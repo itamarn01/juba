@@ -20,6 +20,17 @@
         {
           "launchModeExperimental": "most-recent"
         }
+      ],
+      [
+        "expo-localization"
+      ],
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Varela.ttf"
+          ]
+        }
       ]
     ],
     "splash": {
@@ -38,7 +49,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.gigtunetry.JUBA"
     },
     "web": {
       "favicon": "./assets/favicon.png"
