@@ -71,14 +71,15 @@ const adUnitId = __DEV__
 
 const adUnitIdInterstitial = __DEV__
   ? TestIds.INTERSTITIAL
-  : "ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy";
+  : "ca-app-pub-8754599705550429/2597147010";
 const interstitial = InterstitialAd.createForAdRequest(adUnitIdInterstitial, {
   keywords: ["fashion", "clothing"],
 });
 
 const adUnitIdRewarded = __DEV__
   ? TestIds.REWARDED_INTERSTITIAL
-  : "ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy";
+  : "ca-app-pub-8754599705550429/1379434110";
+
 
 const rewardedInterstitial = RewardedInterstitialAd.createForAdRequest(
   adUnitIdRewarded,
@@ -276,7 +277,7 @@ export default function App() {
   const onPreviousStep = () => {
     setCurrentStep(currentStep - 1);
   };
-  const imagePath = require("./assets/juba3.png");
+  const imagePath = require("./assets/juba-spend.png");
   const viewShotRef = useRef(null);
   //להחזיר
   const captureAndShareImage = async () => {
@@ -1425,105 +1426,106 @@ export default function App() {
                   onRequestClose={() => setModalVisible(false)}
                 >
                   <View style={styles.modalContainer}>
-                    <View style={styles.modalContent} ref={viewShotRef}>
-                      {showText ? (
-                        <View
-                          style={{
-                            justifyContent: "center",
-                            alignItems: "center",
-                          }}
-                        >
-                          <Image
-                            source={imagePath}
-                            style={{ width: 250, height: 100 }}
-                            // resizeMode={FastImage.resizeMode.contain}
-                            //  onLoad={handleImageLoad}
-                          />
-                          <Text
-                            style={{
-                              fontFamily: "Varela",
-                              fontSize: moderateScale(20),
-                            }}
-                          >
-                            החברים ששילמו
-                          </Text>
+                    <View style={styles.modalContent}>
+                      <View ref={viewShotRef}>
+                        {showText ? (
                           <View
                             style={{
-                              width: "100%",
-                              backgroundColor: "grey",
-                              height: 1,
-                            }}
-                          />
-
-                          <FlatList
-                            data={friends}
-                            horizontal
-                            renderItem={renderItem}
-                            keyExtractor={(item, index) => index.toString()}
-                            showsHorizontalScrollIndicator={false}
-                          />
-                          <View
-                            style={{
-                              width: "100%",
-                              backgroundColor: "grey",
-                              height: 1,
-                              //marginVertical: verticalScale(10),
-                            }}
-                          />
-                          <Text
-                            style={{
-                              fontSize: moderateScale(25),
-                              fontFamily: "Varela",
-                              marginBottom: verticalScale(20),
-                            }}
-                          >{`סה"כ שולם  ${totalAmount.toLocaleString()} ${currencySymbol}`}</Text>
-
-                          <Text
-                            style={{
-                              fontSize: moderateScale(27),
-                              color: "grey",
-                              fontFamily: "Varela",
-                            }}
-                          >{`מחיר לאדם: ${(totalAmount / parseInt(numPeople))
-                            //.toFixed(2)
-                            .toLocaleString()} ${currencySymbol}`}</Text>
-                          <View
-                            style={{
-                              width: "100%",
-                              backgroundColor: "grey",
-                              height: 1,
-                              marginVertical: verticalScale(10),
-                            }}
-                          />
-
-                          <View
-                            style={{
-                              // height: 200,
-                              // marginTop: verticalScale(100),
-                              //  marginBottom:verticalScale(40),
                               justifyContent: "center",
                               alignItems: "center",
-                              maxHeight: verticalScale(400),
-                              //backgroundColor: "green",
                             }}
                           >
-                            <FlatList
-                              data={messages}
-                              renderItem={({ item }) => (
-                                <Text
-                                  style={{
-                                    fontSize: moderateScale(12),
-                                    fontFamily: "Varela",
-                                    marginVertical: verticalScale(12),
-                                    writingDirection: "rtl",
-                                  }}
-                                >
-                                  {item}
-                                </Text>
-                              )}
-                              keyExtractor={(item, index) => index.toString()}
+                            <Image
+                              source={imagePath}
+                              style={{ width: 250, height: 100 }}
+                              // resizeMode={FastImage.resizeMode.contain}
+                              //  onLoad={handleImageLoad}
                             />
-                            {/* {messages.map((message, index) => (
+                            <Text
+                              style={{
+                                fontFamily: "Varela",
+                                fontSize: moderateScale(20),
+                              }}
+                            >
+                              החברים ששילמו
+                            </Text>
+                            <View
+                              style={{
+                                width: "100%",
+                                backgroundColor: "grey",
+                                height: 1,
+                              }}
+                            />
+
+                            <FlatList
+                              data={friends}
+                              horizontal
+                              renderItem={renderItem}
+                              keyExtractor={(item, index) => index.toString()}
+                              showsHorizontalScrollIndicator={false}
+                            />
+                            <View
+                              style={{
+                                width: "100%",
+                                backgroundColor: "grey",
+                                height: 1,
+                                //marginVertical: verticalScale(10),
+                              }}
+                            />
+                            <Text
+                              style={{
+                                fontSize: moderateScale(25),
+                                fontFamily: "Varela",
+                                marginBottom: verticalScale(20),
+                              }}
+                            >{`סה"כ שולם  ${totalAmount.toLocaleString()} ${currencySymbol}`}</Text>
+
+                            <Text
+                              style={{
+                                fontSize: moderateScale(27),
+                                color: "grey",
+                                fontFamily: "Varela",
+                              }}
+                            >{`מחיר לאדם: ${(totalAmount / parseInt(numPeople))
+                              //.toFixed(2)
+                              .toLocaleString()} ${currencySymbol}`}</Text>
+                            <View
+                              style={{
+                                width: "100%",
+                                backgroundColor: "grey",
+                                height: 1,
+                                marginVertical: verticalScale(10),
+                              }}
+                            />
+
+                            <View
+                              style={{
+                                // height: 200,
+                                // marginTop: verticalScale(100),
+                                //  marginBottom:verticalScale(40),
+                                justifyContent: "center",
+                                alignItems: "center",
+                                maxHeight: verticalScale(400),
+                                //backgroundColor: "green",
+                              }}
+                            >
+                              <FlatList
+                                data={messages}
+                                renderItem={({ item }) => (
+                                  <Text
+                                    style={{
+                                      fontSize: moderateScale(12),
+                                      fontFamily: "Varela",
+                                      marginVertical: verticalScale(12),
+                                      writingDirection: "rtl",
+                                    }}
+                                  >
+                                    {item}
+                                  </Text>
+                                )}
+                                keyExtractor={(item, index) => index.toString()}
+                              />
+                              {/* {messages.map((message, index) => (
                               <Text
                                 key={index}
                                 style={{
@@ -1535,9 +1537,10 @@ export default function App() {
                                 {message}
                               </Text>
                             ))} */}
+                            </View>
                           </View>
-                        </View>
-                      ) : null}
+                        ) : null}
+                      </View>
 
                       <View style={styles.modalBottomContainer}>
                         <TouchableOpacity

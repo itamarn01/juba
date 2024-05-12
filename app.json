@@ -4,7 +4,7 @@
     "slug": "JUBA",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/apple-icon-juba.png",
     "userInterfaceStyle": "light",
     "plugins": [
       [
@@ -34,7 +34,7 @@
       ]
     ],
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/splash-juba.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -47,7 +47,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/adaptive-icon-juba.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.gigtunetry.JUBA"
