@@ -80,6 +80,7 @@ const adUnitIdRewarded = __DEV__
   ? TestIds.REWARDED_INTERSTITIAL
   : "ca-app-pub-8754599705550429/1379434110";
 
+
 const rewardedInterstitial = RewardedInterstitialAd.createForAdRequest(
   adUnitIdRewarded,
   {
