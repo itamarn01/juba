@@ -31,6 +31,7 @@ import {
   AdEventType,
   RewardedAd,
   RewardedAdEventType,
+  RewardedInterstitialAd,
 } from "react-native-google-mobile-ads";
 import { captureRef } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
@@ -70,18 +71,21 @@ const adUnitId = __DEV__
 
 const adUnitIdInterstitial = __DEV__
   ? TestIds.INTERSTITIAL
-  : "ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy";
+  : "ca-app-pub-8754599705550429/2597147010";
 const interstitial = InterstitialAd.createForAdRequest(adUnitIdInterstitial, {
   keywords: ["fashion", "clothing"],
 });
 
 const adUnitIdRewarded = __DEV__
-  ? TestIds.REWARDED
-  : "ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy";
+  ? TestIds.REWARDED_INTERSTITIAL
+  : "ca-app-pub-8754599705550429/1379434110";
 
-const rewarded = RewardedAd.createForAdRequest(adUnitIdRewarded, {
-  keywords: ["fashion", "clothing"],
-});
+const rewardedInterstitial = RewardedInterstitialAd.createForAdRequest(
+  adUnitIdRewarded,
+  {
+    keywords: ["fashion", "clothing"],
+  }
+);
 export default function App() {
   const [appIsReady, setAppIsReady] = useState(false);
   const [friends, setFriends] = useState([
@@ -122,7 +126,59 @@ export default function App() {
   }, []);
 
   const [loaded, setLoaded] = useState(false);
-  const [loaded2, setLoaded2] = useState(false);
+  const [rewardedInterstitialLoaded, setRewardedInterstitialLoaded] =
+    useState(false);
+  const [adClosed, setAdClosed] = useState(false);
+
+  useEffect(() => {
+    if (adClosed) {
+      calculateExpenses();
+    }
+  }, [adClosed]);
+
+  const loadRewardedInterstitial = () => {
+    const unsubscribeLoaded = rewardedInterstitial.addAdEventListener(
+      RewardedAdEventType.LOADED,
+      () => {
+        setRewardedInterstitialLoaded(true);
+      }
+    );
+
+    const unsubscribeEarned = rewardedInterstitial.addAdEventListener(
+      RewardedAdEventType.EARNED_REWARD,
+      (reward) => {
+        console.log(`User earned reward of ${reward.amount} ${reward.type}`);
+        //  onCalculateButtonPressed();
+      }
+    );
+
+    const unsubscribeClosed = rewardedInterstitial.addAdEventListener(
+      AdEventType.CLOSED,
+      () => {
+        setRewardedInterstitialLoaded(false);
+        rewardedInterstitial.load();
+        setAdClosed(true);
+      }
+    );
+
+    rewardedInterstitial.load();
+
+    return () => {
+      unsubscribeLoaded();
+      unsubscribeClosed();
+      unsubscribeEarned();
+    };
+  };
+
+  useEffect(() => {
+    const unsubscribeRewardedInterstitialEvents = loadRewardedInterstitial();
+
+    return () => {
+      unsubscribeRewardedInterstitialEvents();
+    };
+  }, []);
+
+  const [loadedRewarded, setLoadedRewarded] = useState(false);
 
   useEffect(() => {
     const unsubscribe = interstitial.addAdEventListener(
@@ -140,28 +196,56 @@ export default function App() {
     return unsubscribe;
   }, []);
 
-  useEffect(() => {
-    const unsubscribeLoaded = rewarded.addAdEventListener(
-      RewardedAdEventType.LOADED,
-      () => {
-        setLoaded2(true);
+  const loadRewarded = () => {
+    const unsubscribe = rewardedInterstitial.addAdEventsListener(
+      ({ type, payload }) => {
+        console.log("Ad event: ", type, payload);
       }
     );
-    const unsubscribeEarned = rewarded.addAdEventListener(
+
+    // Sometime later...
+
+    const unsubscribeLoaded = rewardedInterstitial.addAdEventListener(
+      RewardedAdEventType.LOADED,
+      () => {
+        setLoadedRewarded(true);
+      }
+    );
+    const unsubscribeEarned = rewardedInterstitial.addAdEventListener(
       RewardedAdEventType.EARNED_REWARD,
       (reward) => {
         console.log("User earned reward of ", reward);
+        console.log("modal visible:", modalVisible);
+        setLoadedRewarded(false);
+        rewardedInterstitial.load;
+        // setModalVisible(true);
       }
     );
+    /*   const unsubscribeClosed = rewardedInterstitial.addAdEventListener(
+      RewardedAdEventType.CLOSED,
+      () => {
+        setLoadedRewarded(false);
+        rewardedInterstitial.load;
+        onCalculateButtonPressed;
+      }
+    ); */
 
     // Start loading the rewarded ad straight away
-    rewarded.load();
+    rewardedInterstitial.load();
 
     // Unsubscribe from events on unmount
     return () => {
+      //  unsubscribeClosed();
       unsubscribeLoaded();
+      rewardedInterstitial.show();
       unsubscribeEarned();
+      unsubscribe();
     };
+  };
+
+  useEffect(() => {
+    const unsubscribeRewardedEvent = loadRewarded();
+    return unsubscribeRewardedEvent;
   }, []);
 
   /*  if (!loaded) {
@@ -192,7 +276,7 @@ export default function App() {
   const onPreviousStep = () => {
     setCurrentStep(currentStep - 1);
   };
-  const imagePath = require("./assets/juba3.png");
+  const imagePath = require("./assets/juba-spend.png");
   const viewShotRef = useRef(null);
   //להחזיר
   const captureAndShareImage = async () => {
@@ -269,6 +353,7 @@ export default function App() {
     // Update the state based on the validation result
     setFriendsNumValid(isValidInput);
     setNumPeople(text);
+    console.log("אני בפנים");
   };
 
   const addFriend = (amount) => {
@@ -320,9 +405,10 @@ export default function App() {
   };
 
   const onCalculateButtonPressed = () => {
-    // console.log("friendsNumisvalid:", FriendsNumIsValid);
+    console.log("friendsNumisvalid:", FriendsNumIsValid);
+    console.log("friend length:", friends.length);
     if (FriendsNumIsValid) {
-      calculateExpenses();
+      onCalculateButtonPressed();
     } else {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       inputNumFriend.current.shake();
@@ -458,6 +544,7 @@ export default function App() {
       console.log("frieds:", friends);
       setShowText(true);
       setModalVisible(true);
+      setAdClosed(false);
     }
 
     /*  const perPersonAmount = total / parseInt(numPeople);
@@ -465,6 +552,117 @@ export default function App() {
       (amount) => perPersonAmount - parseFloat(amount)
     ); */
   };
+
+  /*  const calculateExpenses = () => {
+    setMessages("");
+    
+    const friendsArray = [];
+    const namesArray = [];
+    const total = friends.reduce(
+      (acc, friend) => acc + parseFloat(friend.amount),
+      0
+    );
+    setTotalAmount(total);
+   
+    friendsArray.push(
+      ...friends.map((friend) => friend.amount),
+      ...Array(Math.max(0, numPeople - friends.length)).fill("0")
+    );
+    namesArray.push(
+      ...friends.map((friend) => friend.nickname),
+      ...Array(Math.max(0, numPeople - friends.length)).fill("")
+    );
+    console.log("namesarray:", namesArray);
+    for (let i = 0; i < friendsArray.length; i++) {
+      friendsArray[i] -= total / parseInt(numPeople);
+      friendsArray[i] = parseFloat(friendsArray[i].toFixed(2).toLocaleString());
+    }
+   
+
+    for (let i = 0; i < friendsArray.length; i++) {
+      let person = i + 1;
+      let iterationCount = 0;
+      const maxIterations = 30; // Set a reasonable maximum number of iterations
+
+      while (friendsArray[i] < -0.1 && iterationCount < maxIterations) {
+        let maxIndex = friendsArray.indexOf(Math.max(...friendsArray));
+
+        let friend = maxIndex + 1;
+        if (friendsArray[maxIndex] + friendsArray[i] >= 0) {
+          friendsArray[maxIndex] += friendsArray[i];
+          friendsArray[maxIndex] = parseFloat(
+            friendsArray[maxIndex].toFixed(2)
+          );
+
+          console.log("person:", person);
+          console.log("friend:", friend);
+
+          console.log("friends[person-1].nickname:", namesArray[person - 1]);
+          console.log("friends[friend-1].nickname:", namesArray[friend - 1]);
+
+          addMessage(
+            `${
+              namesArray[person - 1] === ""
+                ? ` חבר ${person}`
+                : namesArray[person - 1].length > 14
+                ? namesArray[person - 1].substring(0, 14) + ".."
+                : namesArray[person - 1]
+            } צריך/ה להחזיר כסף ל${
+              namesArray[friend - 1] !== ""
+                ? namesArray[friend - 1].length > 14
+                  ? namesArray[friend - 1].substring(0, 14) + ".."
+                  : namesArray[friend - 1]
+                : ` חבר ${friend} \n`
+            }: ${friendsArray[i] * -1} ${currencySymbol}`
+          );
+          friendsArray[i] = 0;
+          console.log("friendsArray", friendsArray);
+        } else {
+          friendsArray[i] += friendsArray[maxIndex];
+          friendsArray[i] = parseFloat(friendsArray[i].toFixed(2));
+          console.log(
+            "index: ",
+            person +
+              " bring back tooo " +
+              friend +
+              ": " +
+              friendsArray[maxIndex]
+          );
+          addMessage(
+            `${
+              namesArray[person - 1] === ""
+                ? ` חבר ${person}`
+                : namesArray[person - 1].length > 14
+                ? namesArray[person - 1].substring(0, 14) + ".."
+                : namesArray[person - 1]
+            } צריך/ה להחזיר כסף ל${
+              namesArray[friend - 1] !== ""
+                ? namesArray[friend - 1].length > 14
+                  ? namesArray[friend - 1].substring(0, 14) + ".."
+                  : namesArray[friend - 1]
+                : ` חבר ${friend}`
+            }: ${friendsArray[maxIndex]} ${currencySymbol}`
+          );
+          friendsArray[maxIndex] = 0;
+         
+        }
+        iterationCount++;
+
+        if (iterationCount >= maxIterations) {
+          console.warn("Maximum iterations reached. Exiting loop.");
+          break; // Break out of the loop to prevent infinite iteration
+        }
+      }
+      console.log("frieds:", friends);
+      setShowText(true);
+      setModalVisible(true);
+    }
+  } */
+
+  /*  const perPersonAmount = total / parseInt(numPeople);
+    const balance = friends.map(
+      (amount) => perPersonAmount - parseFloat(amount)
+    ); */
 
   /* useEffect(() => {
     // Focus on the input when the component mounts
@@ -1181,13 +1379,13 @@ export default function App() {
                     </TouchableOpacity>
                   </View>
                 ) : null}
-                {FriendsNumIsValid && (
+                {FriendsNumIsValid && rewardedInterstitialLoaded && (
                   <TouchableOpacity
-                    onPress={() => {
-                      rewarded.show();
-                      onCalculateButtonPressed;
+                    onPress={async () => {
+                      await rewardedInterstitial.show();
+                      //    onCalculateButtonPressed();
+                      console.log("freind num is valid 1:", FriendsNumIsValid);
                     }}
-                    // onPress={onCalculateButtonPressed}
                     style={{
                       justifyContent: "center",
                       alignItems: "center",
@@ -1227,105 +1425,106 @@ export default function App() {
                   onRequestClose={() => setModalVisible(false)}
                 >
                   <View style={styles.modalContainer}>
-                    <View style={styles.modalContent} ref={viewShotRef}>
-                      {showText ? (
-                        <View
-                          style={{
-                            justifyContent: "center",
-                            alignItems: "center",
-                          }}
-                        >
-                          <Image
-                            source={imagePath}
-                            style={{ width: 250, height: 100 }}
-                            // resizeMode={FastImage.resizeMode.contain}
-                            //  onLoad={handleImageLoad}
-                          />
-                          <Text
-                            style={{
-                              fontFamily: "Varela",
-                              fontSize: moderateScale(20),
-                            }}
-                          >
-                            החברים ששילמו
-                          </Text>
+                    <View style={styles.modalContent}>
+                      <View ref={viewShotRef}>
+                        {showText ? (
                           <View
                             style={{
-                              width: "100%",
-                              backgroundColor: "grey",
-                              height: 1,
-                            }}
-                          />
-
-                          <FlatList
-                            data={friends}
-                            horizontal
-                            renderItem={renderItem}
-                            keyExtractor={(item, index) => index.toString()}
-                            showsHorizontalScrollIndicator={false}
-                          />
-                          <View
-                            style={{
-                              width: "100%",
-                              backgroundColor: "grey",
-                              height: 1,
-                              //marginVertical: verticalScale(10),
-                            }}
-                          />
-                          <Text
-                            style={{
-                              fontSize: moderateScale(25),
-                              fontFamily: "Varela",
-                              marginBottom: verticalScale(20),
-                            }}
-                          >{`סה"כ שולם  ${totalAmount.toLocaleString()} ${currencySymbol}`}</Text>
-
-                          <Text
-                            style={{
-                              fontSize: moderateScale(27),
-                              color: "grey",
-                              fontFamily: "Varela",
-                            }}
-                          >{`מחיר לאדם: ${(totalAmount / parseInt(numPeople))
-                            //.toFixed(2)
-                            .toLocaleString()} ${currencySymbol}`}</Text>
-                          <View
-                            style={{
-                              width: "100%",
-                              backgroundColor: "grey",
-                              height: 1,
-                              marginVertical: verticalScale(10),
-                            }}
-                          />
-
-                          <View
-                            style={{
-                              // height: 200,
-                              // marginTop: verticalScale(100),
-                              //  marginBottom:verticalScale(40),
                               justifyContent: "center",
                               alignItems: "center",
-                              maxHeight: verticalScale(400),
-                              //backgroundColor: "green",
                             }}
                           >
-                            <FlatList
-                              data={messages}
-                              renderItem={({ item }) => (
-                                <Text
-                                  style={{
-                                    fontSize: moderateScale(12),
-                                    fontFamily: "Varela",
-                                    marginVertical: verticalScale(12),
-                                    writingDirection: "rtl",
-                                  }}
-                                >
-                                  {item}
-                                </Text>
-                              )}
-                              keyExtractor={(item, index) => index.toString()}
+                            <Image
+                              source={imagePath}
+                              style={{ width: 250, height: 100 }}
+                              // resizeMode={FastImage.resizeMode.contain}
+                              //  onLoad={handleImageLoad}
                             />
-                            {/* {messages.map((message, index) => (
+                            <Text
+                              style={{
+                                fontFamily: "Varela",
+                                fontSize: moderateScale(20),
+                              }}
+                            >
+                              החברים ששילמו
+                            </Text>
+                            <View
+                              style={{
+                                width: "100%",
+                                backgroundColor: "grey",
+                                height: 1,
+                              }}
+                            />
+
+                            <FlatList
+                              data={friends}
+                              horizontal
+                              renderItem={renderItem}
+                              keyExtractor={(item, index) => index.toString()}
+                              showsHorizontalScrollIndicator={false}
+                            />
+                            <View
+                              style={{
+                                width: "100%",
+                                backgroundColor: "grey",
+                                height: 1,
+                                //marginVertical: verticalScale(10),
+                              }}
+                            />
+                            <Text
+                              style={{
+                                fontSize: moderateScale(25),
+                                fontFamily: "Varela",
+                                marginBottom: verticalScale(20),
+                              }}
+                            >{`סה"כ שולם  ${totalAmount.toLocaleString()} ${currencySymbol}`}</Text>
+
+                            <Text
+                              style={{
+                                fontSize: moderateScale(27),
+                                color: "grey",
+                                fontFamily: "Varela",
+                              }}
+                            >{`מחיר לאדם: ${(totalAmount / parseInt(numPeople))
+                              //.toFixed(2)
+                              .toLocaleString()} ${currencySymbol}`}</Text>
+                            <View
+                              style={{
+                                width: "100%",
+                                backgroundColor: "grey",
+                                height: 1,
+                                marginVertical: verticalScale(10),
+                              }}
+                            />
+
+                            <View
+                              style={{
+                                // height: 200,
+                                // marginTop: verticalScale(100),
+                                //  marginBottom:verticalScale(40),
+                                justifyContent: "center",
+                                alignItems: "center",
+                                maxHeight: verticalScale(400),
+                                //backgroundColor: "green",
+                              }}
+                            >
+                              <FlatList
+                                data={messages}
+                                renderItem={({ item }) => (
+                                  <Text
+                                    style={{
+                                      fontSize: moderateScale(12),
+                                      fontFamily: "Varela",
+                                      marginVertical: verticalScale(12),
+                                      writingDirection: "rtl",
+                                    }}
+                                  >
+                                    {item}
+                                  </Text>
+                                )}
+                                keyExtractor={(item, index) => index.toString()}
+                              />
+                              {/* {messages.map((message, index) => (
                               <Text
                                 key={index}
                                 style={{
@@ -1337,9 +1536,10 @@ export default function App() {
                                 {message}
                               </Text>
                             ))} */}
+                            </View>
                           </View>
-                        </View>
-                      ) : null}
+                        ) : null}
+                      </View>
 
                       <View style={styles.modalBottomContainer}>
                         <TouchableOpacity
