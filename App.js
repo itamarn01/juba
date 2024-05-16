@@ -32,7 +32,9 @@ import {
   RewardedAd,
   RewardedAdEventType,
   RewardedInterstitialAd,
+  mobileAds,
 } from "react-native-google-mobile-ads";
+//import * as Device from "expo-device";
 import { captureRef } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
 import { I18n } from "i18n-js";
@@ -73,7 +75,7 @@ const adUnitIdInterstitial = __DEV__
   ? TestIds.INTERSTITIAL
   : "ca-app-pub-8754599705550429/2597147010";
 const interstitial = InterstitialAd.createForAdRequest(adUnitIdInterstitial, {
-  keywords: ["fashion", "clothing"],
+  keywords: ["fashion", "clothing", "food", "cooking", "fruit"],
 });
 
 const adUnitIdRewarded = __DEV__
@@ -84,7 +86,7 @@ const adUnitIdRewarded = __DEV__
 const rewardedInterstitial = RewardedInterstitialAd.createForAdRequest(
   adUnitIdRewarded,
   {
-    keywords: ["fashion", "clothing"],
+    keywords: ["fashion", "clothing", "food", "cooking", "fruit"],
   }
 );
 export default function App() {
@@ -114,6 +116,36 @@ export default function App() {
   const [selected, setSelected] = React.useState("");
   const [data, setData] = React.useState([]);
   const [selectListPressed, setSelectListPressed] = useState([false]);
+
+  useEffect(() => {
+    // Define the async function
+    const initializeMobileAds = async () => {
+      try {
+        // Initialize the Google Mobile Ads SDK
+        const adapterStatuses = await mobileAds().initialize();
+        console.log("Google Mobile Ads SDK initialized", adapterStatuses);
+      } catch (error) {
+        console.error("Google Mobile Ads SDK initialization error", error);
+      }
+    };
+
+    // Call the async function
+    initializeMobileAds();
+  }, []);
+
+  /* useEffect(() => {
+    (async () => {
+      // Google AdMob will show any messages here that you just set up on the AdMob Privacy & Messaging page
+      const { status: trackingStatus } =
+        await requestTrackingPermissionsAsync();
+      if (trackingStatus !== "granted") {
+        // Do something here such as turn off Sentry tracking, store in context/redux to allow for personalized ads, etc.
+      }
+
+      // Initialize the ads
+      await mobileAds().initialize();
+    })();
+  }, []); */
 
   React.useEffect(() => {
     //Get Values from database
@@ -1380,10 +1412,12 @@ export default function App() {
                     </TouchableOpacity>
                   </View>
                 ) : null}
-                {FriendsNumIsValid && rewardedInterstitialLoaded && (
-                  <TouchableOpacity
+                {FriendsNumIsValid && (
+                  /* rewardedInterstitialLoaded && */ <TouchableOpacity
                     onPress={async () => {
-                      await rewardedInterstitial.show();
+                      rewardedInterstitialLoaded
+                        ? await rewardedInterstitial.show()
+                        : calculateExpenses();
                       //    onCalculateButtonPressed();
                       console.log("freind num is valid 1:", FriendsNumIsValid);
                     }}
