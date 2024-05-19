@@ -51,6 +51,12 @@ import * as Haptics from "expo-haptics";
 import { Input } from "@rneui/themed";
 import { SelectList } from "react-native-dropdown-select-list";
 import { Divider } from "@rneui/themed";
+import {
+  requestTrackingPermissionsAsync,
+  getAdvertisingId,
+  getTrackingPermissionsAsync,
+} from "expo-tracking-transparency";
+import * as Device from "expo-device";
 
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
@@ -67,20 +73,36 @@ const translations = {
 const i18n = new I18n(translations);
 
 i18n.enableFallback = true;
-const adUnitId = __DEV__
-  ? TestIds.ADAPTIVE_BANNER
-  : "ca-app-pub-8754599705550429/4186593720";
+
+const iosAdmobBanner = "ca-app-pub-8754599705550429/4186593720";
+const androidAdmobBanner = "ca-app-pub-8754599705550429/2706265136";
+const productionID =
+  Device.osName === "Android" ? androidAdmobBanner : iosAdmobBanner;
+
+const iosAdmobInterstitial = "ca-app-pub-8754599705550429/2597147010";
+const androidAdmobInterstitial = "ca-app-pub-8754599705550429/7575448434";
+const productionInterstitialID =
+  Device.osName === "Android" ? iosAdmobInterstitial : androidAdmobInterstitial;
+
+const iosRewarderdInterstitial = "ca-app-pub-8754599705550429/1379434110";
+const androidRewarderdInterstitial = "ca-app-pub-8754599705550429/8527737330";
+const productionRewarderdInterstitialID =
+  Device.osName === "Android"
+    ? androidRewarderdInterstitial
+    : iosRewarderdInterstitial;
+
+const adUnitId = __DEV__ ? TestIds.ADAPTIVE_BANNER : productionID;
 
 const adUnitIdInterstitial = __DEV__
   ? TestIds.INTERSTITIAL
-  : "ca-app-pub-8754599705550429/2597147010";
+  : productionInterstitialID;
 const interstitial = InterstitialAd.createForAdRequest(adUnitIdInterstitial, {
   keywords: ["fashion", "clothing", "food", "cooking", "fruit"],
 });
 
 const adUnitIdRewarded = __DEV__
   ? TestIds.REWARDED_INTERSTITIAL
-  : "ca-app-pub-8754599705550429/1379434110";
+  : productionRewarderdInterstitialID;
 
 const rewardedInterstitial = RewardedInterstitialAd.createForAdRequest(
   adUnitIdRewarded,
@@ -116,7 +138,7 @@ export default function App() {
   const [data, setData] = React.useState([]);
   const [selectListPressed, setSelectListPressed] = useState([false]);
 
-  useEffect(() => {
+  /* useEffect(() => {
     // Define the async function
     const initializeMobileAds = async () => {
       try {
@@ -130,21 +152,27 @@ export default function App() {
 
     // Call the async function
     initializeMobileAds();
-  }, []);
-
-  /* useEffect(() => {
-    (async () => {
-      // Google AdMob will show any messages here that you just set up on the AdMob Privacy & Messaging page
-      const { status: trackingStatus } =
-        await requestTrackingPermissionsAsync();
-      if (trackingStatus !== "granted") {
-        // Do something here such as turn off Sentry tracking, store in context/redux to allow for personalized ads, etc.
-      }
-
-      // Initialize the ads
-      await mobileAds().initialize();
-    })();
   }, []); */
+
+  useEffect(() => {
+    (async () => {
+      const { granted } = await getTrackingPermissionsAsync();
+
+      if (granted) {
+        console.log("yayyyyyyyyyyyyyyyy");
+      }
+      // Google AdMob will show any messages here that you just set up on the AdMob Privacy & Messaging page
+      const { status: trackingStatus, canAskAgain } =
+        await requestTrackingPermissionsAsync();
+      //console.log("tracking status:", trackingStatus);
+      // console.log("can ask again?:", canAskAgain);
+      if (trackingStatus === "granted") {
+        // Initialize the ads
+        //  console.log("Yay! I have user permission to track data");
+        await mobileAds().initialize();
+      }
+    })();
+  }, []);
 
   React.useEffect(() => {
     //Get Values from database
@@ -1416,7 +1444,23 @@ export default function App() {
                     onPress={async () => {
                       rewardedInterstitialLoaded
                         ? await rewardedInterstitial.show()
-                        : calculateExpenses();
+                        : //calculateExpenses();
+                          Alert.alert(
+                            "הפעל פרסום",
+                            "כדי לקבל את התוצאה צריך לאפשר צפיה בפרסומות בהגדרות המכשיר",
+                            [
+                              {
+                                text: "Cancel",
+                                onPress: () => console.log("Cancel Pressed"),
+                                style: "cancel",
+                              },
+                              {
+                                text: "OK",
+                                onPress: () => console.log("OK Pressed"),
+                              },
+                            ],
+                            { cancelable: false }
+                          );
                       //    onCalculateButtonPressed();
                       console.log("freind num is valid 1:", FriendsNumIsValid);
                     }}
@@ -1520,7 +1564,7 @@ export default function App() {
                                 fontFamily: "Varela",
                               }}
                             >{`מחיר לאדם: ${(totalAmount / parseInt(numPeople))
-                              //.toFixed(2)
+                              .toFixed(2)
                               .toLocaleString()} ${currencySymbol}`}</Text>
                             <View
                               style={{

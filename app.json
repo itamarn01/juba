@@ -2,7 +2,7 @@
   "expo": {
     "name": "JUBA",
     "slug": "JUBA",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon-apple.png",
     "userInterfaceStyle": "light",
@@ -21,8 +21,7 @@
       [
         "expo-tracking-transparency",
         {
-          "userTrackingPermission":
-            "Allow this app to collect app-related data that can be used for tracking you or your device and deliver personalized ads to you."
+          "userTrackingPermission": "This identifier will be used to deliver personalized ads to you."
         }
       ],
       [
@@ -114,7 +113,8 @@
           }
         ]
       },
-      "bundleIdentifier": "com.gigtunetry.JUBA"
+      "bundleIdentifier": "com.gigtunetry.JUBA",
+      "buildNumber": "2"
     },
     "android": {
       "adaptiveIcon": {
@@ -122,7 +122,9 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.gigtunetry.JUBA",
-      "permissions": ["com.google.android.gms.permission.AD_ID"]
+      "permissions": [
+        "com.google.android.gms.permission.AD_ID"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
