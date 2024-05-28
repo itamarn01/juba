@@ -17,6 +17,7 @@ import {
   Modal,
   I18nManager,
   KeyboardAvoidingView,
+  Platform,
   NativeModules,
   // Share,
   Alert,
@@ -33,7 +34,11 @@ import {
   RewardedAdEventType,
   RewardedInterstitialAd,
   mobileAds,
+  AdsConsent,
+  AdsConsentStatus,
+  useForeground,
 } from "react-native-google-mobile-ads";
+
 //import * as Device from "expo-device";
 import { captureRef } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
@@ -56,8 +61,9 @@ import {
   getAdvertisingId,
   getTrackingPermissionsAsync,
 } from "expo-tracking-transparency";
-import * as Device from "expo-device";
 
+import * as Device from "expo-device";
+// SplashScreen.preventAutoHideAsync();
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
 const GuideLineBaseWidth = 414;
@@ -96,21 +102,15 @@ const adUnitId = __DEV__ ? TestIds.ADAPTIVE_BANNER : productionID;
 const adUnitIdInterstitial = __DEV__
   ? TestIds.INTERSTITIAL
   : productionInterstitialID;
-const interstitial = InterstitialAd.createForAdRequest(adUnitIdInterstitial, {
-  keywords: ["fashion", "clothing", "food", "cooking", "fruit"],
-});
 
 const adUnitIdRewarded = __DEV__
   ? TestIds.REWARDED_INTERSTITIAL
   : productionRewarderdInterstitialID;
 
 
-const rewardedInterstitial = RewardedInterstitialAd.createForAdRequest(
-  adUnitIdRewarded,
-  {
-    keywords: ["fashion", "clothing", "food", "cooking", "fruit"],
-  }
-);
+
+let isMobileAdsStartCalled = false;
+
 export default function App() {
   const [appIsReady, setAppIsReady] = useState(false);
   const [friends, setFriends] = useState([
@@ -120,8 +120,8 @@ export default function App() {
   const [friendArrayValid, setFrindArrayValid] = useState(false);
   const [numPeople, setNumPeople] = useState(0);
   const [totalAmount, setTotalAmount] = useState(0);
-  const [result, setResult] = useState([]);
-  const [inputValue, setInputValue] = useState("");
+  // const [result, setResult] = useState([]);
+  // const [inputValue, setInputValue] = useState("");
   const [FriendsNumIsValid, setFriendsNumValid] = useState(false);
   const [messages, setMessages] = useState([]);
   const [showText, setShowText] = useState(false);
@@ -138,6 +138,15 @@ export default function App() {
   const [selected, setSelected] = React.useState("");
   const [data, setData] = React.useState([]);
   const [selectListPressed, setSelectListPressed] = useState([false]);
+  const [isTrackingPermission, setIsTrackingPermission] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [rewardedInterstitialLoaded, setRewardedInterstitialLoaded] =
+    useState(false);
+  const [loadedRewarded, setLoadedRewarded] = useState(false);
+  const [adClosed, setAdClosed] = useState(false);
+  const [trackingPermissionProcessEnd, setTrackingPermissionProcessEnd] =
+    useState(false);
+  const [canShowAd, setCanShowAd] = useState(false);
 
   /* useEffect(() => {
     // Define the async function
@@ -155,24 +164,67 @@ export default function App() {
     initializeMobileAds();
   }, []); */
 
-  useEffect(() => {
-    (async () => {
-      const { granted } = await getTrackingPermissionsAsync();
+  /*  useEffect(() => {
+    const requestConsentAndLoadAds = async () => {
+      try {
+        // Request an update for the consent information.
+        await AdsConsent.requestInfoUpdate();
 
-      if (granted) {
-        console.log("yayyyyyyyyyyyyyyyy");
+        const adsConsentInfo =
+          await AdsConsent.loadAndShowConsentFormIfRequired();
+
+        // Consent has been gathered.
+        if (adsConsentInfo.canRequestAds) {
+          startGoogleMobileAdsSDK();
+        }
+
+        // Check if you can initialize the Google Mobile Ads SDK in parallel
+        // while checking for new consent information. Consent obtained in
+        // the previous session can be used to request ads.
+        // So you can start loading ads as soon as possible after your app launches.
+        const { canRequestAds } = await AdsConsent.getConsentInfo();
+        if (canRequestAds) {
+          startGoogleMobileAdsSDK();
+        }
+      } catch (error) {
+        console.error("Error handling ad consent:", error);
       }
-      // Google AdMob will show any messages here that you just set up on the AdMob Privacy & Messaging page
-      const { status: trackingStatus, canAskAgain } =
-        await requestTrackingPermissionsAsync();
-      //console.log("tracking status:", trackingStatus);
-      // console.log("can ask again?:", canAskAgain);
-      if (trackingStatus === "granted") {
-        // Initialize the ads
-        //  console.log("Yay! I have user permission to track data");
-        await mobileAds().initialize();
+    };
+
+    requestConsentAndLoadAds();
+  }, []);
+
+  const startGoogleMobileAdsSDK = async () => {
+    if (isMobileAdsStartCalled) return;
+
+    isMobileAdsStartCalled = true;
+
+    try {
+      // (Optional, iOS) Handle Apple's App Tracking Transparency manually.
+      const gdprApplies = await AdsConsent.getGdprApplies();
+      const hasConsentForPurposeOne =
+        gdprApplies && (await AdsConsent.getPurposeConsents()).startsWith("1");
+      if (!gdprApplies || hasConsentForPurposeOne) {
+        // Request ATT...
       }
-    })();
+
+      // Initialize the Google Mobile Ads SDK.
+      await mobileAds().initialize();
+
+      // Request an ad...
+    } catch (error) {
+      console.error("Error initializing Google Mobile Ads SDK:", error);
+    }
+  }; */
+  useEffect(() => {
+    const locales = getLocales();
+    // console.log("local:", locales[0].textDirection);
+    if (locales && locales[0].textDirection === "rtl") {
+      I18nManager.forceRTL(true);
+    } else {
+      I18nManager.forceRTL(false);
+    }
+    console.log("is rtl?", I18nManager.isRTL);
   }, []);
 
   React.useEffect(() => {
@@ -185,11 +237,111 @@ export default function App() {
     //Set Data Variable
     setData(newArray);
   }, []);
+  const [interstitial, setInterstitial] = useState(null);
+  const [rewardedInterstitial, setRewardedInterstitial] = useState(null);
+  useEffect(() => {
+    (async () => {
+      try {
+        console.log("Requesting tracking status...");
+        const { status: trackingStatus, canAskAgain } =
+          await requestTrackingPermissionsAsync();
 
-  const [loaded, setLoaded] = useState(false);
-  const [rewardedInterstitialLoaded, setRewardedInterstitialLoaded] =
-    useState(false);
-  const [adClosed, setAdClosed] = useState(false);
+        console.log("Tracking status:", trackingStatus);
+        console.log("Can ask again:", canAskAgain);
+
+        if (trackingStatus === "granted") {
+          setIsTrackingPermission(true);
+          console.log("Permission to track data granted.");
+        }
+      } catch (error) {
+        console.error("Error during tracking permissions request:", error);
+      } finally {
+        console.log("Finalizing permissions and initializing ads...");
+        setTrackingPermissionProcessEnd(true);
+        await mobileAds().initialize();
+        console.log("Ads initialized.");
+      }
+    })();
+  }, []);
+
+  /*  const removeSplash = useCallback(async () => {
+    console.log("soger tasplash");
+    try {
+      if (canShowAd) await SplashScreen.hideAsync();
+      console.log("Splash screen hidden successfully");
+    } catch (hideError) {
+      console.error("Error hiding splash screen:", hideError);
+    }
+    if (!canShowAd) {
+      return null;
+    }
+  }, [canShowAd]); */
+
+  /*  const onLayoutRootView1 = useCallback(async () => {
+    if (trackingPermissionProcessEnd) {
+      // This tells the splash screen to hide immediately! If we call this after
+      // `setAppIsReady`, then we may see a blank screen while the app is
+      // loading its initial state and rendering its first pixels. So instead,
+      // we hide the splash screen once we know the root view has already
+      // performed layout.
+      
+    }
+  }, [trackingPermissionProcessEnd]);
+
+  if (!trackingPermissionProcessEnd) {
+    return null;
+  } */
+
+  /* const HideSplashScreen = async () => {
+    // if (!trackingPermissionProcessEnd) return;
+    console.log("tracking permission end", trackingPermissionProcessEnd);
+    if (trackingPermissionProcessEnd) {
+      // This tells the splash screen to hide immediately! If we call this after
+      // `setAppIsReady`, then we may see a blank screen while the app is
+      // loading its initial state and rendering its first pixels. So instead,
+      // we hide the splash screen once we know the root view has already
+      // performed layout.
+      await SplashScreen.hideAsync();
+      setCanShowAd(true);
+    }
+  };
+
+  useEffect(() => {
+    HideSplashScreen();
+  }, [trackingPermissionProcessEnd]);
+ */
+
+  useEffect(() => {
+    if (!trackingPermissionProcessEnd) {
+      console.log("tracking process doesn't finish");
+      return;
+    }
+    console.log("tracking process load interstitial");
+    console.log;
+    const newInterstitial = InterstitialAd.createForAdRequest(
+      adUnitIdInterstitial,
+      {
+        keywords: ["fashion", "clothing", "food", "cooking", "fruit"],
+        requestNonPersonalizedAdsOnly: !isTrackingPermission,
+      }
+    );
+
+    setInterstitial(newInterstitial);
+    const unsubscribe = newInterstitial.addAdEventListener(
+      AdEventType.LOADED,
+      () => {
+        console.log("interstitial loaded");
+        setLoaded(true);
+        newInterstitial.show();
+      }
+    );
+
+    // Start loading the interstitial straight away
+    newInterstitial.load();
+
+    // Unsubscribe from events on unmount
+    return unsubscribe;
+  }, [isTrackingPermission, trackingPermissionProcessEnd]);
 
   useEffect(() => {
     if (adClosed) {
@@ -198,14 +350,25 @@ export default function App() {
   }, [adClosed]);
 
   const loadRewardedInterstitial = () => {
-    const unsubscribeLoaded = rewardedInterstitial.addAdEventListener(
+    const newRewardedInterstitial = RewardedInterstitialAd.createForAdRequest(
+      adUnitIdRewarded,
+      {
+        keywords: ["fashion", "clothing", "food", "cooking", "fruit"],
+        requestNonPersonalizedAdsOnly: !isTrackingPermission,
+      }
+    );
+
+    setRewardedInterstitial(newRewardedInterstitial);
+
+    const unsubscribeLoaded = newRewardedInterstitial.addAdEventListener(
       RewardedAdEventType.LOADED,
       () => {
+        console.log("loading rewarded interstitial process done");
         setRewardedInterstitialLoaded(true);
       }
     );
 
-    const unsubscribeEarned = rewardedInterstitial.addAdEventListener(
+    const unsubscribeEarned = newRewardedInterstitial.addAdEventListener(
       RewardedAdEventType.EARNED_REWARD,
       (reward) => {
         console.log(`User earned reward of ${reward.amount} ${reward.type}`);
@@ -213,16 +376,16 @@ export default function App() {
       }
     );
 
-    const unsubscribeClosed = rewardedInterstitial.addAdEventListener(
+    const unsubscribeClosed = newRewardedInterstitial.addAdEventListener(
       AdEventType.CLOSED,
       () => {
         setRewardedInterstitialLoaded(false);
-        rewardedInterstitial.load();
+        newRewardedInterstitial.load();
         setAdClosed(true);
       }
     );
 
-    rewardedInterstitial.load();
+    newRewardedInterstitial.load();
 
     return () => {
       unsubscribeLoaded();
@@ -232,82 +395,16 @@ export default function App() {
   };
 
   useEffect(() => {
+    if (!trackingPermissionProcessEnd) {
+      console.log("tracking process doesn't finish");
+      return;
+    }
     const unsubscribeRewardedInterstitialEvents = loadRewardedInterstitial();
 
     return () => {
       unsubscribeRewardedInterstitialEvents();
     };
-  }, []);
-
-  const [loadedRewarded, setLoadedRewarded] = useState(false);
-
-  useEffect(() => {
-    const unsubscribe = interstitial.addAdEventListener(
-      AdEventType.LOADED,
-      () => {
-        setLoaded(true);
-        interstitial.show();
-      }
-    );
-
-    // Start loading the interstitial straight away
-    interstitial.load();
-
-    // Unsubscribe from events on unmount
-    return unsubscribe;
-  }, []);
-
-  const loadRewarded = () => {
-    const unsubscribe = rewardedInterstitial.addAdEventsListener(
-      ({ type, payload }) => {
-        console.log("Ad event: ", type, payload);
-      }
-    );
-
-    // Sometime later...
-
-    const unsubscribeLoaded = rewardedInterstitial.addAdEventListener(
-      RewardedAdEventType.LOADED,
-      () => {
-        setLoadedRewarded(true);
-      }
-    );
-    const unsubscribeEarned = rewardedInterstitial.addAdEventListener(
-      RewardedAdEventType.EARNED_REWARD,
-      (reward) => {
-        console.log("User earned reward of ", reward);
-        console.log("modal visible:", modalVisible);
-        setLoadedRewarded(false);
-        rewardedInterstitial.load;
-        // setModalVisible(true);
-      }
-    );
-    /*   const unsubscribeClosed = rewardedInterstitial.addAdEventListener(
-      RewardedAdEventType.CLOSED,
-      () => {
-        setLoadedRewarded(false);
-        rewardedInterstitial.load;
-        onCalculateButtonPressed;
-      }
-    ); */
-
-    // Start loading the rewarded ad straight away
-    rewardedInterstitial.load();
-
-    // Unsubscribe from events on unmount
-    return () => {
-      //  unsubscribeClosed();
-      unsubscribeLoaded();
-      rewardedInterstitial.show();
-      unsubscribeEarned();
-      unsubscribe();
-    };
-  };
-
-  useEffect(() => {
-    const unsubscribeRewardedEvent = loadRewarded();
-    return unsubscribeRewardedEvent;
-  }, []);
+  }, [isTrackingPermission, trackingPermissionProcessEnd]);
 
   /*  if (!loaded) {
     return null;
@@ -403,7 +500,7 @@ export default function App() {
 
   const handleInputChange = (text) => {
     // Regular expression for a whole number
-    const integerRegex = /^\d+$/;
+    const integerRegex = /^(?:[1-9]?\d|100)$/;
 
     // Check if the input is a whole number
     const isInteger = integerRegex.test(text);
@@ -414,7 +511,6 @@ export default function App() {
     // Update the state based on the validation result
     setFriendsNumValid(isValidInput);
     setNumPeople(text);
-    console.log("אני בפנים");
   };
 
   const addFriend = (amount) => {
@@ -447,6 +543,7 @@ export default function App() {
   };
 
   const onNextButtonPressed = () => {
+    // Alert.alert("button pressed");
     let allInputsValid = true;
     friends.forEach((friend, index) => {
       if (!validateFriendsInput(index)) {
@@ -466,8 +563,8 @@ export default function App() {
   };
 
   const onCalculateButtonPressed = () => {
-    console.log("friendsNumisvalid:", FriendsNumIsValid);
-    console.log("friend length:", friends.length);
+    // console.log("friendsNumisvalid:", FriendsNumIsValid);
+    // console.log("friend length:", friends.length);
     if (FriendsNumIsValid) {
       onCalculateButtonPressed();
     } else {
@@ -520,7 +617,7 @@ export default function App() {
       ...friends.map((friend) => friend.nickname),
       ...Array(Math.max(0, numPeople - friends.length)).fill("")
     );
-    console.log("namesarray:", namesArray);
+    // console.log("namesarray:", namesArray);
     for (let i = 0; i < friendsArray.length; i++) {
       friendsArray[i] -= total / parseInt(numPeople);
       friendsArray[i] = parseFloat(friendsArray[i].toFixed(2).toLocaleString());
@@ -543,11 +640,11 @@ export default function App() {
             friendsArray[maxIndex].toFixed(2)
           );
 
-          console.log("person:", person);
-          console.log("friend:", friend);
+          // console.log("person:", person);
+          // console.log("friend:", friend);
 
-          console.log("friends[person-1].nickname:", namesArray[person - 1]);
-          console.log("friends[friend-1].nickname:", namesArray[friend - 1]);
+          // console.log("friends[person-1].nickname:", namesArray[person - 1]);
+          // console.log("friends[friend-1].nickname:", namesArray[friend - 1]);
 
           addMessage(
             `${
@@ -565,18 +662,18 @@ export default function App() {
             }: ${friendsArray[i] * -1} ${currencySymbol}`
           );
           friendsArray[i] = 0;
-          console.log("friendsArray", friendsArray);
+          // console.log("friendsArray", friendsArray);
         } else {
           friendsArray[i] += friendsArray[maxIndex];
           friendsArray[i] = parseFloat(friendsArray[i].toFixed(2));
-          console.log(
+          /*    console.log(
             "index: ",
             person +
               " bring back tooo " +
               friend +
               ": " +
               friendsArray[maxIndex]
-          );
+          ); */
           addMessage(
             `${
               namesArray[person - 1] === ""
@@ -598,11 +695,14 @@ export default function App() {
         iterationCount++;
 
         if (iterationCount >= maxIterations) {
+          /*  Alert.alert("הכסף מתחלק בין יותר מדי אנשים", "בחר/י מספר קטן יותר", [
+            { text: "OK", onPress: () => setNumPeople(0) },
+          ]); */
           console.warn("Maximum iterations reached. Exiting loop.");
           break; // Break out of the loop to prevent infinite iteration
         }
       }
-      console.log("frieds:", friends);
+      // console.log("frieds:", friends);
       setShowText(true);
       setModalVisible(true);
       setAdClosed(false);
@@ -612,6 +712,15 @@ export default function App() {
     const balance = friends.map(
       (amount) => perPersonAmount - parseFloat(amount)
     ); */
+  };
+
+  const handlePress = async () => {
+    console.log("rewarded interstitial load:", rewardedInterstitialLoaded);
+    if (rewardedInterstitialLoaded) {
+      await rewardedInterstitial.show();
+    } else {
+      calculateExpenses();
+    }
   };
 
   /*  const calculateExpenses = () => {
@@ -800,7 +909,10 @@ export default function App() {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <KeyboardAvoidingView
-        behavior="padding" // or "height" or "position"
+        behavior={Platform.OS == "ios" ? "padding" : "height"}
+        enabled
+        keyboardVerticalOffset={10}
+        /*  behavior="padding" // or "height" or "position" */
         style={styles.keyboardAvoidingContainer}
       >
         <View style={styles.container}>
@@ -863,6 +975,8 @@ export default function App() {
               <ScrollView
                 nestedScrollEnabled={true}
                 showsVerticalScrollIndicator={false}
+                // keyboardDismissMode={"interactive"}
+                keyboardShouldPersistTaps={"always"}
                 contentContainerStyle={{
                   justifyContent: "center",
                   alignItems: "center",
@@ -968,14 +1082,14 @@ export default function App() {
                                 elevation: 5,
                               }}
                             >
-                              <FontAwesome6
-                                name="coins"
-                                size={12}
+                              <MaterialIcons
+                                name="emoji-people"
+                                size={18}
                                 color="white"
                               />
                             </LinearGradient>
                             <Input
-                              ref={input}
+                              ref={nameInput}
                               inputContainerStyle={{
                                 // backgroundColor: "grey",
                                 borderBottomWidth: 0,
@@ -986,16 +1100,23 @@ export default function App() {
                                 marginTop: verticalScale(25),
                                 //borderWidth:1
                               }}
-                              placeholder={`סכום חבר ${index + 1}`}
+                              style={{
+                                //color: "green",
+                                textAlign: I18nManager.isRTL ? "right" : "left", // Aligns text conditionally
+                                writingDirection: I18nManager.isRTL
+                                  ? "rtl"
+                                  : "ltr",
+                              }}
+                              placeholder={`שם ${index + 1}`}
                               placeholderTextColor="#707070"
-                              keyboardType="numeric"
+                              keyboardType="name-phone-pad"
                               onChangeText={(text) => {
                                 const updatedFriends = [...friends];
-                                updatedFriends[index].amount = text;
+                                updatedFriends[index].nickname = text;
                                 setFriends(updatedFriends);
                               }}
-                              value={friendAmount.amount}
-                              onBlur={() => onBlurHandler(index)}
+                              value={friendAmount.nickname}
+                              //onBlur={() => onBlurHandler(index)}
                             />
                           </View>
                           <View
@@ -1035,14 +1156,14 @@ export default function App() {
                                 elevation: 5,
                               }}
                             >
-                              <MaterialIcons
-                                name="emoji-people"
-                                size={18}
+                              <FontAwesome6
+                                name="coins"
+                                size={12}
                                 color="white"
                               />
                             </LinearGradient>
                             <Input
-                              ref={nameInput}
+                              ref={input}
                               inputContainerStyle={{
                                 // backgroundColor: "grey",
                                 borderBottomWidth: 0,
@@ -1053,16 +1174,22 @@ export default function App() {
                                 marginTop: verticalScale(25),
                                 //borderWidth:1
                               }}
-                              placeholder={`שם ${index + 1}`}
+                              style={{
+                                textAlign: I18nManager.isRTL ? "right" : "left", // Aligns text conditionally
+                                writingDirection: I18nManager.isRTL
+                                  ? "rtl"
+                                  : "ltr",
+                              }}
+                              placeholder={`סכום חבר ${index + 1}`}
                               placeholderTextColor="#707070"
-                              keyboardType="name-phone-pad"
+                              keyboardType="numeric"
                               onChangeText={(text) => {
                                 const updatedFriends = [...friends];
-                                updatedFriends[index].nickname = text;
+                                updatedFriends[index].amount = text;
                                 setFriends(updatedFriends);
                               }}
-                              value={friendAmount.nickname}
-                              //onBlur={() => onBlurHandler(index)}
+                              value={friendAmount.amount}
+                              onBlur={() => onBlurHandler(index)}
                             />
                           </View>
                           {/* {!selectListPressed[index] ? (
@@ -1379,6 +1506,10 @@ export default function App() {
                           height: "100%",
                           marginTop: verticalScale(25),
                         }}
+                        style={{
+                          textAlign: I18nManager.isRTL ? "right" : "left", // Aligns text conditionally
+                          writingDirection: I18nManager.isRTL ? "rtl" : "ltr",
+                        }}
                         placeholder={`מספר אנשים`}
                         keyboardType="number-pad"
                         returnKeyType="done"
@@ -1401,7 +1532,7 @@ export default function App() {
           /> */}
                       {!FriendsNumIsValid && (
                         <Text style={{ color: "red", fontFamily: "Varela" }}>
-                          המספר חייב להיות גדול או שווה ל {friends.length}
+                          מספר החברים חייב להיות בין {friends.length} ל 100
                         </Text>
                       )}
                     </View>
@@ -1440,28 +1571,28 @@ export default function App() {
                     </TouchableOpacity>
                   </View>
                 ) : null}
-                {FriendsNumIsValid && (
+                {FriendsNumIsValid && currentStep === 2 && (
                   /* rewardedInterstitialLoaded && */ <TouchableOpacity
                     onPress={async () => {
                       rewardedInterstitialLoaded
                         ? await rewardedInterstitial.show()
-                        : //calculateExpenses();
-                          Alert.alert(
-                            "הפעל פרסום",
-                            "כדי לקבל את התוצאה צריך לאפשר צפיה בפרסומות בהגדרות המכשיר",
-                            [
-                              {
-                                text: "Cancel",
-                                onPress: () => console.log("Cancel Pressed"),
-                                style: "cancel",
-                              },
-                              {
-                                text: "OK",
-                                onPress: () => console.log("OK Pressed"),
-                              },
-                            ],
-                            { cancelable: false }
-                          );
+                        : calculateExpenses();
+                      /*  Alert.alert(
+                          "הפעל פרסום",
+                          "כדי לקבל את התוצאה צריך לאפשר צפיה בפרסומות בהגדרות המכשיר",
+                          [
+                            {
+                              text: "Cancel",
+                              onPress: () => console.log("Cancel Pressed"),
+                              style: "cancel",
+                            },
+                            {
+                              text: "OK",
+                              onPress: () => console.log("OK Pressed"),
+                            },
+                          ],
+                          { cancelable: false }
+                        ); */
                       //    onCalculateButtonPressed();
                       console.log("freind num is valid 1:", FriendsNumIsValid);
                     }}
@@ -1712,10 +1843,20 @@ export default function App() {
             </View>
           )}
         </View>
-        <BannerAd
-          unitId={adUnitId}
-          size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
-        />
+        {trackingPermissionProcessEnd && (
+          <>
+            {console.log("banner loading")}
+            <BannerAd
+              //    ref={bannerRef}
+              unitId={adUnitId}
+              size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+              requestOptions={{
+                requestNonPersonalizedAdsOnly: !isTrackingPermission,
+                // You can change this setting depending on whether you want to use the permissions tracking we set up in the initializing
+              }}
+            />
+          </>
+        )}
       </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
   );
@@ -1730,13 +1871,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#EDEDED",
   },
   input: {
-    height: 40,
+    height: verticalScale(40),
     borderColor: "#CECECE",
     borderWidth: 1,
-    marginBottom: 10,
-    padding: 10,
+    marginBottom: verticalScale(10),
+    padding: moderateScale(10),
     width: "70%",
-    borderRadius: 20,
+    borderRadius: moderateScale(20),
   },
   friendInputContainer: {
     flexDirection: "row",
@@ -1748,15 +1889,15 @@ const styles = StyleSheet.create({
   },
   messageContainer: {
     backgroundColor: "#e0e0e0",
-    padding: 50,
-    width: 400,
-    marginVertical: 5,
-    borderRadius: 8,
+    padding: moderateScale(50),
+    width: horizontalScale(400),
+    marginVertical: verticalScale(5),
+    borderRadius: moderateScale(8),
     justifyContent: "center",
     alignItems: "center",
   },
   messageText: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: "black",
   },
   modalContainer: {
@@ -1780,7 +1921,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
-    // backgroundColor: "green",
+    backgroundColor: "white",
+    borderBottomEndRadius: moderateScale(20),
   },
   keyboardAvoidingContainer: {
     flex: 1,
@@ -1803,11 +1945,11 @@ const styles = StyleSheet.create({
     marginVertical: verticalScale(5),
   },
   nickname: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: "bold",
   },
   amount: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     // marginTop: 3,
     //marginBottom: 10,
   },

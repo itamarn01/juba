@@ -18,6 +18,9 @@
         "appleId": "itamarn01@gmail.com",
         "ascAppId": "6502645038",
         "appleTeamId": "6PP9XCT28G"
+      },
+      "android": {
+        "serviceAccountKeyPath": "../juba keys/juba-423902-e74ba4a5610b.json"
       }
     }
   }
