@@ -107,18 +107,7 @@ const adUnitIdRewarded = __DEV__
   ? TestIds.REWARDED_INTERSTITIAL
   : productionRewarderdInterstitialID;
 
-/* const interstitial = InterstitialAd.createForAdRequest(adUnitIdInterstitial, {
-  keywords: ["fashion", "clothing", "food", "cooking", "fruit"],
-  requestNonPersonalizedAdsOnly: true,
-});
 
-const rewardedInterstitial = RewardedInterstitialAd.createForAdRequest(
-  adUnitIdRewarded,
-  {
-    keywords: ["fashion", "clothing", "food", "cooking", "fruit"],
-    requestNonPersonalizedAdsOnly: true,
-  }
-); */
 
 let isMobileAdsStartCalled = false;
 
