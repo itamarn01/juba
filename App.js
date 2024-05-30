@@ -23,6 +23,7 @@ import {
   Alert,
   Animated,
 } from "react-native";
+//import { Image } from "expo-image";
 import * as DevClient from "expo-dev-client";
 import {
   BannerAd,
@@ -158,6 +159,7 @@ export default function App() {
   const [trackingPermissionProcessEnd, setTrackingPermissionProcessEnd] =
     useState(false);
   const [canShowAd, setCanShowAd] = useState(false);
+  const [interstitalClosed, setInterstitialClosed] = useState(false);
 
   /* useEffect(() => {
     // Define the async function
@@ -347,11 +349,22 @@ export default function App() {
       }
     );
 
+    const unsubscribeClosed = newInterstitial.addAdEventListener(
+      AdEventType.CLOSED,
+      () => {
+        console.log("interstitial closed");
+        setInterstitialClosed(true);
+      }
+    );
+
     // Start loading the interstitial straight away
     newInterstitial.load();
 
     // Unsubscribe from events on unmount
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+      unsubscribeClosed();
+    };
   }, [isTrackingPermission, trackingPermissionProcessEnd]);
 
   useEffect(() => {
@@ -669,7 +682,7 @@ export default function App() {
                 ? namesArray[friend - 1].length > 14
                   ? namesArray[friend - 1].substring(0, 14) + ".."
                   : namesArray[friend - 1]
-                : ` חבר ${friend} \n`
+                : `חבר ${friend} `
             }: ${friendsArray[i] * -1} ${currencySymbol}`
           );
           friendsArray[i] = 0;
@@ -697,7 +710,7 @@ export default function App() {
                 ? namesArray[friend - 1].length > 14
                   ? namesArray[friend - 1].substring(0, 14) + ".."
                   : namesArray[friend - 1]
-                : ` חבר ${friend}`
+                : `חבר ${friend}`
             }: ${friendsArray[maxIndex]} ${currencySymbol}`
           );
           friendsArray[maxIndex] = 0;
@@ -857,13 +870,15 @@ export default function App() {
     setFriends(updatedFriends);
     setModalNickNameVisible(false);
   };
-  const renderItem = ({ item }) => (
+  const renderItem = ({ item, index }) => (
     <View style={styles.itemContainer}>
       <FontAwesome name="user-circle" size={24} color="purple" />
       <View style={styles.textContainer}>
         <Text style={styles.nickname}>
           {item.nickname.length > 20
             ? item.nickname.substring(0, 20) + ".."
+            : item.nickname === ""
+            ? `חבר ${index + 1}`
             : item.nickname}
         </Text>
         <Text style={styles.amount}>{`${currencySymbol} ${Number(
@@ -927,18 +942,29 @@ export default function App() {
         style={styles.keyboardAvoidingContainer}
       >
         <View style={styles.container}>
-          {!appIsReady ? (
-            <ActivityIndicator
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-              }}
-              size="large"
-              color="gray"
-            />
+          {!appIsReady || !interstitalClosed ? (
+            <>
+              {console.log("app isnt ready")}
+              <Image
+                style={{
+                  width: horizontalScale(400),
+                  height: verticalScale(400),
+                }}
+                source={require("./assets/JubaGif.gif")}
+                contentFit="contain"
+              />
+              {/*  <ActivityIndicator
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                }}
+                size="large"
+                color="orange"
+              /> */}
+            </>
           ) : (
             <View>
               <LinearGradient
@@ -987,12 +1013,13 @@ export default function App() {
                 nestedScrollEnabled={true}
                 showsVerticalScrollIndicator={false}
                 // keyboardDismissMode={"interactive"}
-                keyboardShouldPersistTaps={"always"}
+                // keyboardShouldPersistTaps={"always"}
                 contentContainerStyle={{
-                  justifyContent: "center",
+                  justifyContent: "flex-start",
                   alignItems: "center",
                   //  backgroundColor: "green",
                   width: windowWidth,
+                  flexGrow: 1,
 
                   //  zIndex: 1,
                 }}
@@ -1322,7 +1349,7 @@ export default function App() {
                             }}
                           />
                         ) : null}
-</View> */}
+                   </View> */}
                           {index !== 0 ? (
                             <TouchableOpacity
                               onPress={() => deleteFriend(index)}
@@ -1647,17 +1674,21 @@ export default function App() {
                 >
                   <View style={styles.modalContainer}>
                     <View style={styles.modalContent}>
-                      <View ref={viewShotRef}>
+                      <View ref={viewShotRef} collapsable={false}>
                         {showText ? (
                           <View
                             style={{
                               justifyContent: "center",
                               alignItems: "center",
+                              backgroundColor: "white",
                             }}
                           >
                             <Image
                               source={imagePath}
-                              style={{ width: 250, height: 100 }}
+                              style={{
+                                width: horizontalScale(250),
+                                height: verticalScale(100),
+                              }}
                               // resizeMode={FastImage.resizeMode.contain}
                               //  onLoad={handleImageLoad}
                             />
@@ -1856,7 +1887,7 @@ export default function App() {
         </View>
         {trackingPermissionProcessEnd && (
           <>
-            {console.log("banner loading")}
+            {/* {console.log("banner loading")} */}
             <BannerAd
               //    ref={bannerRef}
               unitId={adUnitId}
@@ -1958,6 +1989,7 @@ const styles = StyleSheet.create({
   nickname: {
     fontSize: moderateScale(16),
     fontWeight: "bold",
+    // writingDirection: i18n.
   },
   amount: {
     fontSize: moderateScale(14),
