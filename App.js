@@ -23,7 +23,8 @@ import {
   Alert,
   Animated,
 } from "react-native";
-import * as DevClient from "expo-dev-client";
+//import { Image } from "expo-image";
+
 import {
   BannerAd,
   BannerAdSize,
@@ -34,6 +35,7 @@ import {
   RewardedAdEventType,
   RewardedInterstitialAd,
   mobileAds,
+  AppOpenAd,
   AdsConsent,
   AdsConsentStatus,
   useForeground,
@@ -50,12 +52,12 @@ import { FontAwesome } from "@expo/vector-icons";
 import { FontAwesome6 } from "@expo/vector-icons";
 import { getLocales } from "expo-localization";
 import { useFonts } from "expo-font";
-import * as SplashScreen from "expo-splash-screen";
+//import * as SplashScreen from "expo-splash-screen";
 //import FastImage from "react-native-fast-image";
 import * as Haptics from "expo-haptics";
 import { Input } from "@rneui/themed";
-import { SelectList } from "react-native-dropdown-select-list";
-import { Divider } from "@rneui/themed";
+//import { SelectList } from "react-native-dropdown-select-list";
+//import { Divider } from "@rneui/themed";
 import {
   requestTrackingPermissionsAsync,
   getAdvertisingId,
@@ -80,6 +82,11 @@ const i18n = new I18n(translations);
 
 i18n.enableFallback = true;
 
+const iosAppOpen = "ca-app-pub-8754599705550429/6844475216";
+const androidAppOpen = "ca-app-pub-8754599705550429/2760678403";
+const productionAppOpenId =
+  Device.osName === "Android" ? androidAppOpen : iosAppOpen;
+
 const iosAdmobBanner = "ca-app-pub-8754599705550429/4186593720";
 const androidAdmobBanner = "ca-app-pub-8754599705550429/2706265136";
 const productionID =
@@ -96,6 +103,8 @@ const productionRewarderdInterstitialID =
   Device.osName === "Android"
     ? androidRewarderdInterstitial
     : iosRewarderdInterstitial;
+
+const adUnitIdAppOpen = __DEV__ ? TestIds.APP_OPEN : productionAppOpenId;
 
 const adUnitId = __DEV__ ? TestIds.ADAPTIVE_BANNER : productionID;
 
@@ -140,6 +149,8 @@ export default function App() {
   const [selectListPressed, setSelectListPressed] = useState([false]);
   const [isTrackingPermission, setIsTrackingPermission] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [appOpenLoaded, setAppOpenLoaded] = useState(false);
+  const [interstitialLoaded, setInterstitialLoaded] = useState(false);
   const [rewardedInterstitialLoaded, setRewardedInterstitialLoaded] =
     useState(false);
   const [loadedRewarded, setLoadedRewarded] = useState(false);
@@ -147,7 +158,8 @@ export default function App() {
   const [trackingPermissionProcessEnd, setTrackingPermissionProcessEnd] =
     useState(false);
   const [canShowAd, setCanShowAd] = useState(false);
-
+  const [interstitalClosed, setInterstitialClosed] = useState(false);
+  const [appOpenClosed, setAppOpenClosed] = useState(false);
   /* useEffect(() => {
     // Define the async function
     const initializeMobileAds = async () => {
@@ -237,8 +249,10 @@ export default function App() {
     //Set Data Variable
     setData(newArray);
   }, []);
+  const [appOpen, setAppOpen] = useState(null);
   const [interstitial, setInterstitial] = useState(null);
   const [rewardedInterstitial, setRewardedInterstitial] = useState(null);
+
   useEffect(() => {
     (async () => {
       try {
@@ -310,8 +324,58 @@ export default function App() {
     HideSplashScreen();
   }, [trackingPermissionProcessEnd]);
  */
-
   useEffect(() => {
+    if (!trackingPermissionProcessEnd) {
+      console.log("tracking process doesn't finish");
+      return;
+    }
+    console.log("tracking process load interstitial");
+    console.log;
+    const newAppOpen = AppOpenAd.createForAdRequest(adUnitIdAppOpen, {
+      keywords: ["fashion", "clothing", "food", "cooking", "fruit"],
+      requestNonPersonalizedAdsOnly: !isTrackingPermission,
+    });
+
+    setAppOpen(newAppOpen);
+    const unsubscribe = newAppOpen.addAdEventListener(
+      AdEventType.LOADED,
+      () => {
+        console.log("appOpen ad loaded");
+        setAppOpenLoaded(true);
+        newAppOpen.show();
+      }
+    );
+
+    const unsubscribeClosed = newAppOpen.addAdEventListener(
+      AdEventType.CLOSED,
+      () => {
+        console.log("app open ad closed");
+        setAppOpenClosed(true);
+      }
+    );
+
+    const unsubscribeErorr = newAppOpen.addAdEventListener(
+      AdEventType.ERROR,
+      (error) => {
+        console.log(`error loading appOpen :`, error);
+        //  onCalculateButtonPressed();
+        setAppOpenLoaded(false);
+        newAppOpen.load();
+      }
+    );
+
+    // Start loading the interstitial straight away
+    newAppOpen.load();
+
+    // Unsubscribe from events on unmount
+    return () => {
+      unsubscribe();
+      unsubscribeClosed();
+      unsubscribeErorr();
+    };
+  }, [isTrackingPermission, trackingPermissionProcessEnd]);
+
+  /*  useEffect(() => {
     if (!trackingPermissionProcessEnd) {
       console.log("tracking process doesn't finish");
       return;
@@ -336,18 +400,88 @@ export default function App() {
       }
     );
 
+    const unsubscribeClosed = newInterstitial.addAdEventListener(
+      AdEventType.CLOSED,
+      () => {
+        console.log("interstitial closed");
+        setInterstitialClosed(true);
+      }
+    );
+
     // Start loading the interstitial straight away
     newInterstitial.load();
 
     // Unsubscribe from events on unmount
-    return unsubscribe;
-  }, [isTrackingPermission, trackingPermissionProcessEnd]);
+    return () => {
+      unsubscribe();
+      unsubscribeClosed();
+    };
+  }, [isTrackingPermission, trackingPermissionProcessEnd]); */
 
   useEffect(() => {
     if (adClosed) {
       calculateExpenses();
     }
   }, [adClosed]);
+
+  const loadInterstitial = () => {
+    const newInterstitial = InterstitialAd.createForAdRequest(
+      adUnitIdInterstitial,
+      {
+        keywords: ["fashion", "clothing", "food", "cooking", "fruit"],
+        requestNonPersonalizedAdsOnly: !isTrackingPermission,
+      }
+    );
+
+    setInterstitial(newInterstitial);
+
+    const unsubscribeLoaded = newInterstitial.addAdEventListener(
+      AdEventType.LOADED,
+      () => {
+        console.log("loading interstitial process done");
+        setInterstitialLoaded(true);
+      }
+    );
+
+    const unsubscribeErorr = newInterstitial.addAdEventListener(
+      AdEventType.ERROR,
+      (error) => {
+        console.log(`error loading ad :`, error);
+        //  onCalculateButtonPressed();
+        setInterstitialLoaded(false);
+        newInterstitial.load();
+      }
+    );
+
+    const unsubscribeClosed = newInterstitial.addAdEventListener(
+      AdEventType.CLOSED,
+      () => {
+        setInterstitialLoaded(false);
+        newInterstitial.load();
+        setAdClosed(true);
+      }
+    );
+
+    newInterstitial.load();
+
+    return () => {
+      unsubscribeLoaded();
+      unsubscribeClosed();
+      unsubscribeErorr();
+    };
+  };
+
+  useEffect(() => {
+    if (!trackingPermissionProcessEnd) {
+      console.log("tracking process doesn't finish");
+      return;
+    }
+    const unsubscribeInterstitialEvents = loadInterstitial();
+
+    return () => {
+      unsubscribeInterstitialEvents();
+    };
+  }, [isTrackingPermission, trackingPermissionProcessEnd]);
 
   const loadRewardedInterstitial = () => {
     const newRewardedInterstitial = RewardedInterstitialAd.createForAdRequest(
@@ -658,7 +792,7 @@ export default function App() {
                 ? namesArray[friend - 1].length > 14
                   ? namesArray[friend - 1].substring(0, 14) + ".."
                   : namesArray[friend - 1]
-                : ` חבר ${friend} \n`
+                : `חבר ${friend} `
             }: ${friendsArray[i] * -1} ${currencySymbol}`
           );
           friendsArray[i] = 0;
@@ -686,7 +820,7 @@ export default function App() {
                 ? namesArray[friend - 1].length > 14
                   ? namesArray[friend - 1].substring(0, 14) + ".."
                   : namesArray[friend - 1]
-                : ` חבר ${friend}`
+                : `חבר ${friend}`
             }: ${friendsArray[maxIndex]} ${currencySymbol}`
           );
           friendsArray[maxIndex] = 0;
@@ -846,13 +980,15 @@ export default function App() {
     setFriends(updatedFriends);
     setModalNickNameVisible(false);
   };
-  const renderItem = ({ item }) => (
+  const renderItem = ({ item, index }) => (
     <View style={styles.itemContainer}>
       <FontAwesome name="user-circle" size={24} color="purple" />
       <View style={styles.textContainer}>
         <Text style={styles.nickname}>
           {item.nickname.length > 20
             ? item.nickname.substring(0, 20) + ".."
+            : item.nickname === ""
+            ? `חבר ${index + 1}`
             : item.nickname}
         </Text>
         <Text style={styles.amount}>{`${currencySymbol} ${Number(
@@ -915,19 +1051,38 @@ export default function App() {
         /*  behavior="padding" // or "height" or "position" */
         style={styles.keyboardAvoidingContainer}
       >
-        <View style={styles.container}>
-          {!appIsReady ? (
-            <ActivityIndicator
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-              }}
-              size="large"
-              color="gray"
-            />
+        <View
+          style={[
+            styles.container,
+            {
+              backgroundColor:
+                !appIsReady || !appOpenClosed ? "white" : "#EDEDED",
+            },
+          ]}
+        >
+          {!appIsReady || /* !interstitalClosed */ !appOpenClosed ? (
+            <>
+              {console.log("app isnt ready")}
+              <Image
+                style={{
+                  width: horizontalScale(400),
+                  height: verticalScale(400),
+                }}
+                source={require("./assets/JubaGif.gif")}
+                contentFit="contain"
+              />
+              {/*  <ActivityIndicator
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                }}
+                size="large"
+                color="orange"
+              /> */}
+            </>
           ) : (
             <View>
               <LinearGradient
@@ -976,12 +1131,13 @@ export default function App() {
                 nestedScrollEnabled={true}
                 showsVerticalScrollIndicator={false}
                 // keyboardDismissMode={"interactive"}
-                keyboardShouldPersistTaps={"always"}
+                // keyboardShouldPersistTaps={"always"}
                 contentContainerStyle={{
-                  justifyContent: "center",
+                  justifyContent: "flex-start",
                   alignItems: "center",
                   //  backgroundColor: "green",
                   width: windowWidth,
+                  flexGrow: 1,
 
                   //  zIndex: 1,
                 }}
@@ -1311,7 +1467,7 @@ export default function App() {
                             }}
                           />
                         ) : null}
-</View> */}
+                   </View> */}
                           {index !== 0 ? (
                             <TouchableOpacity
                               onPress={() => deleteFriend(index)}
@@ -1574,8 +1730,8 @@ export default function App() {
                 {FriendsNumIsValid && currentStep === 2 && (
                   /* rewardedInterstitialLoaded && */ <TouchableOpacity
                     onPress={async () => {
-                      rewardedInterstitialLoaded
-                        ? await rewardedInterstitial.show()
+                      interstitialLoaded
+                        ? await interstitial.show()
                         : calculateExpenses();
                       /*  Alert.alert(
                           "הפעל פרסום",
@@ -1636,17 +1792,21 @@ export default function App() {
                 >
                   <View style={styles.modalContainer}>
                     <View style={styles.modalContent}>
-                      <View ref={viewShotRef}>
+                      <View ref={viewShotRef} collapsable={false}>
                         {showText ? (
                           <View
                             style={{
                               justifyContent: "center",
                               alignItems: "center",
+                              backgroundColor: "white",
                             }}
                           >
                             <Image
                               source={imagePath}
-                              style={{ width: 250, height: 100 }}
+                              style={{
+                                width: horizontalScale(250),
+                                height: verticalScale(100),
+                              }}
                               // resizeMode={FastImage.resizeMode.contain}
                               //  onLoad={handleImageLoad}
                             />
@@ -1845,7 +2005,7 @@ export default function App() {
         </View>
         {trackingPermissionProcessEnd && (
           <>
-            {console.log("banner loading")}
+            {/* {console.log("banner loading")} */}
             <BannerAd
               //    ref={bannerRef}
               unitId={adUnitId}
@@ -1868,7 +2028,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     //  padding: 80,
-    backgroundColor: "#EDEDED",
   },
   input: {
     height: verticalScale(40),
@@ -1947,6 +2106,7 @@ const styles = StyleSheet.create({
   nickname: {
     fontSize: moderateScale(16),
     fontWeight: "bold",
+    // writingDirection: i18n.
   },
   amount: {
     fontSize: moderateScale(14),

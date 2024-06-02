@@ -2,7 +2,7 @@
   "expo": {
     "name": "JUBA",
     "slug": "JUBA",
-    "version": "1.0.2",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon-apple.png",
     "userInterfaceStyle": "light",
@@ -114,15 +114,15 @@
         ]
       },
       "bundleIdentifier": "com.gigtunetry.JUBA",
-      "buildNumber": "1"
+      "buildNumber": "2"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-juba-icon.png",
+        "foregroundImage": "./assets/juba-adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.gigtunetry.JUBA",
-      "versionCode": 1,
+      "versionCode": 3,
       "permissions": [
         "com.google.android.gms.permission.AD_ID"
       ]
