@@ -63,8 +63,9 @@ import {
   getAdvertisingId,
   getTrackingPermissionsAsync,
 } from "expo-tracking-transparency";
-
+import Translations from "./components/languages";
 import * as Device from "expo-device";
+import axios from "axios";
 // SplashScreen.preventAutoHideAsync();
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
@@ -74,158 +75,6 @@ const horizontalScale = (size) => (windowWidth / GuideLineBaseWidth) * size;
 const verticalScale = (size) => (windowHeight / GuideLineBaseHeight) * size;
 const moderateScale = (size, factor = 0.5) =>
   size + (horizontalScale(size) - size) * factor;
-
-const translations = {
-  en: {
-    expenseCalculator: "Crew Expense Calculator",
-    whoPaidHowMuch: "Who paid and how much?",
-    eachMemberPaid: "How much each member paid",
-    name: "Name",
-    amount: "Amount",
-    next: "Next",
-    invalidAmount: "Invalid amount",
-    addMember: "Add member",
-    howManyMembers: "How many crew members?",
-    howManyPeople: "How many people split the bill?",
-    numberOfPeople: "Number of people",
-    membersBetween1And100:
-      "Number of members must be between %{startNumber} and 100",
-    previous: "Previous",
-    calculate: "Calculate",
-    membersPaid: "Members who paid",
-    totalPaid: "Total paid:",
-    pricePerPerson: "Price per person:",
-    member1OwesMember2:
-      "%{friend1} owes money to %{friend2}: %{amount} %{currency}",
-    share: "Share",
-    close: "Close",
-    friend: "Friend",
-  },
-  es: {
-    expenseCalculator: "Calculadora de gastos del grupo",
-    whoPaidHowMuch: "¿Quién pagó y cuánto?",
-    eachMemberPaid: "Cuánto pagó cada miembro",
-    name: "Nombre",
-    amount: "Cantidad",
-    next: "Siguiente",
-    invalidAmount: "Cantidad inválida",
-    addMember: "Agregar miembro",
-    howManyMembers: "¿Cuántos miembros del grupo?",
-    howManyPeople: "¿Cuántas personas dividen la cuenta?",
-    numberOfPeople: "Número de personas",
-    membersBetween1And100:
-      "El número de miembros debe estar entre %{startNumber} y 100",
-    previous: "Anterior",
-    calculate: "Calcular",
-    membersPaid: "Miembros que pagaron",
-    totalPaid: "Total pagado:",
-    pricePerPerson: "Precio por persona:",
-    member1OwesMember2:
-      "%{friend1} debe dinero a %{friend2}: %{amount} %{currency}",
-    share: "Compartir",
-    close: "Cerrar",
-    friend: "Amigo",
-  },
-  fr: {
-    expenseCalculator: "Calculateur de dépenses de l'équipage",
-    whoPaidHowMuch: "Qui a payé et combien?",
-    eachMemberPaid: "Combien chaque membre a payé",
-    name: "Nom",
-    amount: "Montant",
-    next: "Suivant",
-    invalidAmount: "Montant invalide",
-    addMember: "Ajouter un membre",
-    howManyMembers: "Combien de membres de l'équipage?",
-    howManyPeople: "Combien de personnes partagent la facture?",
-    numberOfPeople: "Nombre de personnes",
-    membersBetween1And100:
-      "Le nombre de membres doit être compris entre %{startNumber} et 100",
-    previous: "Précédent",
-    calculate: "Calculer",
-    membersPaid: "Membres qui ont payé",
-    totalPaid: "Total payé:",
-    pricePerPerson: "Prix par personne:",
-    member1OwesMember2:
-      "%{friend1} doit de l'argent à %{friend2}: %{amount} %{currency}",
-    share: "Partager",
-    close: "Fermer",
-    friend: "Ami",
-  },
-  it: {
-    expenseCalculator: "Calcolatore delle spese della crew",
-    whoPaidHowMuch: "Chi ha pagato e quanto?",
-    eachMemberPaid: "Quanto ha pagato ciascun membro",
-    name: "Nome",
-    amount: "Importo",
-    next: "Avanti",
-    invalidAmount: "Importo non valido",
-    addMember: "Aggiungi membro",
-    howManyMembers: "Quanti membri del gruppo?",
-    howManyPeople: "Quante persone dividono il conto?",
-    numberOfPeople: "Numero di persone",
-    membersBetween1And100:
-      "Il numero di membri deve essere compreso tra %{startNumber} e 100",
-    previous: "Precedente",
-    calculate: "Calcola",
-    membersPaid: "Membri che hanno pagato",
-    totalPaid: "Totale pagato:",
-    pricePerPerson: "Prezzo per persona:",
-    member1OwesMember2:
-      "%{friend1} deve soldi a %{friend2}: %{amount} %{currency}",
-    share: "Condividi",
-    close: "Chiudi",
-    friend: "Amico",
-  },
-  de: {
-    expenseCalculator: "Crew-Ausgabenrechner",
-    whoPaidHowMuch: "Wer hat wie viel bezahlt?",
-    eachMemberPaid: "Wie viel hat jedes Mitglied bezahlt",
-    name: "Name",
-    amount: "Betrag",
-    next: "Weiter",
-    invalidAmount: "Ungültiger Betrag",
-    addMember: "Mitglied hinzufügen",
-    howManyMembers: "Wie viele Mitglieder der Crew?",
-    howManyPeople: "Wie viele Personen teilen die Rechnung?",
-    numberOfPeople: "Anzahl der Personen",
-    membersBetween1And100:
-      "Die Anzahl der Mitglieder muss zwischen %{startNumber} und 100 liegen",
-    previous: "Zurück",
-    calculate: "Berechnen",
-    membersPaid: "Mitglieder, die bezahlt haben",
-    totalPaid: "Insgesamt bezahlt:",
-    pricePerPerson: "Preis pro Person:",
-    member1OwesMember2:
-      "%{friend1} schuldet %{friend2} Geld: %{amount} %{currency}",
-    share: "Teilen",
-    close: "Schließen",
-    friend: "Freund",
-  },
-  he: {
-    expenseCalculator: "מחשבון ההוצאות של החבר'ה",
-    whoPaidHowMuch: "מי שילם וכמה?",
-    eachMemberPaid: "כמה כל אחד מהחברים שילם",
-    name: "שם",
-    amount: "סכום חבר",
-    next: "הבא",
-    invalidAmount: "סכום כסף לא תקין",
-    addMember: "הוסף חבר",
-    howManyMembers: "כמה חברה מתחלקים?",
-    howManyPeople: "בין כמה אנשים הכסף מתחלק?",
-    numberOfPeople: "מספר אנשים",
-    membersBetween1And100: "מספר החברים חייב להיות בין %{startNumber} ל100",
-    previous: "הקודם",
-    calculate: "חשב",
-    membersPaid: "החברים ששילמו",
-    totalPaid: 'סה"כ שולם:',
-    pricePerPerson: "מחיר לאדם:",
-    member1OwesMember2:
-      "%{friend1} צריך להחזיר כסף ל%{friend2}: %{amount} %{currency}",
-    share: "שתף",
-    close: "סגור",
-    friend: "חבר",
-  },
-};
 
 let {
   languageTag,
@@ -241,14 +90,16 @@ let {
 if (languageCode === "iw") {
   languageCode = "he";
 }
-const i18n = new I18n(translations);
+console.log("digitgroupingseperator:", digitGroupingSeparator);
+console.log("decimal seperator", decimalSeparator);
+const i18n = new I18n(Translations);
 i18n.fallbacks = true;
 // languageCode = "he";
 console.log("languagecode:", languageCode);
-if (!translations.hasOwnProperty(languageCode)) {
+if (!Translations.hasOwnProperty(languageCode)) {
   i18n.locale = "en";
 } else {
-  i18n.locale = languageCode;
+  i18n.locale = "he";
 }
 
 i18n.defaultLocale = "en";
@@ -344,14 +195,44 @@ export default function App() {
   const [interstitalClosed, setInterstitialClosed] = useState(false);
   const [appOpenClosed, setAppOpenClosed] = useState(false);
   const [isAppOpenAdError, setIsAppOpenAdError] = useState(false);
+  const [translationsJson, setTranslationsJson] = useState({});
+  const [loading, setLoading] = useState(true);
+  //"https://itamarn01.github.io/Juba-backend/components/languages.js"
+  useEffect(() => {
+    fetchTranslations();
+  }, []);
+
+  const fetchTranslations = async () => {
+    try {
+      setLoading(true); // Show loading indicator while fetching
+      const response = await axios.get(
+        "https://itamarn01.github.io/Juba-backend/components/languages.json"
+      );
+      console.log("responseData[0]:", response.data[0]);
+      const translations = response.data;
+
+      setTranslationsJson(translations); // Update state with fetched translations
+
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching translations:", error);
+      setLoading(false);
+    }
+  };
+  // const i18n = new I18n();
+  useEffect(() => {
+    if (loading) return;
+    i18n.store(translationsJson);
+  }, [translationsJson, loading]);
 
   useEffect(() => {
     const locales = getLocales();
     console.log("i18n.locale:", i18n.locale);
     // console.log("local:", locales[0].textDirection);
     if (
-      locales &&
-      /* locales[0].textDirection === "rtl" */ i18n.locale === "he"
+      (locales &&
+        /* locales[0].textDirection === "rtl" */ i18n.locale === "he") ||
+      i18n.locale === "ar"
     ) {
       I18nManager.forceRTL(true);
       console.log("forcing rtl");
@@ -943,7 +824,7 @@ export default function App() {
             ? `${i18n.t("friend")} ${index + 1}`
             : item.nickname}
         </Text>
-        <Text style={styles.amount}>{`${currencySymbol} ${Number(
+        <Text style={styles.amount}>{`${currencySymbol}${Number(
           item.amount
         ).toLocaleString()}`}</Text>
       </View>
@@ -1133,7 +1014,8 @@ export default function App() {
                             justifyContent: "center",
                             alignItems: "center",
                             marginVertical: verticalScale(5),
-                            //   backgroundColor: "blue",
+
+                            // backgroundColor: "blue",
                           }}
                         >
                           {/*  <Button
@@ -1172,7 +1054,7 @@ export default function App() {
                                 //  padding: 10,
                                 width: "45%",
                                 borderRadius: 10,
-                                //     backgroundColor: "yellow",
+                                //backgroundColor: "yellow",
                               }}
                             >
                               <LinearGradient
@@ -1217,9 +1099,13 @@ export default function App() {
                                 style={{
                                   //color: "green",
                                   textAlign:
-                                    i18n.locale === "he" ? "right" : "left", // Aligns text conditionally
+                                    i18n.locale === "he" || i18n.locale === "ar"
+                                      ? "right"
+                                      : "left", // Aligns text conditionally
                                   writingDirection:
-                                    i18n.locale === "he" ? "rtl" : "ltr",
+                                    i18n.locale === "he" || i18n.locale === "ar"
+                                      ? "rtl"
+                                      : "ltr",
                                 }}
                                 placeholder={`${i18n.t("name")} ${index + 1}`}
                                 placeholderTextColor="#707070"
@@ -1290,9 +1176,13 @@ export default function App() {
                                 }}
                                 style={{
                                   textAlign:
-                                    i18n.locale === "he" ? "right" : "left", // Aligns text conditionally
+                                    i18n.locale === "he" || i18n.locale === "ar"
+                                      ? "right"
+                                      : "left", // Aligns text conditionally
                                   writingDirection:
-                                    i18n.locale === "he" ? "rtl" : "ltr",
+                                    i18n.locale === "he" || i18n.locale === "ar"
+                                      ? "rtl"
+                                      : "ltr",
                                 }}
                                 placeholder={`${i18n.t("amount")} ${index + 1}`}
                                 placeholderTextColor="#707070"
@@ -1630,9 +1520,14 @@ export default function App() {
                             marginTop: verticalScale(25),
                           }}
                           style={{
-                            textAlign: i18n.locale === "he" ? "right" : "left", // Aligns text conditionally
+                            textAlign:
+                              i18n.locale === "he" || i18n.locale === "ar"
+                                ? "right"
+                                : "left", // Aligns text conditionally
                             writingDirection:
-                              i18n.locale === "he" ? "rtl" : "ltr",
+                              i18n.locale === "he" || i18n.locale === "ar"
+                                ? "rtl"
+                                : "ltr",
                           }}
                           placeholder={i18n.t("numberOfPeople")}
                           keyboardType="number-pad"
@@ -1821,10 +1716,14 @@ export default function App() {
                                   fontFamily: "Varela",
                                   marginBottom: verticalScale(20),
                                   textAlign: "center",
+                                  writingDirection:
+                                    i18n.locale === "he" || i18n.locale === "ar"
+                                      ? "rtl"
+                                      : "ltr",
                                 }}
                               >{`${i18n.t(
                                 "totalPaid"
-                              )} ${totalAmount.toLocaleString()} ${currencySymbol}`}</Text>
+                              )} ${currencySymbol} ${totalAmount.toLocaleString()}`}</Text>
 
                               <Text
                                 style={{
@@ -1832,12 +1731,16 @@ export default function App() {
                                   color: "grey",
                                   fontFamily: "Varela",
                                   writingDirection:
-                                    i18n.locale === "he" ? "rtl" : "ltr",
+                                    i18n.locale === "he" || i18n.locale === "ar"
+                                      ? "rtl"
+                                      : "ltr",
                                   textAlign: "center",
                                 }}
-                              >{`${i18n.t("pricePerPerson")} ${parseFloat(
+                              >{`${i18n.t(
+                                "pricePerPerson"
+                              )} ${currencySymbol}${parseFloat(
                                 (totalAmount / parseInt(numPeople)).toFixed(2)
-                              ).toLocaleString()} ${currencySymbol}`}</Text>
+                              ).toLocaleString()}`}</Text>
                               <View
                                 style={{
                                   width: "100%",
@@ -1867,7 +1770,10 @@ export default function App() {
                                         fontFamily: "Varela",
                                         marginVertical: verticalScale(12),
                                         writingDirection:
-                                          i18n.locale === "he" ? "rtl" : "ltr",
+                                          i18n.locale === "he" ||
+                                          i18n.locale === "ar"
+                                            ? "rtl"
+                                            : "ltr",
                                       }}
                                     >
                                       {item}

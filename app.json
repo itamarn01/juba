@@ -53,7 +53,7 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSUserTrackingUsageDescription": "Your data will be used to provide you with a better and personalized ad experience",
+        "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized ads to you.",
         "SKAdNetworkItems": [
           {
             "SKAdNetworkIdentifier": [
@@ -111,10 +111,14 @@
               "pwa73g5rt2.skadnetwork"
             ]
           }
-        ]
+        ],
+        "ExpoLocalization_supportsRTL": true
       },
       "bundleIdentifier": "com.gigtunetry.JUBA",
-      "buildNumber": "3"
+      "buildNumber": "3",
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -122,10 +126,11 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.gigtunetry.JUBA",
-      "versionCode": 4,
+      "versionCode": 5,
       "permissions": [
         "com.google.android.gms.permission.AD_ID"
-      ]
+      ],
+      "runtimeVersion": "1.0.0"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -135,6 +140,9 @@
       "eas": {
         "projectId": "374b29b7-1bd7-4c80-9cd6-49c596ea792b"
       }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/374b29b7-1bd7-4c80-9cd6-49c596ea792b"
     }
   },
   "react-native-google-mobile-ads": {
