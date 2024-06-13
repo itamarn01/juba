@@ -2,5 +2,6 @@
   <string name="app_name">JUBA</string>
   <string name="expo_splash_screen_resize_mode" translatable="false">contain</string>
   <string name="expo_splash_screen_status_bar_translucent" translatable="false">false</string>
-  <string name="ExpoLocalization_supportsRTL" translatable="false">undefined</string>
+  <string name="ExpoLocalization_supportsRTL" translatable="false">true</string>
+  <string name="expo_runtime_version">1.0.0</string>
 </resources>
