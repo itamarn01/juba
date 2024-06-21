@@ -1,5 +1,5 @@
-import React, { useState, useRef, useCallback, useEffect } from "react";
-import { StatusBar } from "expo-status-bar";
+import React, { useState, useRef, useEffect } from "react";
+//import { StatusBar } from "expo-status-bar";
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ import {
   NativeModules,
   // Share,
   Alert,
+  Linking,
   Animated,
 } from "react-native";
 //import { Image } from "expo-image";
@@ -66,6 +67,8 @@ import {
 import Translations from "./components/languages";
 import * as Device from "expo-device";
 import axios from "axios";
+import * as Updates from "expo-updates";
+
 // SplashScreen.preventAutoHideAsync();
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
@@ -99,7 +102,7 @@ console.log("languagecode:", languageCode);
 if (!Translations.hasOwnProperty(languageCode)) {
   i18n.locale = "en";
 } else {
-  i18n.locale = "he";
+  i18n.locale = languageCode;
 }
 
 i18n.defaultLocale = "en";
@@ -189,7 +192,83 @@ export default function App() {
   //"https://itamarn01.github.io/Juba-backend/components/languages.js"
   useEffect(() => {
     fetchTranslations();
+    appVersionChecker();
   }, []);
+
+  const appVersionChecker = async () => {
+    try{
+      let currentVersion = "1.0.1" //change the version
+      const response = await axios.get(
+        "https://itamarn01.github.io/Juba-backend/components/version.json"
+      );
+     // console.log("version:", response.data.version);
+      const latestVersion = response.data.updatedVersion;
+      console.log("version:", latestVersion)
+      console.log("----------------------------------------------------------")
+      const updateStatus = getUpdateStatus(currentVersion, latestVersion);
+
+      if (updateStatus === 'mustUpdate') {
+        showMandatoryUpdateAlert('Update Required', 'A new version of the app is available. Please update to continue using the app.', 'https://play.google.com/store/apps/details?id=com.webixnow.gigtune', 'https://play.google.com/store/apps/details?id=com.gigtunetry.JUBA');
+      } else if (updateStatus === 'recommendToUpdate') {
+        showAlert('Update Recommended', 'A new version of the app is available. We recommend updating to the latest version.', 'https://play.google.com/store/apps/details?id=com.webixnow.gigtune', 'https://play.google.com/store/apps/details?id=com.gigtunetry.JUBA');
+      }
+    }
+    catch (error) {console.log("error to fetch version", error)}
+  }
+
+  const showAlert = (title, message, appStoreLink, googlePlayLink) => {
+    Alert.alert(
+      title,
+      message,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Update',
+          onPress: () => {
+            // Modify the link based on the platform
+            const link = Platform.OS === 'ios' ? appStoreLink : googlePlayLink;
+            Linking.openURL(link).catch(err => console.error('An error occurred', err));
+          }
+        }
+      ],
+      { cancelable: false }
+    );
+  };
+  const showMandatoryUpdateAlert = (title, message, appStoreLink, googlePlayLink) => {
+    Alert.alert(
+      title,
+      message,
+      [
+        {
+          text: 'Update',
+          onPress: () => {
+            const link = Platform.OS === 'ios' ? appStoreLink : googlePlayLink;
+            Linking.openURL(link).catch(err => console.error('An error occurred', err));
+          }
+        }
+      ],
+      { cancelable: false }
+    );
+  };
+ 
+
+// Your getUpdateStatus function
+function getUpdateStatus(currentVersion, latestVersion) {
+  const currentVersionArray = currentVersion.split('.').map(Number);
+  const latestVersionArray = latestVersion.split('.').map(Number);
+
+  // Compare each segment of the version number
+  for (let i = 0; i < currentVersionArray.length - 1; i++) {
+    if (currentVersionArray[i] < latestVersionArray[i]) {
+      return 'mustUpdate'; // Major or minor version update
+    }
+  }
+  if (currentVersionArray[2] < latestVersionArray[2]) {
+    return 'recommendToUpdate';
+  }
+
+  return 'noUpdate'; // Versions are identical
+}
 
   const fetchTranslations = async () => {
     try {
@@ -208,6 +287,13 @@ export default function App() {
       setLoading(false);
     }
   };
+  const languageRestart = async () => {
+    if (!I18nManager.isRTL) {
+      I18nManager.allowRTL(true);
+      I18nManager.forceRTL(true);
+      await Updates.reloadAsync();
+    }
+  };
   // const i18n = new I18n();
   useEffect(() => {
     if (loading) return;
@@ -223,8 +309,10 @@ export default function App() {
         /* locales[0].textDirection === "rtl" */ i18n.locale === "he") ||
       i18n.locale === "ar"
     ) {
-      I18nManager.forceRTL(true);
+    /*   I18nManager.forceRTL(true);
       console.log("forcing rtl");
+     restartApp() */
+     languageRestart()
     } else {
       I18nManager.forceRTL(false);
     }
@@ -316,7 +404,15 @@ export default function App() {
     HideSplashScreen();
   }, [trackingPermissionProcessEnd]);
  */
-  useEffect(() => {
+useEffect(()=> {
+  if (!trackingPermissionProcessEnd) {
+    console.log("tracking process doesn't finish");
+    return;
+  }
+  setAppOpenClosed(true)
+},[trackingPermissionProcessEnd, isTrackingPermission])
+//---------------------------------------------------check without app open-------------
+ /*  useEffect(() => {
     if (!trackingPermissionProcessEnd) {
       console.log("tracking process doesn't finish");
       return;
@@ -350,8 +446,6 @@ export default function App() {
       AdEventType.ERROR,
       (error) => {
         console.log(`error loading appOpen :`, error);
-        //  onCalculateButtonPressed();
-        // setIsAppOpenAdError(true);
         setAppOpenClosed(true);
       }
     );
@@ -366,7 +460,7 @@ export default function App() {
       unsubscribeErorr();
     };
   }, [isTrackingPermission, trackingPermissionProcessEnd]);
-
+ */
   /*  useEffect(() => {
     if (!trackingPermissionProcessEnd) {
       console.log("tracking process doesn't finish");
@@ -1712,7 +1806,7 @@ export default function App() {
                                 }}
                               >{`${i18n.t(
                                 "totalPaid"
-                              )} ${currencySymbol} ${totalAmount.toLocaleString()}`}</Text>
+                              )} ${currencySymbol}${totalAmount.toLocaleString()}`}</Text>
 
                               <Text
                                 style={{
