@@ -90,6 +90,7 @@ let {
   currencySymbol,
   regionCode,
 } = getLocales()[0];
+//currencySymbol = "$"
 if (languageCode === "iw") {
   languageCode = "he";
 }
@@ -153,19 +154,22 @@ export default function App() {
   const [friends, setFriends] = useState([
     { amount: "", isValid: true, nickname: "" },
   ]);
+  const [notPaidFriends, setNotPaidFriends] = useState([""])
   const [isFriendExpenseValid, setIsFriendExpenseValid] = useState([false]);
   const [friendArrayValid, setFrindArrayValid] = useState(false);
-  const [numPeople, setNumPeople] = useState(0);
+  const [numPeople, setNumPeople] = useState("");
   const [totalAmount, setTotalAmount] = useState(0);
   const [FriendsNumIsValid, setFriendsNumValid] = useState(false);
   const [messages, setMessages] = useState([]);
   const [showText, setShowText] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [notPaidFriendsModalVisible, setNotPaidFriendsModalVisible] = useState(false)
   const [modalNickNameVisible, setModalNickNameVisible] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [nextBtnValid, setNextBtnValid] = useState(false);
   const input = useRef(null);
   const nameInput = useRef(null);
+  const notPaidNameInput = useRef(null);
   const inputNumFriend = useRef(null);
   const [fontsLoaded, fontError] = useFonts({
     Varela: require("./assets/fonts/Varela.ttf"),
@@ -196,12 +200,12 @@ export default function App() {
   }, []);
 
   const appVersionChecker = async () => {
-    try{
+    try {
       let currentVersion = "1.0.1" //change the version
       const response = await axios.get(
         "https://itamarn01.github.io/Juba-backend/components/version.json"
       );
-     // console.log("version:", response.data.version);
+      // console.log("version:", response.data.version);
       const latestVersion = response.data.updatedVersion;
       console.log("version:", latestVersion)
       console.log("----------------------------------------------------------")
@@ -213,7 +217,7 @@ export default function App() {
         showAlert('Update Recommended', 'A new version of the app is available. We recommend updating to the latest version.', 'https://play.google.com/store/apps/details?id=com.webixnow.gigtune', 'https://play.google.com/store/apps/details?id=com.gigtunetry.JUBA');
       }
     }
-    catch (error) {console.log("error to fetch version", error)}
+    catch (error) { console.log("error to fetch version", error) }
   }
 
   const showAlert = (title, message, appStoreLink, googlePlayLink) => {
@@ -250,25 +254,25 @@ export default function App() {
       { cancelable: false }
     );
   };
- 
 
-// Your getUpdateStatus function
-function getUpdateStatus(currentVersion, latestVersion) {
-  const currentVersionArray = currentVersion.split('.').map(Number);
-  const latestVersionArray = latestVersion.split('.').map(Number);
 
-  // Compare each segment of the version number
-  for (let i = 0; i < currentVersionArray.length - 1; i++) {
-    if (currentVersionArray[i] < latestVersionArray[i]) {
-      return 'mustUpdate'; // Major or minor version update
+  // Your getUpdateStatus function
+  function getUpdateStatus(currentVersion, latestVersion) {
+    const currentVersionArray = currentVersion.split('.').map(Number);
+    const latestVersionArray = latestVersion.split('.').map(Number);
+
+    // Compare each segment of the version number
+    for (let i = 0; i < currentVersionArray.length - 1; i++) {
+      if (currentVersionArray[i] < latestVersionArray[i]) {
+        return 'mustUpdate'; // Major or minor version update
+      }
     }
-  }
-  if (currentVersionArray[2] < latestVersionArray[2]) {
-    return 'recommendToUpdate';
-  }
+    if (currentVersionArray[2] < latestVersionArray[2]) {
+      return 'recommendToUpdate';
+    }
 
-  return 'noUpdate'; // Versions are identical
-}
+    return 'noUpdate'; // Versions are identical
+  }
 
   const fetchTranslations = async () => {
     try {
@@ -309,10 +313,10 @@ function getUpdateStatus(currentVersion, latestVersion) {
         /* locales[0].textDirection === "rtl" */ i18n.locale === "he") ||
       i18n.locale === "ar"
     ) {
-    /*   I18nManager.forceRTL(true);
-      console.log("forcing rtl");
-     restartApp() */
-     languageRestart()
+      /*   I18nManager.forceRTL(true);
+        console.log("forcing rtl");
+       restartApp() */
+      languageRestart()
     } else {
       I18nManager.forceRTL(false);
     }
@@ -404,63 +408,63 @@ function getUpdateStatus(currentVersion, latestVersion) {
     HideSplashScreen();
   }, [trackingPermissionProcessEnd]);
  */
-useEffect(()=> {
-  if (!trackingPermissionProcessEnd) {
-    console.log("tracking process doesn't finish");
-    return;
-  }
-  setAppOpenClosed(true)
-},[trackingPermissionProcessEnd, isTrackingPermission])
-//---------------------------------------------------check without app open-------------
- /*  useEffect(() => {
+  useEffect(() => {
     if (!trackingPermissionProcessEnd) {
       console.log("tracking process doesn't finish");
       return;
     }
-    console.log("Start initialize appOpenAd");
-    const invalidAdUnitIdAppOpen = "invalid_ad_unit_id";
-    const newAppOpen = AppOpenAd.createForAdRequest(adUnitIdAppOpen, {
-      keywords: ["fashion", "clothing", "food", "cooking", "fruit"],
-      requestNonPersonalizedAdsOnly: !isTrackingPermission,
-    });
-
-    setAppOpen(newAppOpen);
-    const unsubscribe = newAppOpen.addAdEventListener(
-      AdEventType.LOADED,
-      () => {
-        console.log("appOpen ad loaded");
-        setAppOpenLoaded(true);
-        newAppOpen.show();
-      }
-    );
-
-    const unsubscribeClosed = newAppOpen.addAdEventListener(
-      AdEventType.CLOSED,
-      () => {
-        console.log("app open ad closed");
-        setAppOpenClosed(true);
-      }
-    );
-
-    const unsubscribeErorr = newAppOpen.addAdEventListener(
-      AdEventType.ERROR,
-      (error) => {
-        console.log(`error loading appOpen :`, error);
-        setAppOpenClosed(true);
-      }
-    );
-
-    // Start loading the interstitial straight away
-    newAppOpen.load();
-
-    // Unsubscribe from events on unmount
-    return () => {
-      unsubscribe();
-      unsubscribeClosed();
-      unsubscribeErorr();
-    };
-  }, [isTrackingPermission, trackingPermissionProcessEnd]);
- */
+    setAppOpenClosed(true)
+  }, [trackingPermissionProcessEnd, isTrackingPermission])
+  //---------------------------------------------------check without app open-------------
+  /*  useEffect(() => {
+     if (!trackingPermissionProcessEnd) {
+       console.log("tracking process doesn't finish");
+       return;
+     }
+     console.log("Start initialize appOpenAd");
+     const invalidAdUnitIdAppOpen = "invalid_ad_unit_id";
+     const newAppOpen = AppOpenAd.createForAdRequest(adUnitIdAppOpen, {
+       keywords: ["fashion", "clothing", "food", "cooking", "fruit"],
+       requestNonPersonalizedAdsOnly: !isTrackingPermission,
+     });
+ 
+     setAppOpen(newAppOpen);
+     const unsubscribe = newAppOpen.addAdEventListener(
+       AdEventType.LOADED,
+       () => {
+         console.log("appOpen ad loaded");
+         setAppOpenLoaded(true);
+         newAppOpen.show();
+       }
+     );
+ 
+     const unsubscribeClosed = newAppOpen.addAdEventListener(
+       AdEventType.CLOSED,
+       () => {
+         console.log("app open ad closed");
+         setAppOpenClosed(true);
+       }
+     );
+ 
+     const unsubscribeErorr = newAppOpen.addAdEventListener(
+       AdEventType.ERROR,
+       (error) => {
+         console.log(`error loading appOpen :`, error);
+         setAppOpenClosed(true);
+       }
+     );
+ 
+     // Start loading the interstitial straight away
+     newAppOpen.load();
+ 
+     // Unsubscribe from events on unmount
+     return () => {
+       unsubscribe();
+       unsubscribeClosed();
+       unsubscribeErorr();
+     };
+   }, [isTrackingPermission, trackingPermissionProcessEnd]);
+  */
   /*  useEffect(() => {
     if (!trackingPermissionProcessEnd) {
       console.log("tracking process doesn't finish");
@@ -739,6 +743,19 @@ useEffect(()=> {
     validateFriendsInput(index);
   };
 
+  const onNumFriendsBlurHandler = () => {
+    let notPaidFriendsArray = []
+    if (FriendsNumIsValid) {
+      for (let i = 0; i < numPeople - friends.length; i++) {
+        notPaidFriendsArray[i] = "";
+
+      }
+      console.log("notPaidFriendsArray:", notPaidFriendsArray)
+      setNotPaidFriends(notPaidFriendsArray)
+    }
+
+  }
+
   const onNextButtonPressed = () => {
     // Alert.alert("button pressed");
     let allInputsValid = true;
@@ -750,6 +767,9 @@ useEffect(()=> {
 
     if (allInputsValid) {
       setCurrentStep(2);
+      setNumPeople("")
+      setNotPaidFriends([])
+      setFriendsNumValid(false)
       // Proceed with your logic if all inputs are valid
       //  Alert.alert("Success", "All inputs are valid!");
     } else {
@@ -807,7 +827,8 @@ useEffect(()=> {
     );
     namesArray.push(
       ...friends.map((friend) => friend.nickname),
-      ...Array(Math.max(0, numPeople - friends.length)).fill("")
+      ...notPaidFriends
+      // ...Array(Math.max(0, numPeople - friends.length)).fill("")
     );
     for (let i = 0; i < friendsArray.length; i++) {
       friendsArray[i] -= total / parseInt(numPeople);
@@ -826,8 +847,8 @@ useEffect(()=> {
           namesArray[person - 1] === ""
             ? `${i18n.t("friend")} ${person}`
             : namesArray[person - 1].length > 14
-            ? namesArray[person - 1].substring(0, 14) + ".."
-            : namesArray[person - 1];
+              ? namesArray[person - 1].substring(0, 14) + ".."
+              : namesArray[person - 1];
 
         const friend2 =
           namesArray[friend - 1] !== ""
@@ -904,8 +925,8 @@ useEffect(()=> {
           {item.nickname.length > 20
             ? item.nickname.substring(0, 20) + ".."
             : item.nickname === ""
-            ? `${i18n.t("friend")} ${index + 1}`
-            : item.nickname}
+              ? `${i18n.t("friend")} ${index + 1}`
+              : item.nickname}
         </Text>
         <Text style={styles.amount}>{`${currencySymbol}${Number(
           item.amount
@@ -1136,7 +1157,7 @@ useEffect(()=> {
                                 // marginBottom: 10,
                                 //  padding: 10,
                                 width: "45%",
-                                borderRadius: 10,
+                                borderRadius: moderateScale(10),
                                 //backgroundColor: "yellow",
                               }}
                             >
@@ -1199,7 +1220,7 @@ useEffect(()=> {
                                   setFriends(updatedFriends);
                                 }}
                                 value={friendAmount.nickname}
-                                //onBlur={() => onBlurHandler(index)}
+                              //onBlur={() => onBlurHandler(index)}
                               />
                             </View>
                             <View
@@ -1411,7 +1432,7 @@ useEffect(()=> {
                                 />
                               </TouchableOpacity>
                             ) : (
-                              <TouchableOpacity onPress={() => {}} style={{}}>
+                              <TouchableOpacity onPress={() => { }} style={{}}>
                                 <Feather
                                   name="x-circle"
                                   size={30}
@@ -1617,6 +1638,7 @@ useEffect(()=> {
                           returnKeyType="done"
                           onChangeText={handleInputChange}
                           value={numPeople}
+                          onBlur={() => onNumFriendsBlurHandler()}
                         />
                       </View>
                       <View>
@@ -1641,6 +1663,10 @@ useEffect(()=> {
                           </Text>
                         )}
                       </View>
+                      {FriendsNumIsValid && notPaidFriends.length > 0 &&
+                        <TouchableOpacity onPress={() => setNotPaidFriendsModalVisible(true)} style={{ marginTop: verticalScale(20), marginHorizontal: horizontalScale(5), backgroundColor: "#FDCBE3", alignSelf: "flex-end", justifyContent: "center", alignItems: "center", paddingHorizontal: horizontalScale(5), borderRadius: moderateScale(10), height: verticalScale(35), /* backgroundColor:"yellow" */ }}>
+                          <Text style={{ fontSize: moderateScale(10), fontFamily: "Varela", color: "purple" }}>{i18n.t("updateNotPaidFriends")}</Text>
+                        </TouchableOpacity>}
                       <TouchableOpacity
                         onPress={onPreviousStep}
                         style={{
@@ -1658,20 +1684,34 @@ useEffect(()=> {
                           style={{
                             justifyContent: "center",
                             alignItems: "center",
-                            width: "90%",
-                            height: verticalScale(50),
-                            borderRadius: moderateScale(30),
+                            width: horizontalScale(200),
+                            height: verticalScale(40),
+                            borderRadius: moderateScale(20),
                           }}
                         >
-                          <Text
+                          <View
                             style={{
-                              color: "white",
-                              fontSize: 24,
-                              fontFamily: "Varela",
-                            }}
-                          >
-                            {i18n.t("previous")}
-                          </Text>
+                              backgroundColor: "white", // Solid color for the button
+                              borderRadius: moderateScale(20),
+
+                              //padding:10,
+                              width: horizontalScale(195),
+                              height: verticalScale(35),
+                              overflow: "hidden",
+                              justifyContent: "center",
+                              alignItems: "center",
+                            }}>
+
+                            <Text
+                              style={{
+                                color: "#2B2B2B",
+                                fontSize: moderateScale(24),
+                                fontFamily: "Varela",
+                              }}
+                            >
+                              {i18n.t("previous")}
+                            </Text>
+                          </View>
                         </LinearGradient>
                       </TouchableOpacity>
                     </View>
@@ -1736,6 +1776,150 @@ useEffect(()=> {
                       </LinearGradient>
                     </TouchableOpacity>
                   )}
+
+                  <Modal
+                    transparent={true}
+                    animationType="slide"
+                    visible={notPaidFriendsModalVisible}
+                    onRequestClose={() => setNotPaidFriendsModalVisible(false)}
+                  >
+                    <KeyboardAvoidingView
+                      style={styles.modalContainer}
+                      behavior={Platform.OS === "ios" ? "padding" : "height"}
+                      enabled
+                    //  keyboardVerticalOffset={200}
+                    >
+                      <View style={styles.modalContent}>
+                        <View style={{
+                          justifyContent: "flex-start",
+                          height: windowHeight * 0.6,
+                          backgroundColor: "white",
+                          // marginBottom:verticalScale(200)
+                        }}>
+                          {FriendsNumIsValid && notPaidFriends.length > 0 &&
+                            <View style={{ justifyContent: "center", alignItems: "center", marginTop: verticalScale(10), marginBottom:verticalScale(50) }}>
+                              <Text
+                                style={{
+                                  color: "#474747",
+                                  fontSize: moderateScale(25),
+                                  fontWeight: "700",
+                                  fontFamily: "Varela",
+                                  textAlign: "center",
+                                }}
+                              >
+                                {i18n.t("notPaidFriends")}
+                              </Text>
+                              <FlatList
+                                data={notPaidFriends}
+                                horizontal={false}
+                                keyExtractor={(item, index) => index.toString()}
+                                contentContainerStyle={{ flexGrow: 1, /* width: windowWidth, */ marginBottom: verticalScale(100) }}
+                                keyboardShouldPersistTaps="handled"
+                                renderItem={({ item, index }) => (
+                                  <View
+                                    style={{
+                                      justifyContent: "center",
+                                      alignItems: "center",
+                                      marginVertical: verticalScale(5),
+                                    }}
+                                  >
+                                    <View
+                                      style={{
+                                        flexDirection: "row",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                        height: verticalScale(47),
+                                        borderColor: "#CECECE",
+                                        borderWidth: 1,
+                                        width: "80%",
+                                        borderRadius: moderateScale(10),
+                                      }}
+                                    >
+                                      <LinearGradient
+                                        colors={["#BD1865", "#88209B"]}
+                                        style={{
+                                          width: horizontalScale(25),
+                                          height: verticalScale(25),
+                                          borderRadius: 100,
+                                          marginLeft: horizontalScale(8),
+                                          justifyContent: "center",
+                                          alignItems: "center",
+                                          shadowColor: "#000",
+                                          shadowOffset: {
+                                            width: 0,
+                                            height: 2,
+                                          },
+                                          shadowOpacity: 0.25,
+                                          shadowRadius: 4,
+                                          elevation: 5,
+                                        }}
+                                      >
+                                        <MaterialIcons
+                                          name="emoji-people"
+                                          size={18}
+                                          color="white"
+                                        />
+                                      </LinearGradient>
+                                      <Input
+                                        ref={notPaidNameInput}
+                                        inputContainerStyle={{
+                                          borderBottomWidth: 0,
+                                          width: "80%",
+                                          height: "100%",
+                                          marginHorizontal: horizontalScale(5),
+                                          borderColor: "green",
+                                          marginTop: verticalScale(25),
+                                        }}
+                                        style={{
+                                          textAlign: i18n.locale === "he" || i18n.locale === "ar" ? "right" : "left",
+                                          writingDirection: i18n.locale === "he" || i18n.locale === "ar" ? "rtl" : "ltr",
+                                        }}
+                                        placeholder={`${i18n.t("friend")} ${index + friends.length + 1}`}
+                                        placeholderTextColor="#707070"
+                                        keyboardType="name-phone-pad"
+                                        onChangeText={(text) => {
+                                          const updatedNotPaidFriends = [...notPaidFriends];
+                                          updatedNotPaidFriends[index] = text;
+                                          setNotPaidFriends(updatedNotPaidFriends);
+                                        }}
+                                        value={item}
+                                      />
+                                    </View>
+                                  </View>
+                                )}
+                              />
+                            </View>
+                          }
+                        </View>
+
+                        <View style={styles.modalBottomContainer}>
+                          <TouchableOpacity
+                            onPress={() => setNotPaidFriendsModalVisible(false)}
+                            style={{ padding: 10, borderRadius: 20 }}
+                          >
+                            <LinearGradient
+                              colors={["#BD1865", "#88209B"]}
+                              style={{
+                                width: horizontalScale(150),
+                                height: verticalScale(40),
+                                borderRadius: 20,
+                                justifyContent: "center",
+                                alignItems: "center",
+                              }}
+                            >
+                              <Text
+                                style={{
+                                  color: "white",
+                                  fontSize: moderateScale(18),
+                                }}
+                              >{i18n.t("save")}
+                              </Text>
+                            </LinearGradient>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    </KeyboardAvoidingView>
+                  </Modal>
                   <Modal
                     transparent={true}
                     animationType="slide"
@@ -1744,28 +1928,31 @@ useEffect(()=> {
                   >
                     <View style={styles.modalContainer}>
                       <View style={styles.modalContent}>
-                        <View ref={viewShotRef} collapsable={false}>
+                        <View style={{
+                          justifyContent: "flex-start",
+                          height: windowHeight * 0.8,
+                          // alignItems: "center",
+                          backgroundColor: "white",
+                        }} ref={viewShotRef} collapsable={false} >
                           {showText ? (
                             <View
-                              style={{
-                                justifyContent: "center",
-                                alignItems: "center",
-                                backgroundColor: "white",
-                              }}
+                              style={{ justifyContent: "center", alignItems: "center" }}
                             >
                               <Image
                                 source={imagePath}
                                 style={{
                                   width: horizontalScale(250),
                                   height: verticalScale(100),
+                                  //  alignSelf:"center"
                                 }}
-                                // resizeMode={FastImage.resizeMode.contain}
-                                //  onLoad={handleImageLoad}
+                              // resizeMode={FastImage.resizeMode.contain}
+                              //  onLoad={handleImageLoad}
                               />
                               <Text
                                 style={{
                                   fontFamily: "Varela",
                                   fontSize: moderateScale(20),
+                                  alignSelf: "center"
                                 }}
                               >
                                 {i18n.t("membersPaid")}
@@ -1784,6 +1971,8 @@ useEffect(()=> {
                                 renderItem={renderItem}
                                 keyExtractor={(item, index) => index.toString()}
                                 showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={{/* width:windowWidth,height:windowHeight* 0.3 , flexWrap: 'wrap', */ justifyContent: "center", alignItems: "center" }}
+                              //  numColumns={3}
                               />
                               <View
                                 style={{
@@ -1844,8 +2033,9 @@ useEffect(()=> {
                                   //backgroundColor: "green",
                                 }}
                               >
-                                <FlatList
+                                {<FlatList
                                   data={messages}
+                                  // contentContainerStyle={{backgroundColor:"green"}}
                                   renderItem={({ item }) => (
                                     <Text
                                       style={{
@@ -1854,7 +2044,7 @@ useEffect(()=> {
                                         marginVertical: verticalScale(12),
                                         writingDirection:
                                           i18n.locale === "he" ||
-                                          i18n.locale === "ar"
+                                            i18n.locale === "ar"
                                             ? "rtl"
                                             : "ltr",
                                       }}
@@ -1865,7 +2055,7 @@ useEffect(()=> {
                                   keyExtractor={(item, index) =>
                                     index.toString()
                                   }
-                                />
+                                />}
                                 {/* {messages.map((message, index) => (
                               <Text
                                 key={index}
@@ -2042,7 +2232,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     backgroundColor: "white",
     width: windowWidth * 0.95,
-    height: windowHeight * 0.9,
+    // height: windowHeight * 0.9,
     borderRadius: moderateScale(10),
     elevation: 5,
     maxHeight: "90%", // Adjust the maximum height as needed
@@ -2055,6 +2245,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "white",
     borderBottomEndRadius: moderateScale(20),
+
   },
   keyboardAvoidingContainer: {
     flex: 1,
