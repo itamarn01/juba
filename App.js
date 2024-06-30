@@ -1664,7 +1664,7 @@ export default function App() {
                         )}
                       </View>
                       {FriendsNumIsValid && notPaidFriends.length > 0 &&
-                        <TouchableOpacity onPress={() => setNotPaidFriendsModalVisible(true)} style={{ marginTop: verticalScale(20), marginHorizontal: horizontalScale(5), backgroundColor: "#FDCBE3", alignSelf: "flex-end", justifyContent: "center", alignItems: "center", paddingHorizontal: horizontalScale(5), borderRadius: moderateScale(10), height: verticalScale(35), /* backgroundColor:"yellow" */ }}>
+                        <TouchableOpacity onPress={() => setNotPaidFriendsModalVisible(true)} style={{ marginTop: verticalScale(20), /* marginHorizontal: horizontalScale(5), */ backgroundColor: "#FDCBE3", alignSelf: "center", justifyContent: "center", alignItems: "center", paddingHorizontal: horizontalScale(5), borderRadius: moderateScale(10), height: verticalScale(35), /* backgroundColor:"yellow" */ }}>
                           <Text style={{ fontSize: moderateScale(10), fontFamily: "Varela", color: "purple" }}>{i18n.t("updateNotPaidFriends")}</Text>
                         </TouchableOpacity>}
                       <TouchableOpacity
@@ -1793,7 +1793,8 @@ export default function App() {
                         <View style={{
                           justifyContent: "flex-start",
                           height: windowHeight * 0.6,
-                          backgroundColor: "white",
+                        //  backgroundColor: "white",
+                          borderRadius:moderateScale(20)
                           // marginBottom:verticalScale(200)
                         }}>
                           {FriendsNumIsValid && notPaidFriends.length > 0 &&
@@ -1805,6 +1806,7 @@ export default function App() {
                                   fontWeight: "700",
                                   fontFamily: "Varela",
                                   textAlign: "center",
+                                  marginBottom:verticalScale(20)
                                 }}
                               >
                                 {i18n.t("notPaidFriends")}
@@ -1933,6 +1935,7 @@ export default function App() {
                           height: windowHeight * 0.8,
                           // alignItems: "center",
                           backgroundColor: "white",
+                          borderRadius: moderateScale(10),
                         }} ref={viewShotRef} collapsable={false} >
                           {showText ? (
                             <View
@@ -1971,7 +1974,7 @@ export default function App() {
                                 renderItem={renderItem}
                                 keyExtractor={(item, index) => index.toString()}
                                 showsHorizontalScrollIndicator={false}
-                                contentContainerStyle={{/* width:windowWidth,height:windowHeight* 0.3 , flexWrap: 'wrap', */ justifyContent: "center", alignItems: "center" }}
+                                contentContainerStyle={{/* width:windowWidth,height:windowHeight* 0.3 ,flexWrap: 'wrap' , */ justifyContent: "center", alignItems: "center" }}
                               //  numColumns={3}
                               />
                               <View
@@ -2167,8 +2170,8 @@ export default function App() {
           }
         </View>
         {trackingPermissionProcessEnd && (
-          <>
-            {/* {console.log("banner loading")} */}
+          <View style={{marginVertical:verticalScale(15)}}>
+
             <BannerAd
               //    ref={bannerRef}
               unitId={adUnitId}
@@ -2178,7 +2181,9 @@ export default function App() {
                 // You can change this setting depending on whether you want to use the permissions tracking we set up in the initializing
               }}
             />
-          </>
+          </View>
+           
+          
         )}
       </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
@@ -2235,7 +2240,7 @@ const styles = StyleSheet.create({
     // height: windowHeight * 0.9,
     borderRadius: moderateScale(10),
     elevation: 5,
-    maxHeight: "90%", // Adjust the maximum height as needed
+    //maxHeight: "90%", // Adjust the maximum height as needed
   },
   modalBottomContainer: {
     //alignSelf:"flex-end",
@@ -2243,8 +2248,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
-    backgroundColor: "white",
-    borderBottomEndRadius: moderateScale(20),
+   // backgroundColor: "white",
+   // borderBottomEndRadius: moderateScale(20),
 
   },
   keyboardAvoidingContainer: {

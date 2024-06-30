@@ -126,7 +126,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.gigtunetry.JUBA",
-      "versionCode": 6,
+      "versionCode": 8,
       "permissions": [
         "com.google.android.gms.permission.AD_ID"
       ],
