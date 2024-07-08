@@ -47,6 +47,7 @@ import { captureRef } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
 import { I18n } from "i18n-js";
 import { Feather } from "@expo/vector-icons";
+import { AntDesign } from '@expo/vector-icons';
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialIcons } from "@expo/vector-icons";
 import { FontAwesome } from "@expo/vector-icons";
@@ -201,7 +202,7 @@ export default function App() {
 
   const appVersionChecker = async () => {
     try {
-      let currentVersion = "1.0.1" //change the version
+      let currentVersion = "1.0.2" //change the version
       const response = await axios.get(
         "https://itamarn01.github.io/Juba-backend/components/version.json"
       );
@@ -864,28 +865,36 @@ export default function App() {
           friendsArray[maxIndex] = parseFloat(
             friendsArray[maxIndex].toFixed(2)
           );
-          addMessage(
-            i18n.t("member1OwesMember2", {
-              friend1,
-              friend2,
-              amount: parseFloat(amount).toLocaleString(),
-              currency: currencySymbol,
-            })
-          );
+
+          addMessage({ textMessage: i18n.t("owe"), friend1: friend1, friend2: friend2, amount: parseFloat(amount).toLocaleString() })
+
+          /*    addMessage(
+               i18n.t("member1OwesMember2", {
+                 friend1,
+                 friend2,
+                 amount: parseFloat(amount).toLocaleString(),
+                 currency: currencySymbol,
+               })
+             ); */
           friendsArray[i] = 0;
         } else {
           friendsArray[i] += friendsArray[maxIndex];
           friendsArray[i] = parseFloat(friendsArray[i].toFixed(2));
-          addMessage(
-            i18n.t("member1OwesMember2", {
-              friend1,
-              friend2,
-              amount: parseFloat(
-                friendsArray[maxIndex].toFixed(2)
-              ).toLocaleString(),
-              currency: currencySymbol,
-            })
-          );
+          addMessage({
+            textMessage: i18n.t("owe"), friend1: friend1, friend2: friend2, amount: parseFloat(
+              friendsArray[maxIndex].toFixed(2)
+            ).toLocaleString()
+          })
+          /*  addMessage(
+             i18n.t("member1OwesMember2", {
+               friend1,
+               friend2,
+               amount: parseFloat(
+                 friendsArray[maxIndex].toFixed(2)
+               ).toLocaleString(),
+               currency: currencySymbol,
+             })
+           ); */
           friendsArray[maxIndex] = 0;
         }
         iterationCount++;
@@ -919,7 +928,7 @@ export default function App() {
   };
   const renderItem = ({ item, index }) => (
     <View style={styles.itemContainer}>
-      <FontAwesome name="user-circle" size={24} color="purple" />
+      <FontAwesome name="user-circle" size={moderateScale(24)} color="purple" />
       <View style={styles.textContainer}>
         <Text style={styles.nickname}>
           {item.nickname.length > 20
@@ -1793,12 +1802,12 @@ export default function App() {
                         <View style={{
                           justifyContent: "flex-start",
                           height: windowHeight * 0.6,
-                        //  backgroundColor: "white",
-                          borderRadius:moderateScale(20)
+                          //  backgroundColor: "white",
+                          borderRadius: moderateScale(20)
                           // marginBottom:verticalScale(200)
                         }}>
                           {FriendsNumIsValid && notPaidFriends.length > 0 &&
-                            <View style={{ justifyContent: "center", alignItems: "center", marginTop: verticalScale(10), marginBottom:verticalScale(50) }}>
+                            <View style={{ justifyContent: "center", alignItems: "center", marginTop: verticalScale(10), marginBottom: verticalScale(50) }}>
                               <Text
                                 style={{
                                   color: "#474747",
@@ -1806,7 +1815,7 @@ export default function App() {
                                   fontWeight: "700",
                                   fontFamily: "Varela",
                                   textAlign: "center",
-                                  marginBottom:verticalScale(20)
+                                  marginBottom: verticalScale(20)
                                 }}
                               >
                                 {i18n.t("notPaidFriends")}
@@ -1939,7 +1948,7 @@ export default function App() {
                         }} ref={viewShotRef} collapsable={false} >
                           {showText ? (
                             <View
-                              style={{ justifyContent: "center", alignItems: "center" }}
+                              style={{ justifyContent: "center", alignItems: "center", paddingTop: verticalScale(10) }}
                             >
                               <Image
                                 source={imagePath}
@@ -1955,7 +1964,8 @@ export default function App() {
                                 style={{
                                   fontFamily: "Varela",
                                   fontSize: moderateScale(20),
-                                  alignSelf: "center"
+                                  alignSelf: "center",
+                                  marginTop:-30
                                 }}
                               >
                                 {i18n.t("membersPaid")}
@@ -1965,6 +1975,7 @@ export default function App() {
                                   width: "100%",
                                   backgroundColor: "grey",
                                   height: 1,
+                                  marginVertical: verticalScale(5)
                                 }}
                               />
 
@@ -1982,7 +1993,7 @@ export default function App() {
                                   width: "100%",
                                   backgroundColor: "grey",
                                   height: 1,
-                                  //marginVertical: verticalScale(10),
+                                  marginBottom: verticalScale(10),
                                 }}
                               />
                               <Text
@@ -2040,20 +2051,90 @@ export default function App() {
                                   data={messages}
                                   // contentContainerStyle={{backgroundColor:"green"}}
                                   renderItem={({ item }) => (
-                                    <Text
-                                      style={{
-                                        fontSize: moderateScale(12),
-                                        fontFamily: "Varela",
-                                        marginVertical: verticalScale(12),
-                                        writingDirection:
-                                          i18n.locale === "he" ||
-                                            i18n.locale === "ar"
-                                            ? "rtl"
-                                            : "ltr",
-                                      }}
-                                    >
-                                      {item}
-                                    </Text>
+                                    <View style={{ flexDirection: "row", marginBottom:verticalScale(15), justifyContent:"space-between", borderBottomColor:"grey", borderBottomWidth: moderateScale(0.3) /* backgroundColor:"green" */ }}>
+                                      <View style={{
+                                        flexDirection: "column",
+                                        // marginHorizontal: horizontalScale(10),
+                                        alignItems: "center",
+                                        //  paddingVertical: verticalScale(10),
+                                        width:windowWidth*0.15
+                                       }}>
+                                        <FontAwesome name="user-circle" size={moderateScale(16)} color="purple" />
+
+                                        <Text style={{
+                                          fontSize: moderateScale(12),
+                                          fontFamily: "Varela",
+                                          textAlign:"center",
+                                          // marginVertical: verticalScale(12),
+                                          writingDirection:
+                                            i18n.locale === "he" ||
+                                              i18n.locale === "ar"
+                                              ? "rtl"
+                                              : "ltr",
+                                        }}>
+                                          {item.friend1.length > 20
+                                            ? item.friend1.substring(0, 20) + ".."
+
+                                            : item.friend1}
+                                        </Text>
+                                      </View>
+                                      
+                                      <View style={{ /* justifyContent: "center", */ alignItems: "center", marginHorizontal:horizontalScale(5),  /* width:windowWidth*0.28 */ }}>
+                                        <Text style={{
+                                          fontSize: moderateScale(12),
+                                          fontFamily: "Varela",
+                                          // marginVertical: verticalScale(12),
+                                          writingDirection:
+                                            i18n.locale === "he" ||
+                                              i18n.locale === "ar"
+                                              ? "rtl"
+                                              : "ltr",
+                                        }}>{`${i18n.t("owe")}`}</Text>
+                                        <AntDesign name="arrowright" size={24} color="purple" style={{
+                                          transform: [{
+                                            rotate: i18n.locale === "he" ||
+                                              i18n.locale === "ar"
+                                              ? '180deg' : '0deg'
+                                          }]
+                                        }} />
+                                      </View>
+                                      <View style={{
+                                        flexDirection: "column",
+                                        //justifyContent:"center",
+                                       //  marginHorizontal: horizontalScale(5),
+                                        alignItems: "center",
+                                        //  paddingVertical: verticalScale(10),
+                                        width:windowWidth*0.15
+                                       }}>
+                                        <FontAwesome name="user-circle" size={moderateScale(16)} color="purple" />
+
+                                        <Text style={{
+                                          fontSize: moderateScale(12),
+                                          fontFamily: "Varela",
+                                          textAlign:"center",
+                                          // marginVertical: verticalScale(12),
+                                          writingDirection:
+                                            i18n.locale === "he" ||
+                                              i18n.locale === "ar"
+                                              ? "rtl"
+                                              : "ltr",
+                                        }}>
+                                          {item.friend2.length > 20
+                                            ? item.friend2.substring(0, 20) + ".."
+
+                                            : item.friend2}
+                                        </Text>
+                                      </View>
+                                      <View style={{flexDirection: i18n.locale === "he" ||
+                                              i18n.locale === "ar"
+                                              ? "row-reverse"
+                                              : "row",  width:windowWidth*0.3, /* marginHorizontal:horizontalScale(30),  */ justifyContent:i18n.locale === "he" ||
+                                              i18n.locale === "ar"
+                                              ? "flex-start": "flex-end", alignItems:"center",/*  backgroundColor:"yellow" */}}>
+                                      <Text style={{fontSize:moderateScale(10), marginTop:verticalScale(3) }}>{currencySymbol}</Text>
+                                      <Text style={{fontSize:moderateScale(15), fontFamily:"Varela"}}>{item.amount}</Text>
+                                      </View>
+                                    </View>
                                   )}
                                   keyExtractor={(item, index) =>
                                     index.toString()
@@ -2170,7 +2251,7 @@ export default function App() {
           }
         </View>
         {trackingPermissionProcessEnd && (
-          <View style={{marginVertical:verticalScale(15)}}>
+          <View style={{ marginVertical: verticalScale(15) }}>
 
             <BannerAd
               //    ref={bannerRef}
@@ -2182,8 +2263,8 @@ export default function App() {
               }}
             />
           </View>
-           
-          
+
+
         )}
       </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
@@ -2248,8 +2329,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
-   // backgroundColor: "white",
-   // borderBottomEndRadius: moderateScale(20),
+    // backgroundColor: "white",
+    // borderBottomEndRadius: moderateScale(20),
 
   },
   keyboardAvoidingContainer: {
@@ -2258,8 +2339,10 @@ const styles = StyleSheet.create({
   itemContainer: {
     //width:"100%",
     flexDirection: "column",
-    margin: moderateScale(10),
+    marginHorizontal: moderateScale(10),
     alignItems: "center",
+    paddingVertical: verticalScale(5),
+    marginVertical: verticalScale(2),
     // maxHeight: verticalScale(100),
     // backgroundColor:"green"
   },
