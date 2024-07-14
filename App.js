@@ -23,6 +23,7 @@ import {
   Alert,
   Linking,
   Animated,
+  PixelRatio,
 } from "react-native";
 //import { Image } from "expo-image";
 
@@ -1097,7 +1098,7 @@ export default function App() {
     <View style={styles.itemContainer}>
       <FontAwesome name="user-circle" size={moderateScale(24)} color="purple" />
       <View style={styles.textContainer}>
-        <Text style={styles.nickname}>
+        <Text  allowFontScaling={false} style={styles.nickname}>
           {item.nickname.length > 20
             ? item.nickname.substring(0, 20) + ".."
             : item.nickname === ""
@@ -1112,7 +1113,7 @@ export default function App() {
               i18n.locale === "ar"
               ? "flex-start" : "flex-end", alignItems: "center", /* backgroundColor:"yellow" */
         }}>
-          <Text style={{
+          <Text  allowFontScaling={false} style={{
             fontSize: moderateScale(9),
             fontFamily: "Varela",
             marginTop: verticalScale(5),
@@ -1122,7 +1123,7 @@ export default function App() {
                 ? "rtl"
                 : "ltr",
           }}>{currencySymbol}</Text>
-          <Text style={styles.amount}>{`${Number(
+          <Text  allowFontScaling={false} style={styles.amount}>{`${Number(
             item.amount
           ).toLocaleString()}`}</Text>
         </View>
@@ -1157,7 +1158,7 @@ export default function App() {
                     borderBottomColor: "#ccc",
                   }}
                 >
-                  <Text style={{ fontSize: 16 }}>{nickname.he}</Text>
+                  <Text  allowFontScaling={false} style={{ fontSize: 16 }}>{nickname.he}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -1170,7 +1171,7 @@ export default function App() {
                 borderRadius: 5,
               }}
             >
-              <Text>Close</Text>
+              <Text  allowFontScaling={false} >Close</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1249,6 +1250,7 @@ export default function App() {
                   }}
                 >
                   <Text
+                   allowFontScaling={false}
                     style={{
                       color: "white",
                       fontSize: moderateScale(50), // width: horizontalScale(150),
@@ -1264,6 +1266,7 @@ export default function App() {
                     JUBA
                   </Text>
                   <Text
+                   allowFontScaling={false}
                     style={{
                       fontFamily: "Varela",
                       fontSize: 20,
@@ -1288,6 +1291,30 @@ export default function App() {
                   style={styles.dropdown}
                   containerStyle={{ height: verticalScale(40), /* width:horizontalScale(250), */ marginTop:verticalScale(10)} }
                   dropDownStyle={{ backgroundColor: '#fafafa' }}
+                  placeholderStyle={{
+                   // color: "grey",
+                   fontSize:16 / PixelRatio.getFontScale(),
+                    fontFamily: "Varela"
+                  }}
+                  labelStyle={{fontSize:16 / PixelRatio.getFontScale(),
+                    fontFamily: "Varela"}}
+                    modalTitleStyle={{
+                       fontSize:16 / PixelRatio.getFontScale(),
+                    fontFamily: "Varela"
+                    }}
+                    searchTextInputProps={{
+                      maxLength: 25,
+                        fontSize:16 / PixelRatio.getFontScale(),
+                    fontFamily: "Varela"
+                    }}
+                    listChildLabelStyle={{
+                       fontSize:16 / PixelRatio.getFontScale(),
+                    fontFamily: "Varela"
+                    }}
+                    listParentLabelStyle={{
+                      fontSize:16 / PixelRatio.getFontScale(),
+                    fontFamily: "Varela"
+                    }}
                  
                  // theme="DARK"
                 />
@@ -1321,6 +1348,7 @@ export default function App() {
                       }}
                     >
                       <Text
+                       allowFontScaling={false}
                         style={{
                           color: "#474747",
                           fontSize: 25,
@@ -1330,7 +1358,7 @@ export default function App() {
                       >
                         {i18n.t("whoPaidHowMuch")}
                       </Text>
-                      <Text style={{ color: "grey", fontFamily: "Varela" }}>
+                      <Text  allowFontScaling={false} style={{ color: "grey", fontFamily: "Varela" }}>
                         {i18n.t("eachMemberPaid")}
                       </Text>
                       {friends.map((friendAmount, index) => (
@@ -1411,6 +1439,7 @@ export default function App() {
                                 />
                               </LinearGradient>
                               <Input
+                               allowFontScaling={false}
                                 ref={nameInput}
                                 inputContainerStyle={{
                                   // backgroundColor: "grey",
@@ -1489,6 +1518,7 @@ export default function App() {
                                 />
                               </LinearGradient>
                               <Input
+                               allowFontScaling={false}
                                 ref={input}
                                 inputContainerStyle={{
                                   // backgroundColor: "grey",
@@ -1667,6 +1697,7 @@ export default function App() {
                           </View>
                           {!friendAmount.isValid ? (
                             <Text
+                            allowFontScaling={false}
                               style={{ color: "red", fontFamily: "Varela" }}
                             >
                               {i18n.t("invalidAmount")}
@@ -1674,6 +1705,7 @@ export default function App() {
                           ) : null}
                           {Number(friends[index].amount) > 999999999 ? (
                             <Text
+                            allowFontScaling={false}
                               style={{ color: "red", fontFamily: "Varela" }}
                             >
                               מספר גבוה מדי
@@ -1717,6 +1749,7 @@ export default function App() {
                             }}
                           >
                             <Text
+                             allowFontScaling={false}
                               style={{
                                 color: "#2B2B2B",
                                 fontFamily: "Varela",
@@ -1753,6 +1786,7 @@ export default function App() {
                           }}
                         >
                           <Text
+                           allowFontScaling={false}
                             style={{
                               color: "white",
                               fontSize: 24,
@@ -1780,6 +1814,7 @@ export default function App() {
                       }}
                     >
                       <Text
+                       allowFontScaling={false}
                         style={{
                           color: "#474747",
                           fontSize: 25,
@@ -1790,7 +1825,7 @@ export default function App() {
                       >
                         {i18n.t("howManyMembers")}
                       </Text>
-                      <Text style={{ color: "grey", fontFamily: "Varela" }}>
+                      <Text  allowFontScaling={false} style={{ color: "grey", fontFamily: "Varela" }}>
                         {i18n.t("howManyPeople")}
                       </Text>
                       <View
@@ -1837,6 +1872,7 @@ export default function App() {
                           />
                         </LinearGradient>
                         <Input
+                         allowFontScaling={false}
                           ref={inputNumFriend}
                           inputContainerStyle={{
                             borderBottomWidth: 0,
@@ -1877,7 +1913,7 @@ export default function App() {
             value={numPeople}
           /> */}
                         {!FriendsNumIsValid && (
-                          <Text style={{ color: "red", fontFamily: "Varela" }}>
+                          <Text  allowFontScaling={false} style={{ color: "red", fontFamily: "Varela" }}>
                             {i18n.t("membersBetween1And100", {
                               startNumber: friends.length,
                             })}{" "}
@@ -1887,7 +1923,7 @@ export default function App() {
                       </View>
                       {FriendsNumIsValid && notPaidFriends.length > 0 &&
                         <TouchableOpacity onPress={() => setNotPaidFriendsModalVisible(true)} style={{ marginTop: verticalScale(20), /* marginHorizontal: horizontalScale(5), */ backgroundColor: "#FDCBE3", alignSelf: "center", justifyContent: "center", alignItems: "center", paddingHorizontal: horizontalScale(5), borderRadius: moderateScale(10), height: verticalScale(35), /* backgroundColor:"yellow" */ }}>
-                          <Text style={{ fontSize: moderateScale(10), fontFamily: "Varela", color: "purple" }}>{i18n.t("updateNotPaidFriends")}</Text>
+                          <Text  allowFontScaling={false} style={{ fontSize: moderateScale(10), fontFamily: "Varela", color: "purple" }}>{i18n.t("updateNotPaidFriends")}</Text>
                         </TouchableOpacity>}
                       <TouchableOpacity
                         onPress={onPreviousStep}
@@ -1925,6 +1961,7 @@ export default function App() {
                             }}>
 
                             <Text
+                             allowFontScaling={false}
                               style={{
                                 color: "#2B2B2B",
                                 fontSize: moderateScale(24),
@@ -1987,6 +2024,7 @@ export default function App() {
                         }}
                       >
                         <Text
+                         allowFontScaling={false}
                           style={{
                             color: "white",
                             fontSize: 24,
@@ -2022,6 +2060,7 @@ export default function App() {
                           {FriendsNumIsValid && notPaidFriends.length > 0 &&
                             <View style={{ justifyContent: "center", alignItems: "center", marginTop: verticalScale(10), marginBottom: verticalScale(50) }}>
                               <Text
+                               allowFontScaling={false}
                                 style={{
                                   color: "#474747",
                                   fontSize: moderateScale(25),
@@ -2085,6 +2124,7 @@ export default function App() {
                                         />
                                       </LinearGradient>
                                       <Input
+                                       allowFontScaling={false}
                                         ref={notPaidNameInput}
                                         inputContainerStyle={{
                                           borderBottomWidth: 0,
@@ -2132,6 +2172,7 @@ export default function App() {
                               }}
                             >
                               <Text
+                               allowFontScaling={false}
                                 style={{
                                   color: "white",
                                   fontSize: moderateScale(18),
@@ -2174,6 +2215,7 @@ export default function App() {
                               //  onLoad={handleImageLoad}
                               />
                               <Text
+                               allowFontScaling={false}
                                 style={{
                                   fontFamily: "Varela",
                                   fontSize: moderateScale(20),
@@ -2214,6 +2256,7 @@ export default function App() {
                               }}>
                               
                                 <Text
+                                allowFontScaling={false}
                                 style={{
                                   fontSize: moderateScale(25),
                                   fontFamily: "Varela",
@@ -2237,7 +2280,9 @@ export default function App() {
                                     i18n.locale === "ar"
                                     ? "flex-start" : "flex-end", alignItems: "center", /* backgroundColor:"yellow" */
                               }}>
-                                <Text style={{
+                                <Text 
+                                 allowFontScaling={false}
+                                style={{
                                   fontSize: moderateScale(18),
                                   fontFamily: "Varela",
                                   marginBottom: verticalScale(15),
@@ -2247,7 +2292,9 @@ export default function App() {
                                       ? "rtl"
                                       : "ltr",
                                 }}>{`${currencySymbol}`}</Text>
-                                <Text style={{
+                                <Text 
+                                 allowFontScaling={false}
+                                style={{
                                   fontSize: moderateScale(25),
                                   fontFamily: "Varela",
                                   marginBottom: verticalScale(20),
@@ -2278,6 +2325,7 @@ export default function App() {
                               }}>
                               
                                 <Text
+                                 allowFontScaling={false}
                                 style={{
                                   fontSize: moderateScale(25),
                                   color: "grey",
@@ -2299,7 +2347,9 @@ export default function App() {
                                     i18n.locale === "ar"
                                     ? "flex-start" : "flex-end", alignItems: "center", /* backgroundColor:"yellow" */
                               }}>
-                                <Text style={{
+                                <Text 
+                                 allowFontScaling={false}
+                                style={{
                                   fontSize: moderateScale(18),
                                   fontFamily: "Varela",
                                    marginTop: verticalScale(5),
@@ -2310,7 +2360,9 @@ export default function App() {
                                       ? "rtl"
                                       : "ltr",
                                 }}>{`${currencySymbol}`}</Text>
-                                <Text style={{
+                                <Text 
+                                 allowFontScaling={false}
+                                style={{
                                   fontSize: moderateScale(25),
                                   fontFamily: "Varela",
                                  // marginBottom: verticalScale(5),
@@ -2376,7 +2428,9 @@ export default function App() {
                                       }}>
                                         <FontAwesome name="user-circle" size={moderateScale(16)} color="purple" />
 
-                                        <Text style={{
+                                        <Text 
+                                         allowFontScaling={false}
+                                        style={{
                                           fontSize: moderateScale(12),
                                           fontFamily: "Varela",
                                           textAlign: "center",
@@ -2395,7 +2449,9 @@ export default function App() {
                                       </View>
 
                                       <View style={{ /* justifyContent: "center", */ alignItems: "center", marginHorizontal: horizontalScale(5),  /* width:windowWidth*0.28 */ }}>
-                                        <Text style={{
+                                        <Text 
+                                         allowFontScaling={false}
+                                        style={{
                                           fontSize: moderateScale(12),
                                           fontFamily: "Varela",
                                           // marginVertical: verticalScale(12),
@@ -2423,7 +2479,9 @@ export default function App() {
                                       }}>
                                         <FontAwesome name="user-circle" size={moderateScale(16)} color="purple" />
 
-                                        <Text style={{
+                                        <Text 
+                                         allowFontScaling={false}
+                                        style={{
                                           fontSize: moderateScale(12),
                                           fontFamily: "Varela",
                                           textAlign: "center",
@@ -2448,8 +2506,8 @@ export default function App() {
                                             i18n.locale === "ar"
                                             ? "flex-start" : "flex-end", alignItems: "center",/*  backgroundColor:"yellow" */
                                       }}>
-                                        <Text style={{ fontSize: moderateScale(10), marginTop: verticalScale(3) }}>{currencySymbol}</Text>
-                                        <Text style={{ fontSize: moderateScale(15), fontFamily: "Varela" }}>{item.amount}</Text>
+                                        <Text  allowFontScaling={false} style={{ fontSize: moderateScale(10), marginTop: verticalScale(3) }}>{currencySymbol}</Text>
+                                        <Text  allowFontScaling={false} style={{ fontSize: moderateScale(15), fontFamily: "Varela" }}>{item.amount}</Text>
                                       </View>
                                     </View>
                                   )}
@@ -2490,6 +2548,7 @@ export default function App() {
                               }}
                             >
                               <Text
+                               allowFontScaling={false}
                                 style={{
                                   color: "white",
                                   fontFamily: "Varela",
@@ -2503,7 +2562,7 @@ export default function App() {
                           <TouchableOpacity
                             onPress={() => {
                               setFriends([
-                                { amount: 0, isValid: true, nickname: "" },
+                                { amount: "", isValid: true, nickname: "" },
                               ]),
                                 setNumPeople(""),
                                 setModalVisible(false);
@@ -2543,6 +2602,7 @@ export default function App() {
                                 }}
                               >
                                 <Text
+                                 allowFontScaling={false}
                                   style={{
                                     color: "#2B2B2B",
                                     fontFamily: "Varela",
