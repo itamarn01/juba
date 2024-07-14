@@ -23,6 +23,7 @@ import {
   Alert,
   Linking,
   Animated,
+  PixelRatio,
 } from "react-native";
 //import { Image } from "expo-image";
 
@@ -69,6 +70,7 @@ import Translations from "./components/languages";
 import * as Device from "expo-device";
 import axios from "axios";
 import * as Updates from "expo-updates";
+import DropDownPicker from 'react-native-dropdown-picker';
 
 // SplashScreen.preventAutoHideAsync();
 const windowWidth = Dimensions.get("window").width;
@@ -194,6 +196,172 @@ export default function App() {
   const [isAppOpenAdError, setIsAppOpenAdError] = useState(false);
   const [translationsJson, setTranslationsJson] = useState({});
   const [loading, setLoading] = useState(true);
+
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState(null);
+  const [items, setItems] = useState([
+    { label: '🇦🇪 United Arab Emirates Dirham (AED)', value: 'AED', symbol: 'د.إ' },
+    { label: '🇦🇫 Afghan Afghani (AFN)', value: 'AFN', symbol: '؋' },
+    { label: '🇦🇱 Albanian Lek (ALL)', value: 'ALL', symbol: 'L' },
+    { label: '🇦🇲 Armenian Dram (AMD)', value: 'AMD', symbol: '֏' },
+    { label: '🇨🇼 Netherlands Antillean Guilder (ANG)', value: 'ANG', symbol: 'ƒ' },
+    { label: '🇦🇴 Angolan Kwanza (AOA)', value: 'AOA', symbol: 'Kz' },
+    { label: '🇦🇷 Argentine Peso (ARS)', value: 'ARS', symbol: '$' },
+    { label: '🇦🇺 Australian Dollar (AUD)', value: 'AUD', symbol: '$' },
+    { label: '🇦🇼 Aruban Florin (AWG)', value: 'AWG', symbol: 'ƒ' },
+    { label: '🇦🇿 Azerbaijani Manat (AZN)', value: 'AZN', symbol: '₼' },
+    { label: '🇧🇦 Bosnia-Herzegovina Convertible Mark (BAM)', value: 'BAM', symbol: 'KM' },
+    { label: '🇧🇧 Barbadian Dollar (BBD)', value: 'BBD', symbol: '$' },
+    { label: '🇧🇩 Bangladeshi Taka (BDT)', value: 'BDT', symbol: '৳' },
+    { label: '🇧🇬 Bulgarian Lev (BGN)', value: 'BGN', symbol: 'лв' },
+    { label: '🇧🇭 Bahraini Dinar (BHD)', value: 'BHD', symbol: '.د.ب' },
+    { label: '🇧🇮 Burundian Franc (BIF)', value: 'BIF', symbol: 'FBu' },
+    { label: '🇧🇲 Bermudan Dollar (BMD)', value: 'BMD', symbol: '$' },
+    { label: '🇧🇳 Brunei Dollar (BND)', value: 'BND', symbol: '$' },
+    { label: '🇧🇴 Bolivian Boliviano (BOB)', value: 'BOB', symbol: 'Bs.' },
+    { label: '🇧🇷 Brazilian Real (BRL)', value: 'BRL', symbol: 'R$' },
+    { label: '🇧🇸 Bahamian Dollar (BSD)', value: 'BSD', symbol: '$' },
+    { label: '₿ Bitcoin (BTC)', value: 'BTC', symbol: '₿' },
+    { label: '🇧🇹 Bhutanese Ngultrum (BTN)', value: 'BTN', symbol: 'Nu.' },
+    { label: '🇧🇼 Botswanan Pula (BWP)', value: 'BWP', symbol: 'P' },
+    { label: '🇧🇾 New Belarusian Ruble (BYN)', value: 'BYN', symbol: 'Br' },
+    { label: '🇧🇾 Belarusian Ruble (BYR)', value: 'BYR', symbol: 'Br' },
+    { label: '🇧🇿 Belize Dollar (BZD)', value: 'BZD', symbol: '$' },
+    { label: '🇨🇦 Canadian Dollar (CAD)', value: 'CAD', symbol: '$' },
+    { label: '🇨🇩 Congolese Franc (CDF)', value: 'CDF', symbol: 'FC' },
+    { label: '🇨🇭 Swiss Franc (CHF)', value: 'CHF', symbol: 'CHF' },
+    { label: '🇨🇱 Chilean Unit Of Account (Uf) (CLF)', value: 'CLF', symbol: 'UF' },
+    { label: '🇨🇱 Chilean Peso (CLP)', value: 'CLP', symbol: '$' },
+    { label: '🇨🇳 Chinese Yuan (CNY)', value: 'CNY', symbol: '¥' },
+    { label: '🇨🇴 Colombian Peso (COP)', value: 'COP', symbol: '$' },
+    { label: '🇨🇷 Costa Rican Colón (CRC)', value: 'CRC', symbol: '₡' },
+    { label: '🇨🇺 Cuban Convertible Peso (CUC)', value: 'CUC', symbol: '$' },
+    { label: '🇨🇺 Cuban Peso (CUP)', value: 'CUP', symbol: '$' },
+    { label: '🇨🇻 Cape Verdean Escudo (CVE)', value: 'CVE', symbol: '$' },
+    { label: '🇨🇿 Czech Republic Koruna (CZK)', value: 'CZK', symbol: 'Kč' },
+    { label: '🇩🇯 Djiboutian Franc (DJF)', value: 'DJF', symbol: 'Fdj' },
+    { label: '🇩🇰 Danish Krone (DKK)', value: 'DKK', symbol: 'kr' },
+    { label: '🇩🇴 Dominican Peso (DOP)', value: 'DOP', symbol: 'RD$' },
+    { label: '🇩🇿 Algerian Dinar (DZD)', value: 'DZD', symbol: 'دج' },
+    { label: '🇪🇬 Egyptian Pound (EGP)', value: 'EGP', symbol: '£' },
+    { label: '🇪🇷 Eritrean Nakfa (ERN)', value: 'ERN', symbol: 'Nfk' },
+    { label: '🇪🇹 Ethiopian Birr (ETB)', value: 'ETB', symbol: 'Br' },
+    { label: '🇪🇺 Euro (EUR)', value: 'EUR', symbol: '€' },
+    { label: '🇫🇯 Fijian Dollar (FJD)', value: 'FJD', symbol: '$' },
+    { label: '🇫🇰 Falkland Islands Pound (FKP)', value: 'FKP', symbol: '£' },
+    { label: '🇬🇧 British Pound Sterling (GBP)', value: 'GBP', symbol: '£' },
+    { label: '🇬🇪 Georgian Lari (GEL)', value: 'GEL', symbol: '₾' },
+    { label: '🇬🇬 Guernsey Pound (GGP)', value: 'GGP', symbol: '£' },
+    { label: '🇬🇭 Ghanaian Cedi (GHS)', value: 'GHS', symbol: 'GH₵' },
+    { label: '🇬🇮 Gibraltar Pound (GIP)', value: 'GIP', symbol: '£' },
+    { label: '🇬🇲 Gambian Dalasi (GMD)', value: 'GMD', symbol: 'D' },
+    { label: '🇬🇳 Guinean Franc (GNF)', value: 'GNF', symbol: 'FG' },
+    { label: '🇬🇹 Guatemalan Quetzal (GTQ)', value: 'GTQ', symbol: 'Q' },
+    { label: '🇬🇾 Guyanaese Dollar (GYD)', value: 'GYD', symbol: '$' },
+    { label: '🇭🇰 Hong Kong Dollar (HKD)', value: 'HKD', symbol: '$' },
+    { label: '🇭🇳 Honduran Lempira (HNL)', value: 'HNL', symbol: 'L' },
+    { label: '🇭🇷 Croatian Kuna (HRK)', value: 'HRK', symbol: 'kn' },
+    { label: '🇭🇹 Haitian Gourde (HTG)', value: 'HTG', symbol: 'G' },
+    { label: '🇭🇺 Hungarian Forint (HUF)', value: 'HUF', symbol: 'Ft' },
+    { label: '🇮🇩 Indonesian Rupiah (IDR)', value: 'IDR', symbol: 'Rp' },
+    { label: '🇮🇱 Israeli New Sheqel (ILS)', value: 'ILS', symbol: '₪' },
+    { label: '🇮🇲 Manx Pound (IMP)', value: 'IMP', symbol: '£' },
+    { label: '🇮🇳 Indian Rupee (INR)', value: 'INR', symbol: '₹' },
+    { label: '🇮🇶 Iraqi Dinar (IQD)', value: 'IQD', symbol: 'ع.د' },
+    { label: '🇮🇷 Iranian Rial (IRR)', value: 'IRR', symbol: '﷼' },
+    { label: '🇮🇸 Icelandic Króna (ISK)', value: 'ISK', symbol: 'kr' },
+    { label: '🇯🇪 Jersey Pound (JEP)', value: 'JEP', symbol: '£' },
+    { label: '🇯🇲 Jamaican Dollar (JMD)', value: 'JMD', symbol: 'J$' },
+    { label: '🇯🇴 Jordanian Dinar (JOD)', value: 'JOD', symbol: 'ا.د' },
+    { label: '🇯🇵 Japanese Yen (JPY)', value: 'JPY', symbol: '¥' },
+    { label: '🇰🇪 Kenyan Shilling (KES)', value: 'KES', symbol: 'Sh' },
+    { label: '🇰🇬 Kyrgystani Som (KGS)', value: 'KGS', symbol: 'лв' },
+    { label: '🇰🇭 Cambodian Riel (KHR)', value: 'KHR', symbol: '៛' },
+    { label: '🇰🇲 Comorian Franc (KMF)', value: 'KMF', symbol: 'CF' },
+    { label: '🇰🇵 North Korean Won (KPW)', value: 'KPW', symbol: '₩' },
+    { label: '🇰🇷 South Korean Won (KRW)', value: 'KRW', symbol: '₩' },
+    { label: '🇰🇼 Kuwaiti Dinar (KWD)', value: 'KWD', symbol: 'د.ك' },
+    { label: '🇰🇾 Cayman Islands Dollar (KYD)', value: 'KYD', symbol: '$' },
+    { label: '🇰🇿 Kazakhstani Tenge (KZT)', value: 'KZT', symbol: 'лв' },
+    { label: '🇱🇦 Laotian Kip (LAK)', value: 'LAK', symbol: '₭' },
+    { label: '🇱🇧 Lebanese Pound (LBP)', value: 'LBP', symbol: '£' },
+    { label: '🇱🇰 Sri Lankan Rupee (LKR)', value: 'LKR', symbol: '₨' },
+    { label: '🇱🇷 Liberian Dollar (LRD)', value: 'LRD', symbol: '$' },
+    { label: '🇱🇸 Lesotho Loti (LSL)', value: 'LSL', symbol: 'L' },
+    { label: '🇱🇹 Lithuanian Litas (LTL)', value: 'LTL', symbol: 'Lt' },
+    { label: '🇱🇻 Latvian Lats (LVL)', value: 'LVL', symbol: 'Ls' },
+    { label: '🇱🇾 Libyan Dinar (LYD)', value: 'LYD', symbol: 'د.ل' },
+    { label: '🇲🇦 Moroccan Dirham (MAD)', value: 'MAD', symbol: 'د.م.' },
+    { label: '🇲🇩 Moldovan Leu (MDL)', value: 'MDL', symbol: 'L' },
+    { label: '🇲🇬 Malagasy Ariary (MGA)', value: 'MGA', symbol: 'Ar' },
+    { label: '🇲🇰 Macedonian Denar (MKD)', value: 'MKD', symbol: 'ден' },
+    { label: '🇲🇲 Myanma Kyat (MMK)', value: 'MMK', symbol: 'K' },
+    { label: '🇲🇳 Mongolian Tugrik (MNT)', value: 'MNT', symbol: '₮' },
+    { label: '🇲🇴 Macanese Pataca (MOP)', value: 'MOP', symbol: 'MOP$' },
+    { label: '🇲🇷 Mauritanian Ouguiya (MRO)', value: 'MRO', symbol: 'UM' },
+    { label: '🇲🇺 Mauritian Rupee (MUR)', value: 'MUR', symbol: '₨' },
+    { label: '🇲🇻 Maldivian Rufiyaa (MVR)', value: 'MVR', symbol: 'Rf' },
+    { label: '🇲🇼 Malawian Kwacha (MWK)', value: 'MWK', symbol: 'MK' },
+    { label: '🇲🇽 Mexican Peso (MXN)', value: 'MXN', symbol: '$' },
+    { label: '🇲🇾 Malaysian Ringgit (MYR)', value: 'MYR', symbol: 'RM' },
+    { label: '🇲🇿 Mozambican Metical (MZN)', value: 'MZN', symbol: 'MT' },
+    { label: '🇳🇦 Namibian Dollar (NAD)', value: 'NAD', symbol: '$' },
+    { label: '🇳🇬 Nigerian Naira (NGN)', value: 'NGN', symbol: '₦' },
+    { label: '🇳🇮 Nicaraguan Córdoba (NIO)', value: 'NIO', symbol: 'C$' },
+    { label: '🇳🇴 Norwegian Krone (NOK)', value: 'NOK', symbol: 'kr' },
+    { label: '🇳🇵 Nepalese Rupee (NPR)', value: 'NPR', symbol: '₨' },
+    { label: '🇳🇿 New Zealand Dollar (NZD)', value: 'NZD', symbol: '$' },
+    { label: '🇴🇲 Omani Rial (OMR)', value: 'OMR', symbol: '﷼' },
+    { label: '🇵🇦 Panamanian Balboa (PAB)', value: 'PAB', symbol: 'B/.' },
+    { label: '🇵🇪 Peruvian Nuevo Sol (PEN)', value: 'PEN', symbol: 'S/.' },
+    { label: '🇵🇬 Papua New Guinean Kina (PGK)', value: 'PGK', symbol: 'K' },
+    { label: '🇵🇭 Philippine Peso (PHP)', value: 'PHP', symbol: '₱' },
+    { label: '🇵🇰 Pakistani Rupee (PKR)', value: 'PKR', symbol: '₨' },
+    { label: '🇵🇱 Polish Zloty (PLN)', value: 'PLN', symbol: 'zł' },
+    { label: '🇵🇾 Paraguayan Guarani (PYG)', value: 'PYG', symbol: 'Gs' },
+    { label: '🇶🇦 Qatari Rial (QAR)', value: 'QAR', symbol: '﷼' },
+    { label: '🇷🇴 Romanian Leu (RON)', value: 'RON', symbol: 'lei' },
+    { label: '🇷🇸 Serbian Dinar (RSD)', value: 'RSD', symbol: 'Дин.' },
+    { label: '🇷🇺 Russian Ruble (RUB)', value: 'RUB', symbol: '₽' },
+    { label: '🇷🇼 Rwandan Franc (RWF)', value: 'RWF', symbol: 'FRw' },
+    { label: '🇸🇦 Saudi Riyal (SAR)', value: 'SAR', symbol: '﷼' },
+    { label: '🇸🇧 Solomon Islands Dollar (SBD)', value: 'SBD', symbol: '$' },
+    { label: '🇸🇨 Seychellois Rupee (SCR)', value: 'SCR', symbol: '₨' },
+    { label: '🇸🇩 Sudanese Pound (SDG)', value: 'SDG', symbol: 'ج.س.' },
+    { label: '🇸🇪 Swedish Krona (SEK)', value: 'SEK', symbol: 'kr' },
+    { label: '🇸🇬 Singapore Dollar (SGD)', value: 'SGD', symbol: '$' },
+    { label: '🇸🇭 Saint Helena Pound (SHP)', value: 'SHP', symbol: '£' },
+    { label: '🇸🇱 Sierra Leonean Leone (SLL)', value: 'SLL', symbol: 'Le' },
+    { label: '🇸🇴 Somali Shilling (SOS)', value: 'SOS', symbol: 'Sh' },
+    { label: '🇸🇷 Surinamese Dollar (SRD)', value: 'SRD', symbol: '$' },
+    { label: '🇸🇸 South Sudanese Pound (SSP)', value: 'SSP', symbol: '£' },
+    { label: '🇸🇹 São Tomé and Príncipe Dobra (STD)', value: 'STD', symbol: 'Db' },
+    { label: '🇸🇾 Syrian Pound (SYP)', value: 'SYP', symbol: '£' },
+    { label: '🇸🇿 Swazi Lilangeni (SZL)', value: 'SZL', symbol: 'L' },
+    { label: '🇹🇭 Thai Baht (THB)', value: 'THB', symbol: '฿' },
+    { label: '🇹🇿 Tanzanian Shilling (TZS)', value: 'TZS', symbol: 'Sh' },
+    { label: '🇹🇿 Tanzanian Shilling (TZS)', value: 'TZS', symbol: 'Sh' },
+    { label: '🇹🇳 Tunisian Dinar (TND)', value: 'TND', symbol: 'د.ت' },
+    { label: '🇹🇷 Turkish Lira (TRY)', value: 'TRY', symbol: '₺' },
+    { label: '🇹🇹 Trinidad and Tobago Dollar (TTD)', value: 'TTD', symbol: 'TT$' },
+    { label: '🇹🇻 Tuvaluan Dollar (TVD)', value: 'TVD', symbol: '$' },
+    { label: '🇺🇦 Ukrainian Hryvnia (UAH)', value: 'UAH', symbol: '₴' },
+    { label: '🇺🇬 Ugandan Shilling (UGX)', value: 'UGX', symbol: 'USh' },
+    { label: '🇺🇸 United States Dollar (USD)', value: 'USD', symbol: '$' },
+    { label: '🇺🇾 Uruguayan Peso (UYU)', value: 'UYU', symbol: '$' },
+    { label: '🇺🇿 Uzbekistani Som (UZS)', value: 'UZS', symbol: 'лв' },
+    { label: '🇻🇪 Venezuelan Bolívar Fuerte (VEF)', value: 'VEF', symbol: 'Bs F' },
+    { label: '🇻🇳 Vietnamese Dong (VND)', value: 'VND', symbol: '₫' },
+    { label: '🇻🇺 Vanuatu Vatu (VUV)', value: 'VUV', symbol: 'VT' },
+    { label: '🇼🇸 Samoan Tala (WST)', value: 'WST', symbol: 'T' },
+    { label: '🇾🇪 Yemeni Rial (YER)', value: 'YER', symbol: '﷼' },
+    { label: '🇿🇦 South African Rand (ZAR)', value: 'ZAR', symbol: 'R' },
+    { label: '🇿🇲 Zambian Kwacha (ZMW)', value: 'ZMW', symbol: 'ZK' },
+    { label: '🇿🇼 Zimbabwean Dollar (ZWL)', value: 'ZWL', symbol: '$' }
+  ]);
+
+
+
   //"https://itamarn01.github.io/Juba-backend/components/languages.js"
   useEffect(() => {
     fetchTranslations();
@@ -930,16 +1098,38 @@ export default function App() {
     <View style={styles.itemContainer}>
       <FontAwesome name="user-circle" size={moderateScale(24)} color="purple" />
       <View style={styles.textContainer}>
-        <Text style={styles.nickname}>
+        <Text  allowFontScaling={false} style={styles.nickname}>
           {item.nickname.length > 20
             ? item.nickname.substring(0, 20) + ".."
             : item.nickname === ""
               ? `${i18n.t("friend")} ${index + 1}`
               : item.nickname}
         </Text>
-        <Text style={styles.amount}>{`${currencySymbol}${Number(
+        <View style={{
+          flexDirection: i18n.locale === "he" ||
+            i18n.locale === "ar"
+            ? "row-reverse"
+            : "row", justifyContent: i18n.locale === "he" ||
+              i18n.locale === "ar"
+              ? "flex-start" : "flex-end", alignItems: "center", /* backgroundColor:"yellow" */
+        }}>
+          <Text  allowFontScaling={false} style={{
+            fontSize: moderateScale(9),
+            fontFamily: "Varela",
+            marginTop: verticalScale(5),
+            textAlign: "center",
+            writingDirection:
+              i18n.locale === "he" || i18n.locale === "ar"
+                ? "rtl"
+                : "ltr",
+          }}>{currencySymbol}</Text>
+          <Text  allowFontScaling={false} style={styles.amount}>{`${Number(
+            item.amount
+          ).toLocaleString()}`}</Text>
+        </View>
+        {/*  <Text style={styles.amount}>{`${currencySymbol}${Number(
           item.amount
-        ).toLocaleString()}`}</Text>
+        ).toLocaleString()}`}</Text> */}
       </View>
     </View>
   );
@@ -968,7 +1158,7 @@ export default function App() {
                     borderBottomColor: "#ccc",
                   }}
                 >
-                  <Text style={{ fontSize: 16 }}>{nickname.he}</Text>
+                  <Text  allowFontScaling={false} style={{ fontSize: 16 }}>{nickname.he}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -981,13 +1171,19 @@ export default function App() {
                 borderRadius: 5,
               }}
             >
-              <Text>Close</Text>
+              <Text  allowFontScaling={false} >Close</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
     );
   };
+
+  const handleValueChange = (code) => {
+    searchItem = items.find(item => item.value === code);
+    currencySymbol = searchItem.symbol
+  };
+
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <KeyboardAvoidingView
@@ -1008,9 +1204,9 @@ export default function App() {
           ]}
         >
           {
-            /* !appIsReady || */ !appOpenClosed ? (
+            /* !appIsReady || */!fontsLoaded || !appOpenClosed ? (
               <>
-                {console.log("app isnt ready:", appOpenClosed)}
+                {console.log("fonts loaded:", fontsLoaded)}
                 <Image
                   style={{
                     width: horizontalScale(400),
@@ -1054,6 +1250,7 @@ export default function App() {
                   }}
                 >
                   <Text
+                   allowFontScaling={false}
                     style={{
                       color: "white",
                       fontSize: moderateScale(50), // width: horizontalScale(150),
@@ -1069,6 +1266,7 @@ export default function App() {
                     JUBA
                   </Text>
                   <Text
+                   allowFontScaling={false}
                     style={{
                       fontFamily: "Varela",
                       fontSize: 20,
@@ -1078,7 +1276,48 @@ export default function App() {
                     {i18n.t("expenseCalculator")}
                   </Text>
                 </LinearGradient>
+                <DropDownPicker
 
+                  open={open}
+                  value={value}
+                  items={items}
+                  setOpen={setOpen}
+                  setValue={setValue}
+                  setItems={setItems}
+                  onChangeValue={handleValueChange}
+                  searchable={true}
+                  placeholder={currencySymbol + " " + currencyCode}
+                  searchPlaceholder={i18n.t("searchCurrency")}
+                  style={styles.dropdown}
+                  containerStyle={{ height: verticalScale(40), /* width:horizontalScale(250), */ marginTop:verticalScale(10)} }
+                  dropDownStyle={{ backgroundColor: '#fafafa' }}
+                  placeholderStyle={{
+                   // color: "grey",
+                   fontSize:16 / PixelRatio.getFontScale(),
+                    fontFamily: "Varela"
+                  }}
+                  labelStyle={{fontSize:16 / PixelRatio.getFontScale(),
+                    fontFamily: "Varela"}}
+                    modalTitleStyle={{
+                       fontSize:16 / PixelRatio.getFontScale(),
+                    fontFamily: "Varela"
+                    }}
+                    searchTextInputProps={{
+                      maxLength: 25,
+                        fontSize:16 / PixelRatio.getFontScale(),
+                    fontFamily: "Varela"
+                    }}
+                    listChildLabelStyle={{
+                       fontSize:16 / PixelRatio.getFontScale(),
+                    fontFamily: "Varela"
+                    }}
+                    listParentLabelStyle={{
+                      fontSize:16 / PixelRatio.getFontScale(),
+                    fontFamily: "Varela"
+                    }}
+                 
+                 // theme="DARK"
+                />
                 <ScrollView
                   nestedScrollEnabled={true}
                   showsVerticalScrollIndicator={false}
@@ -1104,10 +1343,12 @@ export default function App() {
                         justifyContent: "flex-start",
                         zIndex: 1,
                         alignItems: "center",
-                        marginTop: verticalScale(50),
+                        marginTop: verticalScale(40),
+                        paddingTop:verticalScale(5)
                       }}
                     >
                       <Text
+                       allowFontScaling={false}
                         style={{
                           color: "#474747",
                           fontSize: 25,
@@ -1117,7 +1358,7 @@ export default function App() {
                       >
                         {i18n.t("whoPaidHowMuch")}
                       </Text>
-                      <Text style={{ color: "grey", fontFamily: "Varela" }}>
+                      <Text  allowFontScaling={false} style={{ color: "grey", fontFamily: "Varela" }}>
                         {i18n.t("eachMemberPaid")}
                       </Text>
                       {friends.map((friendAmount, index) => (
@@ -1198,6 +1439,7 @@ export default function App() {
                                 />
                               </LinearGradient>
                               <Input
+                               allowFontScaling={false}
                                 ref={nameInput}
                                 inputContainerStyle={{
                                   // backgroundColor: "grey",
@@ -1276,6 +1518,7 @@ export default function App() {
                                 />
                               </LinearGradient>
                               <Input
+                               allowFontScaling={false}
                                 ref={input}
                                 inputContainerStyle={{
                                   // backgroundColor: "grey",
@@ -1454,6 +1697,7 @@ export default function App() {
                           </View>
                           {!friendAmount.isValid ? (
                             <Text
+                            allowFontScaling={false}
                               style={{ color: "red", fontFamily: "Varela" }}
                             >
                               {i18n.t("invalidAmount")}
@@ -1461,6 +1705,7 @@ export default function App() {
                           ) : null}
                           {Number(friends[index].amount) > 999999999 ? (
                             <Text
+                            allowFontScaling={false}
                               style={{ color: "red", fontFamily: "Varela" }}
                             >
                               מספר גבוה מדי
@@ -1504,6 +1749,7 @@ export default function App() {
                             }}
                           >
                             <Text
+                             allowFontScaling={false}
                               style={{
                                 color: "#2B2B2B",
                                 fontFamily: "Varela",
@@ -1540,6 +1786,7 @@ export default function App() {
                           }}
                         >
                           <Text
+                           allowFontScaling={false}
                             style={{
                               color: "white",
                               fontSize: 24,
@@ -1567,6 +1814,7 @@ export default function App() {
                       }}
                     >
                       <Text
+                       allowFontScaling={false}
                         style={{
                           color: "#474747",
                           fontSize: 25,
@@ -1577,7 +1825,7 @@ export default function App() {
                       >
                         {i18n.t("howManyMembers")}
                       </Text>
-                      <Text style={{ color: "grey", fontFamily: "Varela" }}>
+                      <Text  allowFontScaling={false} style={{ color: "grey", fontFamily: "Varela" }}>
                         {i18n.t("howManyPeople")}
                       </Text>
                       <View
@@ -1624,6 +1872,7 @@ export default function App() {
                           />
                         </LinearGradient>
                         <Input
+                         allowFontScaling={false}
                           ref={inputNumFriend}
                           inputContainerStyle={{
                             borderBottomWidth: 0,
@@ -1664,7 +1913,7 @@ export default function App() {
             value={numPeople}
           /> */}
                         {!FriendsNumIsValid && (
-                          <Text style={{ color: "red", fontFamily: "Varela" }}>
+                          <Text  allowFontScaling={false} style={{ color: "red", fontFamily: "Varela" }}>
                             {i18n.t("membersBetween1And100", {
                               startNumber: friends.length,
                             })}{" "}
@@ -1674,7 +1923,7 @@ export default function App() {
                       </View>
                       {FriendsNumIsValid && notPaidFriends.length > 0 &&
                         <TouchableOpacity onPress={() => setNotPaidFriendsModalVisible(true)} style={{ marginTop: verticalScale(20), /* marginHorizontal: horizontalScale(5), */ backgroundColor: "#FDCBE3", alignSelf: "center", justifyContent: "center", alignItems: "center", paddingHorizontal: horizontalScale(5), borderRadius: moderateScale(10), height: verticalScale(35), /* backgroundColor:"yellow" */ }}>
-                          <Text style={{ fontSize: moderateScale(10), fontFamily: "Varela", color: "purple" }}>{i18n.t("updateNotPaidFriends")}</Text>
+                          <Text  allowFontScaling={false} style={{ fontSize: moderateScale(10), fontFamily: "Varela", color: "purple" }}>{i18n.t("updateNotPaidFriends")}</Text>
                         </TouchableOpacity>}
                       <TouchableOpacity
                         onPress={onPreviousStep}
@@ -1712,6 +1961,7 @@ export default function App() {
                             }}>
 
                             <Text
+                             allowFontScaling={false}
                               style={{
                                 color: "#2B2B2B",
                                 fontSize: moderateScale(24),
@@ -1774,6 +2024,7 @@ export default function App() {
                         }}
                       >
                         <Text
+                         allowFontScaling={false}
                           style={{
                             color: "white",
                             fontSize: 24,
@@ -1809,6 +2060,7 @@ export default function App() {
                           {FriendsNumIsValid && notPaidFriends.length > 0 &&
                             <View style={{ justifyContent: "center", alignItems: "center", marginTop: verticalScale(10), marginBottom: verticalScale(50) }}>
                               <Text
+                               allowFontScaling={false}
                                 style={{
                                   color: "#474747",
                                   fontSize: moderateScale(25),
@@ -1872,6 +2124,7 @@ export default function App() {
                                         />
                                       </LinearGradient>
                                       <Input
+                                       allowFontScaling={false}
                                         ref={notPaidNameInput}
                                         inputContainerStyle={{
                                           borderBottomWidth: 0,
@@ -1919,6 +2172,7 @@ export default function App() {
                               }}
                             >
                               <Text
+                               allowFontScaling={false}
                                 style={{
                                   color: "white",
                                   fontSize: moderateScale(18),
@@ -1961,11 +2215,12 @@ export default function App() {
                               //  onLoad={handleImageLoad}
                               />
                               <Text
+                               allowFontScaling={false}
                                 style={{
                                   fontFamily: "Varela",
                                   fontSize: moderateScale(20),
                                   alignSelf: "center",
-                                  marginTop:-30
+                                  marginTop: -30
                                 }}
                               >
                                 {i18n.t("membersPaid")}
@@ -1996,7 +2251,12 @@ export default function App() {
                                   marginBottom: verticalScale(10),
                                 }}
                               />
-                              <Text
+                               <View style={{
+                                flexDirection: "row", justifyContent:"center", alignItems: "center", /* backgroundColor:"yellow" */
+                              }}>
+                              
+                                <Text
+                                allowFontScaling={false}
                                 style={{
                                   fontSize: moderateScale(25),
                                   fontFamily: "Varela",
@@ -2009,9 +2269,116 @@ export default function App() {
                                 }}
                               >{`${i18n.t(
                                 "totalPaid"
-                              )} ${currencySymbol}${totalAmount.toLocaleString()}`}</Text>
+                              )} `}
+                              
+                              </Text>
+                              <View style={{
+                                flexDirection: i18n.locale === "he" ||
+                                  i18n.locale === "ar"
+                                  ? "row-reverse"
+                                  : "row", justifyContent: i18n.locale === "he" ||
+                                    i18n.locale === "ar"
+                                    ? "flex-start" : "flex-end", alignItems: "center", /* backgroundColor:"yellow" */
+                              }}>
+                                <Text 
+                                 allowFontScaling={false}
+                                style={{
+                                  fontSize: moderateScale(18),
+                                  fontFamily: "Varela",
+                                  marginBottom: verticalScale(15),
+                                  textAlign: "center",
+                                  writingDirection:
+                                    i18n.locale === "he" || i18n.locale === "ar"
+                                      ? "rtl"
+                                      : "ltr",
+                                }}>{`${currencySymbol}`}</Text>
+                                <Text 
+                                 allowFontScaling={false}
+                                style={{
+                                  fontSize: moderateScale(25),
+                                  fontFamily: "Varela",
+                                  marginBottom: verticalScale(20),
+                                  textAlign: "center",
+                                  writingDirection:
+                                    i18n.locale === "he" || i18n.locale === "ar"
+                                      ? "rtl"
+                                      : "ltr",
+                                }}>{`${totalAmount.toLocaleString()}`}</Text>
+                              </View>
+                              </View>
+                              {/*  <Text
+                                style={{
+                                  fontSize: moderateScale(25),
+                                  fontFamily: "Varela",
+                                  marginBottom: verticalScale(20),
+                                  textAlign: "center",
+                                  writingDirection:
+                                    i18n.locale === "he" || i18n.locale === "ar"
+                                      ? "rtl"
+                                      : "ltr",
+                                }}
+                              >{`${i18n.t(
+                                "totalPaid"
+                              )} ${currencySymbol}${totalAmount.toLocaleString()}`}</Text> */}
+                              <View style={{
+                                flexDirection: "row", justifyContent:"center", alignItems: "center", /* backgroundColor:"yellow" */
+                              }}>
+                              
+                                <Text
+                                 allowFontScaling={false}
+                                style={{
+                                  fontSize: moderateScale(25),
+                                  color: "grey",
+                                  fontFamily: "Varela",
+                                  writingDirection:
+                                    i18n.locale === "he" || i18n.locale === "ar"
+                                      ? "rtl"
+                                      : "ltr",
+                                  textAlign: "center",
+                                }}
+                              >{`${i18n.t(
+                                "pricePerPerson"
+                              )} `}</Text>
+                              <View style={{
+                                flexDirection: i18n.locale === "he" ||
+                                  i18n.locale === "ar"
+                                  ? "row-reverse"
+                                  : "row", justifyContent: i18n.locale === "he" ||
+                                    i18n.locale === "ar"
+                                    ? "flex-start" : "flex-end", alignItems: "center", /* backgroundColor:"yellow" */
+                              }}>
+                                <Text 
+                                 allowFontScaling={false}
+                                style={{
+                                  fontSize: moderateScale(18),
+                                  fontFamily: "Varela",
+                                   marginTop: verticalScale(5),
+                                  color: "grey",
+                                  textAlign: "center",
+                                  writingDirection:
+                                    i18n.locale === "he" || i18n.locale === "ar"
+                                      ? "rtl"
+                                      : "ltr",
+                                }}>{`${currencySymbol}`}</Text>
+                                <Text 
+                                 allowFontScaling={false}
+                                style={{
+                                  fontSize: moderateScale(25),
+                                  fontFamily: "Varela",
+                                 // marginBottom: verticalScale(5),
+                                  color: "grey",
+                                  textAlign: "center",
+                                  writingDirection:
+                                    i18n.locale === "he" || i18n.locale === "ar"
+                                      ? "rtl"
+                                      : "ltr",
+                                }}>{`${parseFloat(
+                                  (totalAmount / parseInt(numPeople)).toFixed(2)
+                                ).toLocaleString()}`}</Text>
+                              </View>
+                              </View>
 
-                              <Text
+                              {/* <Text
                                 style={{
                                   fontSize: moderateScale(27),
                                   color: "grey",
@@ -2026,7 +2393,7 @@ export default function App() {
                                 "pricePerPerson"
                               )} ${currencySymbol}${parseFloat(
                                 (totalAmount / parseInt(numPeople)).toFixed(2)
-                              ).toLocaleString()}`}</Text>
+                              ).toLocaleString()}`}</Text> */}
                               <View
                                 style={{
                                   width: "100%",
@@ -2051,20 +2418,22 @@ export default function App() {
                                   data={messages}
                                   // contentContainerStyle={{backgroundColor:"green"}}
                                   renderItem={({ item }) => (
-                                    <View style={{ flexDirection: "row", marginBottom:verticalScale(15), justifyContent:"space-between", borderBottomColor:"grey", borderBottomWidth: moderateScale(0.3) /* backgroundColor:"green" */ }}>
+                                    <View style={{ flexDirection: "row", marginBottom: verticalScale(15), justifyContent: "space-between", borderBottomColor: "grey", borderBottomWidth: moderateScale(0.3) /* backgroundColor:"green" */ }}>
                                       <View style={{
                                         flexDirection: "column",
                                         // marginHorizontal: horizontalScale(10),
                                         alignItems: "center",
                                         //  paddingVertical: verticalScale(10),
-                                        width:windowWidth*0.15
-                                       }}>
+                                        width: windowWidth * 0.15
+                                      }}>
                                         <FontAwesome name="user-circle" size={moderateScale(16)} color="purple" />
 
-                                        <Text style={{
+                                        <Text 
+                                         allowFontScaling={false}
+                                        style={{
                                           fontSize: moderateScale(12),
                                           fontFamily: "Varela",
-                                          textAlign:"center",
+                                          textAlign: "center",
                                           // marginVertical: verticalScale(12),
                                           writingDirection:
                                             i18n.locale === "he" ||
@@ -2078,9 +2447,11 @@ export default function App() {
                                             : item.friend1}
                                         </Text>
                                       </View>
-                                      
-                                      <View style={{ /* justifyContent: "center", */ alignItems: "center", marginHorizontal:horizontalScale(5),  /* width:windowWidth*0.28 */ }}>
-                                        <Text style={{
+
+                                      <View style={{ /* justifyContent: "center", */ alignItems: "center", marginHorizontal: horizontalScale(5),  /* width:windowWidth*0.28 */ }}>
+                                        <Text 
+                                         allowFontScaling={false}
+                                        style={{
                                           fontSize: moderateScale(12),
                                           fontFamily: "Varela",
                                           // marginVertical: verticalScale(12),
@@ -2101,17 +2472,19 @@ export default function App() {
                                       <View style={{
                                         flexDirection: "column",
                                         //justifyContent:"center",
-                                       //  marginHorizontal: horizontalScale(5),
+                                        //  marginHorizontal: horizontalScale(5),
                                         alignItems: "center",
                                         //  paddingVertical: verticalScale(10),
-                                        width:windowWidth*0.15
-                                       }}>
+                                        width: windowWidth * 0.15
+                                      }}>
                                         <FontAwesome name="user-circle" size={moderateScale(16)} color="purple" />
 
-                                        <Text style={{
+                                        <Text 
+                                         allowFontScaling={false}
+                                        style={{
                                           fontSize: moderateScale(12),
                                           fontFamily: "Varela",
-                                          textAlign:"center",
+                                          textAlign: "center",
                                           // marginVertical: verticalScale(12),
                                           writingDirection:
                                             i18n.locale === "he" ||
@@ -2125,14 +2498,16 @@ export default function App() {
                                             : item.friend2}
                                         </Text>
                                       </View>
-                                      <View style={{flexDirection: i18n.locale === "he" ||
-                                              i18n.locale === "ar"
-                                              ? "row-reverse"
-                                              : "row",  width:windowWidth*0.3, /* marginHorizontal:horizontalScale(30),  */ justifyContent:i18n.locale === "he" ||
-                                              i18n.locale === "ar"
-                                              ? "flex-start": "flex-end", alignItems:"center",/*  backgroundColor:"yellow" */}}>
-                                      <Text style={{fontSize:moderateScale(10), marginTop:verticalScale(3) }}>{currencySymbol}</Text>
-                                      <Text style={{fontSize:moderateScale(15), fontFamily:"Varela"}}>{item.amount}</Text>
+                                      <View style={{
+                                        flexDirection: i18n.locale === "he" ||
+                                          i18n.locale === "ar"
+                                          ? "row-reverse"
+                                          : "row", width: windowWidth * 0.3, /* marginHorizontal:horizontalScale(30),  */ justifyContent: i18n.locale === "he" ||
+                                            i18n.locale === "ar"
+                                            ? "flex-start" : "flex-end", alignItems: "center",/*  backgroundColor:"yellow" */
+                                      }}>
+                                        <Text  allowFontScaling={false} style={{ fontSize: moderateScale(10), marginTop: verticalScale(3) }}>{currencySymbol}</Text>
+                                        <Text  allowFontScaling={false} style={{ fontSize: moderateScale(15), fontFamily: "Varela" }}>{item.amount}</Text>
                                       </View>
                                     </View>
                                   )}
@@ -2173,6 +2548,7 @@ export default function App() {
                               }}
                             >
                               <Text
+                               allowFontScaling={false}
                                 style={{
                                   color: "white",
                                   fontFamily: "Varela",
@@ -2186,7 +2562,7 @@ export default function App() {
                           <TouchableOpacity
                             onPress={() => {
                               setFriends([
-                                { amount: 0, isValid: true, nickname: "" },
+                                { amount: "", isValid: true, nickname: "" },
                               ]),
                                 setNumPeople(""),
                                 setModalVisible(false);
@@ -2226,6 +2602,7 @@ export default function App() {
                                 }}
                               >
                                 <Text
+                                 allowFontScaling={false}
                                   style={{
                                     color: "#2B2B2B",
                                     fontFamily: "Varela",
@@ -2342,7 +2719,7 @@ const styles = StyleSheet.create({
     marginHorizontal: moderateScale(10),
     alignItems: "center",
     paddingVertical: verticalScale(5),
-    marginVertical: verticalScale(2),
+    marginVertical: verticalScale(4),
     // maxHeight: verticalScale(100),
     // backgroundColor:"green"
   },
@@ -2364,6 +2741,9 @@ const styles = StyleSheet.create({
     fontSize: moderateScale(14),
     // marginTop: 3,
     //marginBottom: 10,
+  },
+  dropdown: {
+    backgroundColor: '#fafafa',
   },
 });
 
