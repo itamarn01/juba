@@ -1715,7 +1715,7 @@ export default function App() {
                       ))}
                       <TouchableOpacity
                         onPress={() => {
-                          addFriend(0);
+                          addFriend("");
                         }}
                         style={{
                           padding: 10,
