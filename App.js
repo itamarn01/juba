@@ -1296,23 +1296,23 @@ export default function App() {
                    fontSize:16 / PixelRatio.getFontScale(),
                     fontFamily: "Varela"
                   }}
-                  labelStyle={{fontSize:16 / PixelRatio.getFontScale(),
+                  labelStyle={{fontSize:moderateScale(16) / PixelRatio.getFontScale(),
                     fontFamily: "Varela"}}
                     modalTitleStyle={{
-                       fontSize:16 / PixelRatio.getFontScale(),
+                       fontSize:moderateScale(16) / PixelRatio.getFontScale(),
                     fontFamily: "Varela"
                     }}
                     searchTextInputProps={{
                       maxLength: 25,
-                        fontSize:16 / PixelRatio.getFontScale(),
+                        fontSize:moderateScale(16) / PixelRatio.getFontScale(),
                     fontFamily: "Varela"
                     }}
                     listChildLabelStyle={{
-                       fontSize:16 / PixelRatio.getFontScale(),
+                       fontSize:moderateScale(16) / PixelRatio.getFontScale(),
                     fontFamily: "Varela"
                     }}
                     listParentLabelStyle={{
-                      fontSize:16 / PixelRatio.getFontScale(),
+                      fontSize:moderateScale(16) / PixelRatio.getFontScale(),
                     fontFamily: "Varela"
                     }}
                  
@@ -1451,6 +1451,7 @@ export default function App() {
                                   marginTop: verticalScale(25),
                                   //borderWidth:1
                                 }}
+                                inputStyle={{fontSize:moderateScale(16) / PixelRatio.getFontScale(), fontFamily:"Varela"}}
                                 style={{
                                   //color: "green",
                                   textAlign:
@@ -1530,6 +1531,7 @@ export default function App() {
                                   marginTop: verticalScale(25),
                                   //borderWidth:1
                                 }}
+                                inputStyle={{fontSize:moderateScale(16) / PixelRatio.getFontScale(), fontFamily:"Varela"}}
                                 style={{
                                   textAlign:
                                     i18n.locale === "he" || i18n.locale === "ar"
@@ -1715,7 +1717,7 @@ export default function App() {
                       ))}
                       <TouchableOpacity
                         onPress={() => {
-                          addFriend(0);
+                          addFriend("");
                         }}
                         style={{
                           padding: 10,
@@ -1881,6 +1883,7 @@ export default function App() {
                             height: "100%",
                             marginTop: verticalScale(25),
                           }}
+                          inputStyle={{fontSize:moderateScale(16) / PixelRatio.getFontScale(), fontFamily:"Varela"}}
                           style={{
                             textAlign:
                               i18n.locale === "he" || i18n.locale === "ar"
@@ -2134,6 +2137,7 @@ export default function App() {
                                           borderColor: "green",
                                           marginTop: verticalScale(25),
                                         }}
+                                        inputStyle={{fontSize:moderateScale(16) / PixelRatio.getFontScale(), fontFamily:"Varela"}}
                                         style={{
                                           textAlign: i18n.locale === "he" || i18n.locale === "ar" ? "right" : "left",
                                           writingDirection: i18n.locale === "he" || i18n.locale === "ar" ? "rtl" : "ltr",
