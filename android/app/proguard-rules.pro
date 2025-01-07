@@ -21,4 +21,13 @@
 -keep class com.google.android.gms.internal.consent_sdk.** { *; }
 -keep class com.google.android.gms.internal.consent_sdk.** { *; }
 -keep class com.google.android.gms.internal.consent_sdk.** { *; }
+-keep class com.google.android.gms.internal.consent_sdk.** { *; }
+-keep class com.google.android.gms.internal.consent_sdk.** { *; }
+-keep class com.google.android.gms.internal.consent_sdk.** { *; }
+-keep class com.google.android.gms.internal.consent_sdk.** { *; }
+-keep class com.google.android.gms.internal.consent_sdk.** { *; }
+-keep class com.google.android.gms.internal.consent_sdk.** { *; }
+-keep class com.google.android.gms.internal.consent_sdk.** { *; }
+-keep class com.google.android.gms.internal.consent_sdk.** { *; }
+-keep class com.google.android.gms.internal.consent_sdk.** { *; }
 # @generated end expo-build-properties

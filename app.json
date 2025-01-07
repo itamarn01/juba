@@ -2,7 +2,7 @@
   "expo": {
     "name": "JUBA",
     "slug": "JUBA",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/icon-apple.png",
     "userInterfaceStyle": "light",
@@ -115,7 +115,7 @@
         "ExpoLocalization_supportsRTL": true
       },
       "bundleIdentifier": "com.gigtunetry.JUBA",
-      "buildNumber": "3",
+      "buildNumber": "1",
       "runtimeVersion": {
         "policy": "appVersion"
       }
