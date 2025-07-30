@@ -24,7 +24,7 @@ import {
   Linking,
   Animated,
   PixelRatio,
-  InputAccessoryView
+  InputAccessoryView,
 } from "react-native";
 //import { Image } from "expo-image";
 
@@ -49,7 +49,7 @@ import { captureRef } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
 import { I18n } from "i18n-js";
 import { Feather } from "@expo/vector-icons";
-import { AntDesign } from '@expo/vector-icons';
+import { AntDesign } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialIcons } from "@expo/vector-icons";
 import { FontAwesome } from "@expo/vector-icons";
@@ -71,10 +71,13 @@ import Translations from "./components/languages";
 import * as Device from "expo-device";
 import axios from "axios";
 import * as Updates from "expo-updates";
-import DropDownPicker from 'react-native-dropdown-picker';
-import { checkTrackingStatus, requestTrackingPermission } from 'react-native-tracking-transparency';
+import DropDownPicker from "react-native-dropdown-picker";
+import {
+  checkTrackingStatus,
+  requestTrackingPermission,
+} from "react-native-tracking-transparency";
 
- SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync();
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
 const GuideLineBaseWidth = 414;
@@ -126,6 +129,11 @@ const androidAdmobBanner = "ca-app-pub-8754599705550429/2706265136";
 const productionID =
   Device.osName === "Android" ? androidAdmobBanner : iosAdmobBanner;
 
+  const iosAdmobBanner2 = "ca-app-pub-8754599705550429/8937907272";
+  const androidAdmobBanner2 = "ca-app-pub-8754599705550429/2522696253";
+  const productionID2 =
+    Device.osName === "Android" ? androidAdmobBanner2 : iosAdmobBanner2;  
+
 const iosAdmobInterstitial = "ca-app-pub-8754599705550429/2597147010";
 const androidAdmobInterstitial = "ca-app-pub-8754599705550429/7575448434";
 const productionInterstitialID =
@@ -142,6 +150,8 @@ const adUnitIdAppOpen = __DEV__ ? TestIds.APP_OPEN : productionAppOpenId;
 
 const adUnitId = __DEV__ ? TestIds.ADAPTIVE_BANNER : productionID;
 
+const adUnitId2 = __DEV__ ? TestIds.ADAPTIVE_BANNER : productionID2;
+
 const adUnitIdInterstitial = __DEV__
   ? TestIds.INTERSTITIAL
   : productionInterstitialID;
@@ -149,8 +159,6 @@ const adUnitIdInterstitial = __DEV__
 const adUnitIdRewarded = __DEV__
   ? TestIds.REWARDED_INTERSTITIAL
   : productionRewarderdInterstitialID;
-
-
 
 let isMobileAdsStartCalled = false;
 
@@ -160,7 +168,7 @@ export default function App() {
   const [friends, setFriends] = useState([
     { amount: "", isValid: true, nickname: "" },
   ]);
-  const [notPaidFriends, setNotPaidFriends] = useState([""])
+  const [notPaidFriends, setNotPaidFriends] = useState([""]);
   const [isFriendExpenseValid, setIsFriendExpenseValid] = useState([false]);
   const [friendArrayValid, setFrindArrayValid] = useState(false);
   const [numPeople, setNumPeople] = useState("");
@@ -169,7 +177,8 @@ export default function App() {
   const [messages, setMessages] = useState([]);
   const [showText, setShowText] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [notPaidFriendsModalVisible, setNotPaidFriendsModalVisible] = useState(false)
+  const [notPaidFriendsModalVisible, setNotPaidFriendsModalVisible] =
+    useState(false);
   const [modalNickNameVisible, setModalNickNameVisible] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [nextBtnValid, setNextBtnValid] = useState(false);
@@ -203,167 +212,193 @@ export default function App() {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(null);
   const [items, setItems] = useState([
-    { label: '🇦🇪 United Arab Emirates Dirham (AED)', value: 'AED', symbol: 'د.إ' },
-    { label: '🇦🇫 Afghan Afghani (AFN)', value: 'AFN', symbol: '؋' },
-    { label: '🇦🇱 Albanian Lek (ALL)', value: 'ALL', symbol: 'L' },
-    { label: '🇦🇲 Armenian Dram (AMD)', value: 'AMD', symbol: '֏' },
-    { label: '🇨🇼 Netherlands Antillean Guilder (ANG)', value: 'ANG', symbol: 'ƒ' },
-    { label: '🇦🇴 Angolan Kwanza (AOA)', value: 'AOA', symbol: 'Kz' },
-    { label: '🇦🇷 Argentine Peso (ARS)', value: 'ARS', symbol: '$' },
-    { label: '🇦🇺 Australian Dollar (AUD)', value: 'AUD', symbol: '$' },
-    { label: '🇦🇼 Aruban Florin (AWG)', value: 'AWG', symbol: 'ƒ' },
-    { label: '🇦🇿 Azerbaijani Manat (AZN)', value: 'AZN', symbol: '₼' },
-    { label: '🇧🇦 Bosnia-Herzegovina Convertible Mark (BAM)', value: 'BAM', symbol: 'KM' },
-    { label: '🇧🇧 Barbadian Dollar (BBD)', value: 'BBD', symbol: '$' },
-    { label: '🇧🇩 Bangladeshi Taka (BDT)', value: 'BDT', symbol: '৳' },
-    { label: '🇧🇬 Bulgarian Lev (BGN)', value: 'BGN', symbol: 'лв' },
-    { label: '🇧🇭 Bahraini Dinar (BHD)', value: 'BHD', symbol: '.د.ب' },
-    { label: '🇧🇮 Burundian Franc (BIF)', value: 'BIF', symbol: 'FBu' },
-    { label: '🇧🇲 Bermudan Dollar (BMD)', value: 'BMD', symbol: '$' },
-    { label: '🇧🇳 Brunei Dollar (BND)', value: 'BND', symbol: '$' },
-    { label: '🇧🇴 Bolivian Boliviano (BOB)', value: 'BOB', symbol: 'Bs.' },
-    { label: '🇧🇷 Brazilian Real (BRL)', value: 'BRL', symbol: 'R$' },
-    { label: '🇧🇸 Bahamian Dollar (BSD)', value: 'BSD', symbol: '$' },
-    { label: '₿ Bitcoin (BTC)', value: 'BTC', symbol: '₿' },
-    { label: '🇧🇹 Bhutanese Ngultrum (BTN)', value: 'BTN', symbol: 'Nu.' },
-    { label: '🇧🇼 Botswanan Pula (BWP)', value: 'BWP', symbol: 'P' },
-    { label: '🇧🇾 New Belarusian Ruble (BYN)', value: 'BYN', symbol: 'Br' },
-    { label: '🇧🇾 Belarusian Ruble (BYR)', value: 'BYR', symbol: 'Br' },
-    { label: '🇧🇿 Belize Dollar (BZD)', value: 'BZD', symbol: '$' },
-    { label: '🇨🇦 Canadian Dollar (CAD)', value: 'CAD', symbol: '$' },
-    { label: '🇨🇩 Congolese Franc (CDF)', value: 'CDF', symbol: 'FC' },
-    { label: '🇨🇭 Swiss Franc (CHF)', value: 'CHF', symbol: 'CHF' },
-    { label: '🇨🇱 Chilean Unit Of Account (Uf) (CLF)', value: 'CLF', symbol: 'UF' },
-    { label: '🇨🇱 Chilean Peso (CLP)', value: 'CLP', symbol: '$' },
-    { label: '🇨🇳 Chinese Yuan (CNY)', value: 'CNY', symbol: '¥' },
-    { label: '🇨🇴 Colombian Peso (COP)', value: 'COP', symbol: '$' },
-    { label: '🇨🇷 Costa Rican Colón (CRC)', value: 'CRC', symbol: '₡' },
-    { label: '🇨🇺 Cuban Convertible Peso (CUC)', value: 'CUC', symbol: '$' },
-    { label: '🇨🇺 Cuban Peso (CUP)', value: 'CUP', symbol: '$' },
-    { label: '🇨🇻 Cape Verdean Escudo (CVE)', value: 'CVE', symbol: '$' },
-    { label: '🇨🇿 Czech Republic Koruna (CZK)', value: 'CZK', symbol: 'Kč' },
-    { label: '🇩🇯 Djiboutian Franc (DJF)', value: 'DJF', symbol: 'Fdj' },
-    { label: '🇩🇰 Danish Krone (DKK)', value: 'DKK', symbol: 'kr' },
-    { label: '🇩🇴 Dominican Peso (DOP)', value: 'DOP', symbol: 'RD$' },
-    { label: '🇩🇿 Algerian Dinar (DZD)', value: 'DZD', symbol: 'دج' },
-    { label: '🇪🇬 Egyptian Pound (EGP)', value: 'EGP', symbol: '£' },
-    { label: '🇪🇷 Eritrean Nakfa (ERN)', value: 'ERN', symbol: 'Nfk' },
-    { label: '🇪🇹 Ethiopian Birr (ETB)', value: 'ETB', symbol: 'Br' },
-    { label: '🇪🇺 Euro (EUR)', value: 'EUR', symbol: '€' },
-    { label: '🇫🇯 Fijian Dollar (FJD)', value: 'FJD', symbol: '$' },
-    { label: '🇫🇰 Falkland Islands Pound (FKP)', value: 'FKP', symbol: '£' },
-    { label: '🇬🇧 British Pound Sterling (GBP)', value: 'GBP', symbol: '£' },
-    { label: '🇬🇪 Georgian Lari (GEL)', value: 'GEL', symbol: '₾' },
-    { label: '🇬🇬 Guernsey Pound (GGP)', value: 'GGP', symbol: '£' },
-    { label: '🇬🇭 Ghanaian Cedi (GHS)', value: 'GHS', symbol: 'GH₵' },
-    { label: '🇬🇮 Gibraltar Pound (GIP)', value: 'GIP', symbol: '£' },
-    { label: '🇬🇲 Gambian Dalasi (GMD)', value: 'GMD', symbol: 'D' },
-    { label: '🇬🇳 Guinean Franc (GNF)', value: 'GNF', symbol: 'FG' },
-    { label: '🇬🇹 Guatemalan Quetzal (GTQ)', value: 'GTQ', symbol: 'Q' },
-    { label: '🇬🇾 Guyanaese Dollar (GYD)', value: 'GYD', symbol: '$' },
-    { label: '🇭🇰 Hong Kong Dollar (HKD)', value: 'HKD', symbol: '$' },
-    { label: '🇭🇳 Honduran Lempira (HNL)', value: 'HNL', symbol: 'L' },
-    { label: '🇭🇷 Croatian Kuna (HRK)', value: 'HRK', symbol: 'kn' },
-    { label: '🇭🇹 Haitian Gourde (HTG)', value: 'HTG', symbol: 'G' },
-    { label: '🇭🇺 Hungarian Forint (HUF)', value: 'HUF', symbol: 'Ft' },
-    { label: '🇮🇩 Indonesian Rupiah (IDR)', value: 'IDR', symbol: 'Rp' },
-    { label: '🇮🇱 Israeli New Sheqel (ILS)', value: 'ILS', symbol: '₪' },
-    { label: '🇮🇲 Manx Pound (IMP)', value: 'IMP', symbol: '£' },
-    { label: '🇮🇳 Indian Rupee (INR)', value: 'INR', symbol: '₹' },
-    { label: '🇮🇶 Iraqi Dinar (IQD)', value: 'IQD', symbol: 'ع.د' },
-    { label: '🇮🇷 Iranian Rial (IRR)', value: 'IRR', symbol: '﷼' },
-    { label: '🇮🇸 Icelandic Króna (ISK)', value: 'ISK', symbol: 'kr' },
-    { label: '🇯🇪 Jersey Pound (JEP)', value: 'JEP', symbol: '£' },
-    { label: '🇯🇲 Jamaican Dollar (JMD)', value: 'JMD', symbol: 'J$' },
-    { label: '🇯🇴 Jordanian Dinar (JOD)', value: 'JOD', symbol: 'ا.د' },
-    { label: '🇯🇵 Japanese Yen (JPY)', value: 'JPY', symbol: '¥' },
-    { label: '🇰🇪 Kenyan Shilling (KES)', value: 'KES', symbol: 'Sh' },
-    { label: '🇰🇬 Kyrgystani Som (KGS)', value: 'KGS', symbol: 'лв' },
-    { label: '🇰🇭 Cambodian Riel (KHR)', value: 'KHR', symbol: '៛' },
-    { label: '🇰🇲 Comorian Franc (KMF)', value: 'KMF', symbol: 'CF' },
-    { label: '🇰🇵 North Korean Won (KPW)', value: 'KPW', symbol: '₩' },
-    { label: '🇰🇷 South Korean Won (KRW)', value: 'KRW', symbol: '₩' },
-    { label: '🇰🇼 Kuwaiti Dinar (KWD)', value: 'KWD', symbol: 'د.ك' },
-    { label: '🇰🇾 Cayman Islands Dollar (KYD)', value: 'KYD', symbol: '$' },
-    { label: '🇰🇿 Kazakhstani Tenge (KZT)', value: 'KZT', symbol: 'лв' },
-    { label: '🇱🇦 Laotian Kip (LAK)', value: 'LAK', symbol: '₭' },
-    { label: '🇱🇧 Lebanese Pound (LBP)', value: 'LBP', symbol: '£' },
-    { label: '🇱🇰 Sri Lankan Rupee (LKR)', value: 'LKR', symbol: '₨' },
-    { label: '🇱🇷 Liberian Dollar (LRD)', value: 'LRD', symbol: '$' },
-    { label: '🇱🇸 Lesotho Loti (LSL)', value: 'LSL', symbol: 'L' },
-    { label: '🇱🇹 Lithuanian Litas (LTL)', value: 'LTL', symbol: 'Lt' },
-    { label: '🇱🇻 Latvian Lats (LVL)', value: 'LVL', symbol: 'Ls' },
-    { label: '🇱🇾 Libyan Dinar (LYD)', value: 'LYD', symbol: 'د.ل' },
-    { label: '🇲🇦 Moroccan Dirham (MAD)', value: 'MAD', symbol: 'د.م.' },
-    { label: '🇲🇩 Moldovan Leu (MDL)', value: 'MDL', symbol: 'L' },
-    { label: '🇲🇬 Malagasy Ariary (MGA)', value: 'MGA', symbol: 'Ar' },
-    { label: '🇲🇰 Macedonian Denar (MKD)', value: 'MKD', symbol: 'ден' },
-    { label: '🇲🇲 Myanma Kyat (MMK)', value: 'MMK', symbol: 'K' },
-    { label: '🇲🇳 Mongolian Tugrik (MNT)', value: 'MNT', symbol: '₮' },
-    { label: '🇲🇴 Macanese Pataca (MOP)', value: 'MOP', symbol: 'MOP$' },
-    { label: '🇲🇷 Mauritanian Ouguiya (MRO)', value: 'MRO', symbol: 'UM' },
-    { label: '🇲🇺 Mauritian Rupee (MUR)', value: 'MUR', symbol: '₨' },
-    { label: '🇲🇻 Maldivian Rufiyaa (MVR)', value: 'MVR', symbol: 'Rf' },
-    { label: '🇲🇼 Malawian Kwacha (MWK)', value: 'MWK', symbol: 'MK' },
-    { label: '🇲🇽 Mexican Peso (MXN)', value: 'MXN', symbol: '$' },
-    { label: '🇲🇾 Malaysian Ringgit (MYR)', value: 'MYR', symbol: 'RM' },
-    { label: '🇲🇿 Mozambican Metical (MZN)', value: 'MZN', symbol: 'MT' },
-    { label: '🇳🇦 Namibian Dollar (NAD)', value: 'NAD', symbol: '$' },
-    { label: '🇳🇬 Nigerian Naira (NGN)', value: 'NGN', symbol: '₦' },
-    { label: '🇳🇮 Nicaraguan Córdoba (NIO)', value: 'NIO', symbol: 'C$' },
-    { label: '🇳🇴 Norwegian Krone (NOK)', value: 'NOK', symbol: 'kr' },
-    { label: '🇳🇵 Nepalese Rupee (NPR)', value: 'NPR', symbol: '₨' },
-    { label: '🇳🇿 New Zealand Dollar (NZD)', value: 'NZD', symbol: '$' },
-    { label: '🇴🇲 Omani Rial (OMR)', value: 'OMR', symbol: '﷼' },
-    { label: '🇵🇦 Panamanian Balboa (PAB)', value: 'PAB', symbol: 'B/.' },
-    { label: '🇵🇪 Peruvian Nuevo Sol (PEN)', value: 'PEN', symbol: 'S/.' },
-    { label: '🇵🇬 Papua New Guinean Kina (PGK)', value: 'PGK', symbol: 'K' },
-    { label: '🇵🇭 Philippine Peso (PHP)', value: 'PHP', symbol: '₱' },
-    { label: '🇵🇰 Pakistani Rupee (PKR)', value: 'PKR', symbol: '₨' },
-    { label: '🇵🇱 Polish Zloty (PLN)', value: 'PLN', symbol: 'zł' },
-    { label: '🇵🇾 Paraguayan Guarani (PYG)', value: 'PYG', symbol: 'Gs' },
-    { label: '🇶🇦 Qatari Rial (QAR)', value: 'QAR', symbol: '﷼' },
-    { label: '🇷🇴 Romanian Leu (RON)', value: 'RON', symbol: 'lei' },
-    { label: '🇷🇸 Serbian Dinar (RSD)', value: 'RSD', symbol: 'Дин.' },
-    { label: '🇷🇺 Russian Ruble (RUB)', value: 'RUB', symbol: '₽' },
-    { label: '🇷🇼 Rwandan Franc (RWF)', value: 'RWF', symbol: 'FRw' },
-    { label: '🇸🇦 Saudi Riyal (SAR)', value: 'SAR', symbol: '﷼' },
-    { label: '🇸🇧 Solomon Islands Dollar (SBD)', value: 'SBD', symbol: '$' },
-    { label: '🇸🇨 Seychellois Rupee (SCR)', value: 'SCR', symbol: '₨' },
-    { label: '🇸🇩 Sudanese Pound (SDG)', value: 'SDG', symbol: 'ج.س.' },
-    { label: '🇸🇪 Swedish Krona (SEK)', value: 'SEK', symbol: 'kr' },
-    { label: '🇸🇬 Singapore Dollar (SGD)', value: 'SGD', symbol: '$' },
-    { label: '🇸🇭 Saint Helena Pound (SHP)', value: 'SHP', symbol: '£' },
-    { label: '🇸🇱 Sierra Leonean Leone (SLL)', value: 'SLL', symbol: 'Le' },
-    { label: '🇸🇴 Somali Shilling (SOS)', value: 'SOS', symbol: 'Sh' },
-    { label: '🇸🇷 Surinamese Dollar (SRD)', value: 'SRD', symbol: '$' },
-    { label: '🇸🇸 South Sudanese Pound (SSP)', value: 'SSP', symbol: '£' },
-    { label: '🇸🇹 São Tomé and Príncipe Dobra (STD)', value: 'STD', symbol: 'Db' },
-    { label: '🇸🇾 Syrian Pound (SYP)', value: 'SYP', symbol: '£' },
-    { label: '🇸🇿 Swazi Lilangeni (SZL)', value: 'SZL', symbol: 'L' },
-    { label: '🇹🇭 Thai Baht (THB)', value: 'THB', symbol: '฿' },
-    { label: '🇹🇿 Tanzanian Shilling (TZS)', value: 'TZS', symbol: 'Sh' },
-    { label: '🇹🇿 Tanzanian Shilling (TZS)', value: 'TZS', symbol: 'Sh' },
-    { label: '🇹🇳 Tunisian Dinar (TND)', value: 'TND', symbol: 'د.ت' },
-    { label: '🇹🇷 Turkish Lira (TRY)', value: 'TRY', symbol: '₺' },
-    { label: '🇹🇹 Trinidad and Tobago Dollar (TTD)', value: 'TTD', symbol: 'TT$' },
-    { label: '🇹🇻 Tuvaluan Dollar (TVD)', value: 'TVD', symbol: '$' },
-    { label: '🇺🇦 Ukrainian Hryvnia (UAH)', value: 'UAH', symbol: '₴' },
-    { label: '🇺🇬 Ugandan Shilling (UGX)', value: 'UGX', symbol: 'USh' },
-    { label: '🇺🇸 United States Dollar (USD)', value: 'USD', symbol: '$' },
-    { label: '🇺🇾 Uruguayan Peso (UYU)', value: 'UYU', symbol: '$' },
-    { label: '🇺🇿 Uzbekistani Som (UZS)', value: 'UZS', symbol: 'лв' },
-    { label: '🇻🇪 Venezuelan Bolívar Fuerte (VEF)', value: 'VEF', symbol: 'Bs F' },
-    { label: '🇻🇳 Vietnamese Dong (VND)', value: 'VND', symbol: '₫' },
-    { label: '🇻🇺 Vanuatu Vatu (VUV)', value: 'VUV', symbol: 'VT' },
-    { label: '🇼🇸 Samoan Tala (WST)', value: 'WST', symbol: 'T' },
-    { label: '🇾🇪 Yemeni Rial (YER)', value: 'YER', symbol: '﷼' },
-    { label: '🇿🇦 South African Rand (ZAR)', value: 'ZAR', symbol: 'R' },
-    { label: '🇿🇲 Zambian Kwacha (ZMW)', value: 'ZMW', symbol: 'ZK' },
-    { label: '🇿🇼 Zimbabwean Dollar (ZWL)', value: 'ZWL', symbol: '$' }
+    {
+      label: "🇦🇪 United Arab Emirates Dirham (AED)",
+      value: "AED",
+      symbol: "د.إ",
+    },
+    { label: "🇦🇫 Afghan Afghani (AFN)", value: "AFN", symbol: "؋" },
+    { label: "🇦🇱 Albanian Lek (ALL)", value: "ALL", symbol: "L" },
+    { label: "🇦🇲 Armenian Dram (AMD)", value: "AMD", symbol: "֏" },
+    {
+      label: "🇨🇼 Netherlands Antillean Guilder (ANG)",
+      value: "ANG",
+      symbol: "ƒ",
+    },
+    { label: "🇦🇴 Angolan Kwanza (AOA)", value: "AOA", symbol: "Kz" },
+    { label: "🇦🇷 Argentine Peso (ARS)", value: "ARS", symbol: "$" },
+    { label: "🇦🇺 Australian Dollar (AUD)", value: "AUD", symbol: "$" },
+    { label: "🇦🇼 Aruban Florin (AWG)", value: "AWG", symbol: "ƒ" },
+    { label: "🇦🇿 Azerbaijani Manat (AZN)", value: "AZN", symbol: "₼" },
+    {
+      label: "🇧🇦 Bosnia-Herzegovina Convertible Mark (BAM)",
+      value: "BAM",
+      symbol: "KM",
+    },
+    { label: "🇧🇧 Barbadian Dollar (BBD)", value: "BBD", symbol: "$" },
+    { label: "🇧🇩 Bangladeshi Taka (BDT)", value: "BDT", symbol: "৳" },
+    { label: "🇧🇬 Bulgarian Lev (BGN)", value: "BGN", symbol: "лв" },
+    { label: "🇧🇭 Bahraini Dinar (BHD)", value: "BHD", symbol: ".د.ب" },
+    { label: "🇧🇮 Burundian Franc (BIF)", value: "BIF", symbol: "FBu" },
+    { label: "🇧🇲 Bermudan Dollar (BMD)", value: "BMD", symbol: "$" },
+    { label: "🇧🇳 Brunei Dollar (BND)", value: "BND", symbol: "$" },
+    { label: "🇧🇴 Bolivian Boliviano (BOB)", value: "BOB", symbol: "Bs." },
+    { label: "🇧🇷 Brazilian Real (BRL)", value: "BRL", symbol: "R$" },
+    { label: "🇧🇸 Bahamian Dollar (BSD)", value: "BSD", symbol: "$" },
+    { label: "₿ Bitcoin (BTC)", value: "BTC", symbol: "₿" },
+    { label: "🇧🇹 Bhutanese Ngultrum (BTN)", value: "BTN", symbol: "Nu." },
+    { label: "🇧🇼 Botswanan Pula (BWP)", value: "BWP", symbol: "P" },
+    { label: "🇧🇾 New Belarusian Ruble (BYN)", value: "BYN", symbol: "Br" },
+    { label: "🇧🇾 Belarusian Ruble (BYR)", value: "BYR", symbol: "Br" },
+    { label: "🇧🇿 Belize Dollar (BZD)", value: "BZD", symbol: "$" },
+    { label: "🇨🇦 Canadian Dollar (CAD)", value: "CAD", symbol: "$" },
+    { label: "🇨🇩 Congolese Franc (CDF)", value: "CDF", symbol: "FC" },
+    { label: "🇨🇭 Swiss Franc (CHF)", value: "CHF", symbol: "CHF" },
+    {
+      label: "🇨🇱 Chilean Unit Of Account (Uf) (CLF)",
+      value: "CLF",
+      symbol: "UF",
+    },
+    { label: "🇨🇱 Chilean Peso (CLP)", value: "CLP", symbol: "$" },
+    { label: "🇨🇳 Chinese Yuan (CNY)", value: "CNY", symbol: "¥" },
+    { label: "🇨🇴 Colombian Peso (COP)", value: "COP", symbol: "$" },
+    { label: "🇨🇷 Costa Rican Colón (CRC)", value: "CRC", symbol: "₡" },
+    { label: "🇨🇺 Cuban Convertible Peso (CUC)", value: "CUC", symbol: "$" },
+    { label: "🇨🇺 Cuban Peso (CUP)", value: "CUP", symbol: "$" },
+    { label: "🇨🇻 Cape Verdean Escudo (CVE)", value: "CVE", symbol: "$" },
+    { label: "🇨🇿 Czech Republic Koruna (CZK)", value: "CZK", symbol: "Kč" },
+    { label: "🇩🇯 Djiboutian Franc (DJF)", value: "DJF", symbol: "Fdj" },
+    { label: "🇩🇰 Danish Krone (DKK)", value: "DKK", symbol: "kr" },
+    { label: "🇩🇴 Dominican Peso (DOP)", value: "DOP", symbol: "RD$" },
+    { label: "🇩🇿 Algerian Dinar (DZD)", value: "DZD", symbol: "دج" },
+    { label: "🇪🇬 Egyptian Pound (EGP)", value: "EGP", symbol: "£" },
+    { label: "🇪🇷 Eritrean Nakfa (ERN)", value: "ERN", symbol: "Nfk" },
+    { label: "🇪🇹 Ethiopian Birr (ETB)", value: "ETB", symbol: "Br" },
+    { label: "🇪🇺 Euro (EUR)", value: "EUR", symbol: "€" },
+    { label: "🇫🇯 Fijian Dollar (FJD)", value: "FJD", symbol: "$" },
+    { label: "🇫🇰 Falkland Islands Pound (FKP)", value: "FKP", symbol: "£" },
+    { label: "🇬🇧 British Pound Sterling (GBP)", value: "GBP", symbol: "£" },
+    { label: "🇬🇪 Georgian Lari (GEL)", value: "GEL", symbol: "₾" },
+    { label: "🇬🇬 Guernsey Pound (GGP)", value: "GGP", symbol: "£" },
+    { label: "🇬🇭 Ghanaian Cedi (GHS)", value: "GHS", symbol: "GH₵" },
+    { label: "🇬🇮 Gibraltar Pound (GIP)", value: "GIP", symbol: "£" },
+    { label: "🇬🇲 Gambian Dalasi (GMD)", value: "GMD", symbol: "D" },
+    { label: "🇬🇳 Guinean Franc (GNF)", value: "GNF", symbol: "FG" },
+    { label: "🇬🇹 Guatemalan Quetzal (GTQ)", value: "GTQ", symbol: "Q" },
+    { label: "🇬🇾 Guyanaese Dollar (GYD)", value: "GYD", symbol: "$" },
+    { label: "🇭🇰 Hong Kong Dollar (HKD)", value: "HKD", symbol: "$" },
+    { label: "🇭🇳 Honduran Lempira (HNL)", value: "HNL", symbol: "L" },
+    { label: "🇭🇷 Croatian Kuna (HRK)", value: "HRK", symbol: "kn" },
+    { label: "🇭🇹 Haitian Gourde (HTG)", value: "HTG", symbol: "G" },
+    { label: "🇭🇺 Hungarian Forint (HUF)", value: "HUF", symbol: "Ft" },
+    { label: "🇮🇩 Indonesian Rupiah (IDR)", value: "IDR", symbol: "Rp" },
+    { label: "🇮🇱 Israeli New Sheqel (ILS)", value: "ILS", symbol: "₪" },
+    { label: "🇮🇲 Manx Pound (IMP)", value: "IMP", symbol: "£" },
+    { label: "🇮🇳 Indian Rupee (INR)", value: "INR", symbol: "₹" },
+    { label: "🇮🇶 Iraqi Dinar (IQD)", value: "IQD", symbol: "ع.د" },
+    { label: "🇮🇷 Iranian Rial (IRR)", value: "IRR", symbol: "﷼" },
+    { label: "🇮🇸 Icelandic Króna (ISK)", value: "ISK", symbol: "kr" },
+    { label: "🇯🇪 Jersey Pound (JEP)", value: "JEP", symbol: "£" },
+    { label: "🇯🇲 Jamaican Dollar (JMD)", value: "JMD", symbol: "J$" },
+    { label: "🇯🇴 Jordanian Dinar (JOD)", value: "JOD", symbol: "ا.د" },
+    { label: "🇯🇵 Japanese Yen (JPY)", value: "JPY", symbol: "¥" },
+    { label: "🇰🇪 Kenyan Shilling (KES)", value: "KES", symbol: "Sh" },
+    { label: "🇰🇬 Kyrgystani Som (KGS)", value: "KGS", symbol: "лв" },
+    { label: "🇰🇭 Cambodian Riel (KHR)", value: "KHR", symbol: "៛" },
+    { label: "🇰🇲 Comorian Franc (KMF)", value: "KMF", symbol: "CF" },
+    { label: "🇰🇵 North Korean Won (KPW)", value: "KPW", symbol: "₩" },
+    { label: "🇰🇷 South Korean Won (KRW)", value: "KRW", symbol: "₩" },
+    { label: "🇰🇼 Kuwaiti Dinar (KWD)", value: "KWD", symbol: "د.ك" },
+    { label: "🇰🇾 Cayman Islands Dollar (KYD)", value: "KYD", symbol: "$" },
+    { label: "🇰🇿 Kazakhstani Tenge (KZT)", value: "KZT", symbol: "лв" },
+    { label: "🇱🇦 Laotian Kip (LAK)", value: "LAK", symbol: "₭" },
+    { label: "🇱🇧 Lebanese Pound (LBP)", value: "LBP", symbol: "£" },
+    { label: "🇱🇰 Sri Lankan Rupee (LKR)", value: "LKR", symbol: "₨" },
+    { label: "🇱🇷 Liberian Dollar (LRD)", value: "LRD", symbol: "$" },
+    { label: "🇱🇸 Lesotho Loti (LSL)", value: "LSL", symbol: "L" },
+    { label: "🇱🇹 Lithuanian Litas (LTL)", value: "LTL", symbol: "Lt" },
+    { label: "🇱🇻 Latvian Lats (LVL)", value: "LVL", symbol: "Ls" },
+    { label: "🇱🇾 Libyan Dinar (LYD)", value: "LYD", symbol: "د.ل" },
+    { label: "🇲🇦 Moroccan Dirham (MAD)", value: "MAD", symbol: "د.م." },
+    { label: "🇲🇩 Moldovan Leu (MDL)", value: "MDL", symbol: "L" },
+    { label: "🇲🇬 Malagasy Ariary (MGA)", value: "MGA", symbol: "Ar" },
+    { label: "🇲🇰 Macedonian Denar (MKD)", value: "MKD", symbol: "ден" },
+    { label: "🇲🇲 Myanma Kyat (MMK)", value: "MMK", symbol: "K" },
+    { label: "🇲🇳 Mongolian Tugrik (MNT)", value: "MNT", symbol: "₮" },
+    { label: "🇲🇴 Macanese Pataca (MOP)", value: "MOP", symbol: "MOP$" },
+    { label: "🇲🇷 Mauritanian Ouguiya (MRO)", value: "MRO", symbol: "UM" },
+    { label: "🇲🇺 Mauritian Rupee (MUR)", value: "MUR", symbol: "₨" },
+    { label: "🇲🇻 Maldivian Rufiyaa (MVR)", value: "MVR", symbol: "Rf" },
+    { label: "🇲🇼 Malawian Kwacha (MWK)", value: "MWK", symbol: "MK" },
+    { label: "🇲🇽 Mexican Peso (MXN)", value: "MXN", symbol: "$" },
+    { label: "🇲🇾 Malaysian Ringgit (MYR)", value: "MYR", symbol: "RM" },
+    { label: "🇲🇿 Mozambican Metical (MZN)", value: "MZN", symbol: "MT" },
+    { label: "🇳🇦 Namibian Dollar (NAD)", value: "NAD", symbol: "$" },
+    { label: "🇳🇬 Nigerian Naira (NGN)", value: "NGN", symbol: "₦" },
+    { label: "🇳🇮 Nicaraguan Córdoba (NIO)", value: "NIO", symbol: "C$" },
+    { label: "🇳🇴 Norwegian Krone (NOK)", value: "NOK", symbol: "kr" },
+    { label: "🇳🇵 Nepalese Rupee (NPR)", value: "NPR", symbol: "₨" },
+    { label: "🇳🇿 New Zealand Dollar (NZD)", value: "NZD", symbol: "$" },
+    { label: "🇴🇲 Omani Rial (OMR)", value: "OMR", symbol: "﷼" },
+    { label: "🇵🇦 Panamanian Balboa (PAB)", value: "PAB", symbol: "B/." },
+    { label: "🇵🇪 Peruvian Nuevo Sol (PEN)", value: "PEN", symbol: "S/." },
+    { label: "🇵🇬 Papua New Guinean Kina (PGK)", value: "PGK", symbol: "K" },
+    { label: "🇵🇭 Philippine Peso (PHP)", value: "PHP", symbol: "₱" },
+    { label: "🇵🇰 Pakistani Rupee (PKR)", value: "PKR", symbol: "₨" },
+    { label: "🇵🇱 Polish Zloty (PLN)", value: "PLN", symbol: "zł" },
+    { label: "🇵🇾 Paraguayan Guarani (PYG)", value: "PYG", symbol: "Gs" },
+    { label: "🇶🇦 Qatari Rial (QAR)", value: "QAR", symbol: "﷼" },
+    { label: "🇷🇴 Romanian Leu (RON)", value: "RON", symbol: "lei" },
+    { label: "🇷🇸 Serbian Dinar (RSD)", value: "RSD", symbol: "Дин." },
+    { label: "🇷🇺 Russian Ruble (RUB)", value: "RUB", symbol: "₽" },
+    { label: "🇷🇼 Rwandan Franc (RWF)", value: "RWF", symbol: "FRw" },
+    { label: "🇸🇦 Saudi Riyal (SAR)", value: "SAR", symbol: "﷼" },
+    { label: "🇸🇧 Solomon Islands Dollar (SBD)", value: "SBD", symbol: "$" },
+    { label: "🇸🇨 Seychellois Rupee (SCR)", value: "SCR", symbol: "₨" },
+    { label: "🇸🇩 Sudanese Pound (SDG)", value: "SDG", symbol: "ج.س." },
+    { label: "🇸🇪 Swedish Krona (SEK)", value: "SEK", symbol: "kr" },
+    { label: "🇸🇬 Singapore Dollar (SGD)", value: "SGD", symbol: "$" },
+    { label: "🇸🇭 Saint Helena Pound (SHP)", value: "SHP", symbol: "£" },
+    { label: "🇸🇱 Sierra Leonean Leone (SLL)", value: "SLL", symbol: "Le" },
+    { label: "🇸🇴 Somali Shilling (SOS)", value: "SOS", symbol: "Sh" },
+    { label: "🇸🇷 Surinamese Dollar (SRD)", value: "SRD", symbol: "$" },
+    { label: "🇸🇸 South Sudanese Pound (SSP)", value: "SSP", symbol: "£" },
+    {
+      label: "🇸🇹 São Tomé and Príncipe Dobra (STD)",
+      value: "STD",
+      symbol: "Db",
+    },
+    { label: "🇸🇾 Syrian Pound (SYP)", value: "SYP", symbol: "£" },
+    { label: "🇸🇿 Swazi Lilangeni (SZL)", value: "SZL", symbol: "L" },
+    { label: "🇹🇭 Thai Baht (THB)", value: "THB", symbol: "฿" },
+    { label: "🇹🇿 Tanzanian Shilling (TZS)", value: "TZS", symbol: "Sh" },
+    { label: "🇹🇿 Tanzanian Shilling (TZS)", value: "TZS", symbol: "Sh" },
+    { label: "🇹🇳 Tunisian Dinar (TND)", value: "TND", symbol: "د.ت" },
+    { label: "🇹🇷 Turkish Lira (TRY)", value: "TRY", symbol: "₺" },
+    {
+      label: "🇹🇹 Trinidad and Tobago Dollar (TTD)",
+      value: "TTD",
+      symbol: "TT$",
+    },
+    { label: "🇹🇻 Tuvaluan Dollar (TVD)", value: "TVD", symbol: "$" },
+    { label: "🇺🇦 Ukrainian Hryvnia (UAH)", value: "UAH", symbol: "₴" },
+    { label: "🇺🇬 Ugandan Shilling (UGX)", value: "UGX", symbol: "USh" },
+    { label: "🇺🇸 United States Dollar (USD)", value: "USD", symbol: "$" },
+    { label: "🇺🇾 Uruguayan Peso (UYU)", value: "UYU", symbol: "$" },
+    { label: "🇺🇿 Uzbekistani Som (UZS)", value: "UZS", symbol: "лв" },
+    {
+      label: "🇻🇪 Venezuelan Bolívar Fuerte (VEF)",
+      value: "VEF",
+      symbol: "Bs F",
+    },
+    { label: "🇻🇳 Vietnamese Dong (VND)", value: "VND", symbol: "₫" },
+    { label: "🇻🇺 Vanuatu Vatu (VUV)", value: "VUV", symbol: "VT" },
+    { label: "🇼🇸 Samoan Tala (WST)", value: "WST", symbol: "T" },
+    { label: "🇾🇪 Yemeni Rial (YER)", value: "YER", symbol: "﷼" },
+    { label: "🇿🇦 South African Rand (ZAR)", value: "ZAR", symbol: "R" },
+    { label: "🇿🇲 Zambian Kwacha (ZMW)", value: "ZMW", symbol: "ZK" },
+    { label: "🇿🇼 Zimbabwean Dollar (ZWL)", value: "ZWL", symbol: "$" },
   ]);
-
-
 
   //"https://itamarn01.github.io/Juba-backend/components/languages.js"
   useEffect(() => {
@@ -373,79 +408,101 @@ export default function App() {
 
   const appVersionChecker = async () => {
     try {
-      let currentVersion = "1.0.2" //change the version
-      let iosCurrentVersion = "1.0.3"
+      let currentVersion = "1.0.2"; //change the version
+      let iosCurrentVersion = "1.0.3";
       const response = await axios.get(
         "https://itamarn01.github.io/Juba-backend/components/version.json"
       );
       // console.log("version:", response.data.version);
       const latestVersion = response.data.updatedVersion;
       const iosLatestVersion = response.data.iosUpdatedVersion;
-      console.log("version:", iosLatestVersion)
-      console.log("----------------------------------------------------------")
-      const updateStatus = getUpdateStatus(Platform.OS === "ios" ? iosCurrentVersion : currentVersion, Platform.OS === "ios" ? iosLatestVersion : latestVersion);
+      console.log("version:", iosLatestVersion);
+      console.log("----------------------------------------------------------");
+      const updateStatus = getUpdateStatus(
+        Platform.OS === "ios" ? iosCurrentVersion : currentVersion,
+        Platform.OS === "ios" ? iosLatestVersion : latestVersion
+      );
 
-      if (updateStatus === 'mustUpdate') {
-        showMandatoryUpdateAlert('Update Required', 'A new version of the app is available. Please update to continue using the app.', 'https://apps.apple.com/il/app/juba/id6502645038?l=he', 'https://play.google.com/store/apps/details?id=com.gigtunetry.JUBA');
-      } else if (updateStatus === 'recommendToUpdate') {
-        showAlert('Update Recommended', 'A new version of the app is available. We recommend updating to the latest version.', 'https://apps.apple.com/il/app/juba/id6502645038?l=he', 'https://play.google.com/store/apps/details?id=com.gigtunetry.JUBA');
+      if (updateStatus === "mustUpdate") {
+        showMandatoryUpdateAlert(
+          "Update Required",
+          "A new version of the app is available. Please update to continue using the app.",
+          "https://apps.apple.com/il/app/juba/id6502645038?l=he",
+          "https://play.google.com/store/apps/details?id=com.gigtunetry.JUBA"
+        );
+      } else if (updateStatus === "recommendToUpdate") {
+        showAlert(
+          "Update Recommended",
+          "A new version of the app is available. We recommend updating to the latest version.",
+          "https://apps.apple.com/il/app/juba/id6502645038?l=he",
+          "https://play.google.com/store/apps/details?id=com.gigtunetry.JUBA"
+        );
       }
+    } catch (error) {
+      console.log("error to fetch version", error);
     }
-    catch (error) { console.log("error to fetch version", error) }
-  }
+  };
 
   const showAlert = (title, message, appStoreLink, googlePlayLink) => {
     Alert.alert(
       title,
       message,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Update',
+          text: "Update",
           onPress: () => {
             // Modify the link based on the platform
-            const link = Platform.OS === 'ios' ? appStoreLink : googlePlayLink;
-            Linking.openURL(link).catch(err => console.error('An error occurred', err));
-          }
-        }
+            const link = Platform.OS === "ios" ? appStoreLink : googlePlayLink;
+            Linking.openURL(link).catch((err) =>
+              console.error("An error occurred", err)
+            );
+          },
+        },
       ],
       { cancelable: false }
     );
   };
-  const showMandatoryUpdateAlert = (title, message, appStoreLink, googlePlayLink) => {
+  const showMandatoryUpdateAlert = (
+    title,
+    message,
+    appStoreLink,
+    googlePlayLink
+  ) => {
     Alert.alert(
       title,
       message,
       [
         {
-          text: 'Update',
+          text: "Update",
           onPress: () => {
-            const link = Platform.OS === 'ios' ? appStoreLink : googlePlayLink;
-            Linking.openURL(link).catch(err => console.error('An error occurred', err));
-          }
-        }
+            const link = Platform.OS === "ios" ? appStoreLink : googlePlayLink;
+            Linking.openURL(link).catch((err) =>
+              console.error("An error occurred", err)
+            );
+          },
+        },
       ],
       { cancelable: false }
     );
   };
 
-
   // Your getUpdateStatus function
   function getUpdateStatus(currentVersion, latestVersion) {
-    const currentVersionArray = currentVersion.split('.').map(Number);
-    const latestVersionArray = latestVersion.split('.').map(Number);
+    const currentVersionArray = currentVersion.split(".").map(Number);
+    const latestVersionArray = latestVersion.split(".").map(Number);
 
     // Compare each segment of the version number
     for (let i = 0; i < currentVersionArray.length - 1; i++) {
       if (currentVersionArray[i] < latestVersionArray[i]) {
-        return 'mustUpdate'; // Major or minor version update
+        return "mustUpdate"; // Major or minor version update
       }
     }
     if (currentVersionArray[2] < latestVersionArray[2]) {
-      return 'recommendToUpdate';
+      return "recommendToUpdate";
     }
 
-    return 'noUpdate'; // Versions are identical
+    return "noUpdate"; // Versions are identical
   }
 
   const fetchTranslations = async () => {
@@ -490,7 +547,7 @@ export default function App() {
       /*   I18nManager.forceRTL(true);
         console.log("forcing rtl");
        restartApp() */
-      languageRestart()
+      languageRestart();
     } else {
       I18nManager.forceRTL(false);
     }
@@ -510,6 +567,7 @@ export default function App() {
   const [appOpen, setAppOpen] = useState(null);
   const [interstitial, setInterstitial] = useState(null);
   const [rewardedInterstitial, setRewardedInterstitial] = useState(null);
+  const [showDescription, setShowDescription] = React.useState(false);
 
   useEffect(() => {
     const getTrackingPermission = async () => {
@@ -520,7 +578,7 @@ export default function App() {
         if (status === 'not-determined') { */
         const permission = await requestTrackingPermission();
         console.log("permission tracking:", permission);
-        if (permission === 'authorized') {
+        if (permission === "authorized") {
           setIsTrackingPermission(true);
           console.log("Permission to track data granted.");
         }
@@ -618,14 +676,15 @@ export default function App() {
       console.log("tracking process doesn't finish");
       return;
     }
-    setAppOpenClosed(true)
-    console.log("change to app open closed")
-  }, [trackingPermissionProcessEnd, isTrackingPermission])
+    setAppOpenClosed(true);
+    console.log("change to app open closed");
+  }, [trackingPermissionProcessEnd, isTrackingPermission]);
 
   useEffect(() => {
     if (fontsLoaded && appOpenClosed) {
       SplashScreen.hideAsync();
-      console.log("splash screen hidden")
+      console.log("splash screen hidden");
+      setShowDescription(true);
     }
   }, [fontsLoaded, appOpenClosed]);
   //---------------------------------------------------check without app open-------------
@@ -726,6 +785,12 @@ export default function App() {
       calculateExpenses();
     }
   }, [adClosed]);
+
+  useEffect(() => {
+    if (currentStep === 2 && inputNumFriend.current) {
+      inputNumFriend.current.focus();
+    }
+  }, [currentStep]);
 
   const loadInterstitial = () => {
     const invalidAdUnitIdInterstitial = "invalid_ad_unit_id";
@@ -925,6 +990,15 @@ export default function App() {
     // Update the state based on the validation result
     setFriendsNumValid(isValidInput);
     setNumPeople(text);
+
+    let notPaidFriendsArray = [];
+    if (isValidInput) {
+      for (let i = 0; i < text - friends.length; i++) {
+        notPaidFriendsArray[i] = "";
+      }
+      console.log("notPaidFriendsArray:", notPaidFriendsArray);
+      setNotPaidFriends(notPaidFriendsArray);
+    }
   };
 
   const addFriend = (amount) => {
@@ -957,17 +1031,15 @@ export default function App() {
   };
 
   const onNumFriendsBlurHandler = () => {
-    let notPaidFriendsArray = []
+    let notPaidFriendsArray = [];
     if (FriendsNumIsValid) {
       for (let i = 0; i < numPeople - friends.length; i++) {
         notPaidFriendsArray[i] = "";
-
       }
-      console.log("notPaidFriendsArray:", notPaidFriendsArray)
-      setNotPaidFriends(notPaidFriendsArray)
+      console.log("notPaidFriendsArray:", notPaidFriendsArray);
+      setNotPaidFriends(notPaidFriendsArray);
     }
-
-  }
+  };
 
   const onNextButtonPressed = () => {
     // Alert.alert("button pressed");
@@ -980,9 +1052,10 @@ export default function App() {
 
     if (allInputsValid) {
       setCurrentStep(2);
-      setNumPeople("")
-      setNotPaidFriends([])
-      setFriendsNumValid(false)
+      setNumPeople("");
+      setNotPaidFriends([]);
+      setFriendsNumValid(false);
+
       // Proceed with your logic if all inputs are valid
       //  Alert.alert("Success", "All inputs are valid!");
     } else {
@@ -1060,8 +1133,8 @@ export default function App() {
           namesArray[person - 1] === ""
             ? `${i18n.t("friend")} ${person}`
             : namesArray[person - 1].length > 14
-              ? namesArray[person - 1].substring(0, 14) + ".."
-              : namesArray[person - 1];
+            ? namesArray[person - 1].substring(0, 14) + ".."
+            : namesArray[person - 1];
 
         const friend2 =
           namesArray[friend - 1] !== ""
@@ -1078,7 +1151,12 @@ export default function App() {
             friendsArray[maxIndex].toFixed(2)
           );
 
-          addMessage({ textMessage: i18n.t("owe"), friend1: friend1, friend2: friend2, amount: parseFloat(amount).toLocaleString() })
+          addMessage({
+            textMessage: i18n.t("owe"),
+            friend1: friend1,
+            friend2: friend2,
+            amount: parseFloat(amount).toLocaleString(),
+          });
 
           /*    addMessage(
                i18n.t("member1OwesMember2", {
@@ -1093,10 +1171,13 @@ export default function App() {
           friendsArray[i] += friendsArray[maxIndex];
           friendsArray[i] = parseFloat(friendsArray[i].toFixed(2));
           addMessage({
-            textMessage: i18n.t("owe"), friend1: friend1, friend2: friend2, amount: parseFloat(
+            textMessage: i18n.t("owe"),
+            friend1: friend1,
+            friend2: friend2,
+            amount: parseFloat(
               friendsArray[maxIndex].toFixed(2)
-            ).toLocaleString()
-          })
+            ).toLocaleString(),
+          });
           /*  addMessage(
              i18n.t("member1OwesMember2", {
                friend1,
@@ -1146,27 +1227,35 @@ export default function App() {
           {item.nickname.length > 20
             ? item.nickname.substring(0, 20) + ".."
             : item.nickname === ""
-              ? `${i18n.t("friend")} ${index + 1}`
-              : item.nickname}
+            ? `${i18n.t("friend")} ${index + 1}`
+            : item.nickname}
         </Text>
-        <View style={{
-          flexDirection: i18n.locale === "he" ||
-            i18n.locale === "ar"
-            ? "row-reverse"
-            : "row", justifyContent: i18n.locale === "he" ||
-              i18n.locale === "ar"
-              ? "flex-start" : "flex-end", alignItems: "center", /* backgroundColor:"yellow" */
-        }}>
-          <Text allowFontScaling={false} style={{
-            fontSize: moderateScale(9),
-            fontFamily: "Varela",
-            marginTop: verticalScale(5),
-            textAlign: "center",
-            writingDirection:
+        <View
+          style={{
+            flexDirection:
               i18n.locale === "he" || i18n.locale === "ar"
-                ? "rtl"
-                : "ltr",
-          }}>{currencySymbol}</Text>
+                ? "row-reverse"
+                : "row",
+            justifyContent:
+              i18n.locale === "he" || i18n.locale === "ar"
+                ? "flex-start"
+                : "flex-end",
+            alignItems: "center" /* backgroundColor:"yellow" */,
+          }}
+        >
+          <Text
+            allowFontScaling={false}
+            style={{
+              fontSize: moderateScale(9),
+              fontFamily: "Varela",
+              marginTop: verticalScale(5),
+              textAlign: "center",
+              writingDirection:
+                i18n.locale === "he" || i18n.locale === "ar" ? "rtl" : "ltr",
+            }}
+          >
+            {currencySymbol}
+          </Text>
           <Text allowFontScaling={false} style={styles.amount}>{`${Number(
             item.amount
           ).toLocaleString()}`}</Text>
@@ -1202,7 +1291,9 @@ export default function App() {
                     borderBottomColor: "#ccc",
                   }}
                 >
-                  <Text allowFontScaling={false} style={{ fontSize: 16 }}>{nickname.he}</Text>
+                  <Text allowFontScaling={false} style={{ fontSize: 16 }}>
+                    {nickname.he}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -1215,7 +1306,7 @@ export default function App() {
                 borderRadius: 5,
               }}
             >
-              <Text allowFontScaling={false} >Close</Text>
+              <Text allowFontScaling={false}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1224,9 +1315,17 @@ export default function App() {
   };
 
   const handleValueChange = (code) => {
-    searchItem = items.find(item => item.value === code);
-    currencySymbol = searchItem.symbol
+    searchItem = items.find((item) => item.value === code);
+    currencySymbol = searchItem.symbol;
   };
+
+  const isRTL = languageCode === 'he' || languageCode === 'ar';
+const rtlTextStyle = {
+   textAlign: isRTL ? 'left' : 'right',
+  writingDirection: isRTL ? 'rtl' : 'ltr',
+};
+
+  
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -1247,9 +1346,8 @@ export default function App() {
             },
           ]}
         >
-
           {
-            /* !appIsReady || */!fontsLoaded || !appOpenClosed ? (
+            /* !appIsReady || */ !fontsLoaded || !appOpenClosed ? (
               <>
                 {console.log("fonts loaded:", fontsLoaded)}
                 <Image
@@ -1260,7 +1358,11 @@ export default function App() {
                   source={require("./assets/JubaGif.gif")}
                   contentFit="contain"
                 />
-                <Text style={{ fontSize: moderateScale(20), fontFamily: "Varela" }}>loading...</Text>
+                <Text
+                  style={{ fontSize: moderateScale(20), fontFamily: "Varela" }}
+                >
+                  loading...
+                </Text>
                 {/*  <ActivityIndicator
                 style={{
                   position: "absolute",
@@ -1275,6 +1377,71 @@ export default function App() {
               </>
             ) : (
               <View>
+      {/*           <AppDescriptionModal
+  visible={showDescription}
+  onClose={() => setShowDescription(false)}
+ 
+/> */}
+<Modal
+      visible={showDescription}
+      animationType="slide"
+      transparent
+      onRequestClose={() => setShowDescription(false)}
+    >
+      <View style={styles.overlay}>
+        <View style={styles.card}>
+          {/* Close button at top-right */}
+          <TouchableOpacity onPress={() => setShowDescription(false)} style={{ position: 'absolute', top: 10, right: 10, zIndex: 10 }}>
+            <Feather name="x-circle" size={28} color="#88209B" />
+          </TouchableOpacity>
+          <ScrollView contentContainerStyle={{ padding: 5, marginHorizontal:20 }}>
+            <Text style={styles.title}>{i18n.t("whatIsJuba")}</Text>
+            <Text style={styles.description}>{i18n.t("appDescription")}</Text>
+
+            <View style={styles.featuresGrid}>
+              <View style={styles.featureRow}>
+                <Feather name="users" size={28} color="#88209B" style={styles.icon} />
+                <View>
+                  <Text style={[styles.featureTitle, rtlTextStyle]}>{i18n.t("addFriendsTitle")}</Text>
+                  <Text style={[styles.featureDesc, rtlTextStyle]}>{i18n.t("addFriendsDesc")}</Text>
+                </View>
+              </View>
+              <View style={styles.featureRow}>
+                <Feather name="edit-3" size={28} color="#88209B" style={styles.icon} />
+                <View>
+                  <Text style={[styles.featureTitle, rtlTextStyle]}>{i18n.t("recordExpensesTitle")}</Text>
+                  <Text style={[styles.featureDesc, rtlTextStyle]}>{i18n.t("recordExpensesDesc")}</Text>
+                </View>
+              </View>
+              <View style={styles.featureRow}>
+                <Feather name="check-circle" size={28} color="#88209B" style={styles.icon} />
+                <View>
+                  <Text style={[styles.featureTitle, rtlTextStyle]}>{i18n.t("autoCalculationTitle")}</Text>
+                  <Text style={[styles.featureDesc, rtlTextStyle]}>{i18n.t("autoCalculationDesc")}</Text>
+                </View>
+              </View>
+              <View style={styles.featureRow}>
+                <Feather name="share-2" size={28} color="#88209B" style={styles.icon} />
+                <View>
+                  <Text style={[styles.featureTitle, rtlTextStyle]}>{i18n.t("easySharingTitle")}</Text>
+                  <Text style={[styles.featureDesc, rtlTextStyle]}>{i18n.t("easySharingDesc")}</Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.howItWorksBox}>
+              <Text style={[styles.howItWorksTitle, rtlTextStyle]}>{i18n.t("howItWorksTitle")}</Text>
+              <View style={styles.stepsList}>
+                <Text style={[styles.step, rtlTextStyle]}>1. {i18n.t("step1")}</Text>
+                <Text style={[styles.step, rtlTextStyle]}>2. {i18n.t("step2")}</Text>
+                <Text style={[styles.step, rtlTextStyle]}>3. {i18n.t("step3")}</Text>
+                <Text style={[styles.step, rtlTextStyle]}>4. {i18n.t("step4")}</Text>
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
                 <LinearGradient
                   // Button Linear Gradient
                   colors={["#BD1865", "#88209B"]}
@@ -1323,7 +1490,6 @@ export default function App() {
                   </Text>
                 </LinearGradient>
                 <DropDownPicker
-
                   open={open}
                   value={value}
                   items={items}
@@ -1335,36 +1501,40 @@ export default function App() {
                   placeholder={currencySymbol + " " + currencyCode}
                   searchPlaceholder={i18n.t("searchCurrency")}
                   style={styles.dropdown}
-                  containerStyle={{ height: verticalScale(40), /* width:horizontalScale(250), */ marginTop: verticalScale(10) }}
-                  dropDownStyle={{ backgroundColor: '#fafafa' }}
+                  containerStyle={{
+                    height: verticalScale(40),
+                    /* width:horizontalScale(250), */ marginTop:
+                      verticalScale(10),
+                  }}
+                  dropDownStyle={{ backgroundColor: "#fafafa" }}
                   placeholderStyle={{
                     // color: "grey",
                     fontSize: 16 / PixelRatio.getFontScale(),
-                    fontFamily: "Varela"
+                    fontFamily: "Varela",
                   }}
                   labelStyle={{
                     fontSize: moderateScale(16) / PixelRatio.getFontScale(),
-                    fontFamily: "Varela"
+                    fontFamily: "Varela",
                   }}
                   modalTitleStyle={{
                     fontSize: moderateScale(16) / PixelRatio.getFontScale(),
-                    fontFamily: "Varela"
+                    fontFamily: "Varela",
                   }}
                   searchTextInputProps={{
                     maxLength: 25,
                     fontSize: moderateScale(16) / PixelRatio.getFontScale(),
-                    fontFamily: "Varela"
+                    fontFamily: "Varela",
                   }}
                   listChildLabelStyle={{
                     fontSize: moderateScale(16) / PixelRatio.getFontScale(),
-                    fontFamily: "Varela"
+                    fontFamily: "Varela",
                   }}
                   listParentLabelStyle={{
                     fontSize: moderateScale(16) / PixelRatio.getFontScale(),
-                    fontFamily: "Varela"
+                    fontFamily: "Varela",
                   }}
 
-                // theme="DARK"
+                  // theme="DARK"
                 />
                 <ScrollView
                   nestedScrollEnabled={true}
@@ -1381,10 +1551,8 @@ export default function App() {
                     //  zIndex: 1,
                   }}
                 >
-
                   {trackingPermissionProcessEnd && (
                     <View style={{ marginVertical: verticalScale(15) }}>
-
                       <BannerAd
                         //    ref={bannerRef}
                         unitId={adUnitId}
@@ -1395,8 +1563,6 @@ export default function App() {
                         }}
                       />
                     </View>
-
-
                   )}
                   {currentStep === 1 ? (
                     /*   <KeyboardAvoidingView
@@ -1412,10 +1578,55 @@ export default function App() {
                         justifyContent: "flex-start",
                         zIndex: 1,
                         alignItems: "center",
-                        marginTop: verticalScale(40),
-                        paddingTop: verticalScale(5)
+                        // marginTop: verticalScale(10),
+                        paddingTop: verticalScale(5),
                       }}
                     >
+                       <TouchableOpacity
+                        onPress={onNextButtonPressed}
+                        style={{
+                          justifyContent: "center",
+                          alignItems: "center",
+                           width: "30%",
+                          // paddingHorizontal:horizontalScale(20),
+                          height: verticalScale(50),
+                          borderRadius: moderateScale(20),
+                           marginBottom: verticalScale(10),
+                          // marginTop: verticalScale(30),
+                          alignSelf:"flex-end"
+                        }}
+                      >
+                        <LinearGradient
+                          colors={["#BD1865", "#88209B"]}
+                          style={{
+                            justifyContent: "center",
+                            alignItems: "center",
+                            width: "90%",
+                            height: verticalScale(50),
+                            borderRadius: moderateScale(20),
+                          }}
+                        >
+                          <Text
+                            allowFontScaling={false}
+                            style={{
+                              color: "white",
+                              fontSize: 12,
+                              fontFamily: "Varela",
+                            }}
+                          >
+                            {i18n.t("next")}
+                          </Text>
+                        </LinearGradient>
+                      </TouchableOpacity>
+                      <View
+                        style={{
+                          width: "90%",
+                          height: 1,
+                          backgroundColor: "#E0E0E0",
+                          marginBottom: verticalScale(10),
+                          alignSelf: "center",
+                        }}
+                      />
                       <Text
                         allowFontScaling={false}
                         style={{
@@ -1427,7 +1638,10 @@ export default function App() {
                       >
                         {i18n.t("whoPaidHowMuch")}
                       </Text>
-                      <Text allowFontScaling={false} style={{ color: "grey", fontFamily: "Varela" }}>
+                      <Text
+                        allowFontScaling={false}
+                        style={{ color: "grey", fontFamily: "Varela" }}
+                      >
                         {i18n.t("eachMemberPaid")}
                       </Text>
                       {friends.map((friendAmount, index) => (
@@ -1521,7 +1735,12 @@ export default function App() {
                                   //borderWidth:1
                                 }}
                                 inputAccessoryViewID={inputAccessoryViewID}
-                                inputStyle={{ fontSize: moderateScale(16) / PixelRatio.getFontScale(), fontFamily: "Varela" }}
+                                inputStyle={{
+                                  fontSize:
+                                    moderateScale(16) /
+                                    PixelRatio.getFontScale(),
+                                  fontFamily: "Varela",
+                                }}
                                 style={{
                                   //color: "green",
                                   textAlign:
@@ -1542,7 +1761,7 @@ export default function App() {
                                   setFriends(updatedFriends);
                                 }}
                                 value={friendAmount.nickname}
-                              //onBlur={() => onBlurHandler(index)}
+                                //onBlur={() => onBlurHandler(index)}
                               />
                             </View>
                             <View
@@ -1601,7 +1820,12 @@ export default function App() {
                                   marginTop: verticalScale(30),
                                   //borderWidth:1
                                 }}
-                                inputStyle={{ fontSize: moderateScale(16) / PixelRatio.getFontScale(), fontFamily: "Varela" }}
+                                inputStyle={{
+                                  fontSize:
+                                    moderateScale(16) /
+                                    PixelRatio.getFontScale(),
+                                  fontFamily: "Varela",
+                                }}
                                 style={{
                                   textAlign:
                                     i18n.locale === "he" || i18n.locale === "ar"
@@ -1757,7 +1981,7 @@ export default function App() {
                                 />
                               </TouchableOpacity>
                             ) : (
-                              <TouchableOpacity onPress={() => { }} style={{}}>
+                              <TouchableOpacity onPress={() => {}} style={{}}>
                                 <Feather
                                   name="x-circle"
                                   size={30}
@@ -1834,9 +2058,10 @@ export default function App() {
                           </View>
                         </LinearGradient>
                       </TouchableOpacity>
+                    
                       {/*  <Button title="הוסף חבר" onPress={() => addFriend(0)} /> */}
 
-                      <TouchableOpacity
+                     {/*  <TouchableOpacity
                         onPress={onNextButtonPressed}
                         style={{
                           justifyContent: "center",
@@ -1869,11 +2094,11 @@ export default function App() {
                             {i18n.t("next")}
                           </Text>
                         </LinearGradient>
-                      </TouchableOpacity>
+                      </TouchableOpacity> */}
                     </View>
-
-                    /*  </KeyboardAvoidingView> */
-                  ) : null}
+                  ) : /*  </KeyboardAvoidingView> */
+                  null}
+                  
                   <InputAccessoryView nativeID={inputAccessoryViewID}>
                     <View style={styles.accessory}>
                       <TouchableOpacity onPress={() => Keyboard.dismiss()}>
@@ -1881,6 +2106,20 @@ export default function App() {
                       </TouchableOpacity>
                     </View>
                   </InputAccessoryView>
+                  {trackingPermissionProcessEnd && (
+                    <View style={{ marginVertical: verticalScale(15) }}>
+                      <BannerAd
+                        //    ref={bannerRef}
+                        unitId={adUnitId2}
+                        size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+                        requestOptions={{
+                          requestNonPersonalizedAdsOnly: !isTrackingPermission,
+                          // You can change this setting depending on whether you want to use the permissions tracking we set up in the initializing
+                        }}
+                      />
+                    </View>
+                  )}
+                  
                   {currentStep === 2 ? (
                     <View
                       style={{
@@ -1889,11 +2128,131 @@ export default function App() {
                         width: horizontalScale(400),
                         height: "auto",
                         justifyContent: "flex-start",
-                        paddingVertical: verticalScale(20),
+                        paddingVertical: verticalScale(5),
                         alignItems: "center",
-                        marginTop: verticalScale(50),
+                        // marginTop: verticalScale(50),
                       }}
                     >
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          width: "100%",
+                        }}
+                      >
+                        <View
+                          style={{
+                            width: "20%",
+                            alignItems: "flex-start",
+                            padding: 2,
+                          }}
+                        >
+                          <TouchableOpacity
+                            onPress={onPreviousStep}
+                            style={{ padding: 8 }}
+                          >
+                            <Feather
+                              name="x-circle"
+                              size={28}
+                              color="#88209B"
+                            />
+                          </TouchableOpacity>
+                        </View>
+                        <View
+                          style={{
+                            flexDirection: "row",
+                              justifyContent: "flex-end",
+                            alignItems: "center",
+                            width: "70%",
+                            // backgroundColor: "green",
+                          }}
+                        >
+                          <TouchableOpacity
+                          disabled={!(FriendsNumIsValid && notPaidFriends.length > 0)}
+                            onPress={() => setNotPaidFriendsModalVisible(true)}
+                            style={{
+                              // marginTop: verticalScale(20),
+                              backgroundColor: (FriendsNumIsValid && notPaidFriends.length > 0) ?  "white" : "#E0E0E0" ,
+                              alignSelf: "center",
+                              justifyContent: "center",
+                              alignItems: "center",
+                              paddingHorizontal: horizontalScale(5),
+                              borderRadius: moderateScale(10),
+                              borderColor: (FriendsNumIsValid && notPaidFriends.length > 0) ? "#88209B" : "#BDBDBD" ,
+                              borderWidth:1,
+                            
+                                width: horizontalScale(100),
+                                height: verticalScale(50),
+                                borderRadius: moderateScale(20),
+                                paddingHorizontal: 10,
+                            }}
+                          >
+                            <Text
+                              allowFontScaling={false}
+                              style={{
+                                fontSize: moderateScale(10),
+                                fontFamily: "Varela",
+                                color: (FriendsNumIsValid && notPaidFriends.length > 0) ? "purple" : "#9E9E9E",
+                              }}
+                            >
+                              {i18n.t("updateNotPaidFriends")}
+                            </Text>
+                          </TouchableOpacity>
+                          
+                          <TouchableOpacity
+                            disabled={!FriendsNumIsValid}
+                            onPress={async () => {
+                              interstitialLoaded
+                                ? await interstitial.show()
+                                : calculateExpenses();
+                              console.log(
+                                "freind num is valid 1:",
+                                FriendsNumIsValid
+                              );
+                            }}
+                            style={{
+                              width: horizontalScale(100),
+                              height: verticalScale(50),
+                              borderRadius: moderateScale(30),
+                              paddingHorizontal: 10,
+                            }}
+                          >
+                            <LinearGradient
+                              colors={
+                                FriendsNumIsValid
+                                  ? ["#BD1865", "#88209B"]
+                                  : ["#cccccc", "#888888"]
+                              }
+                              style={{
+                                justifyContent: "center",
+                                alignItems: "center",
+                                height: verticalScale(50),
+                                borderRadius: moderateScale(20),
+                              }}
+                            >
+                              <Text
+                                allowFontScaling={false}
+                                style={{
+                                  color: "white",
+                                  fontSize: moderateScale(12),
+                                  fontFamily: "Varela",
+                                }}
+                              >
+                                {i18n.t("calculate")}
+                              </Text>
+                            </LinearGradient>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                      <View
+                        style={{
+                          width: "90%",
+                          height: verticalScale(2),
+                          backgroundColor: "#E0E0E0",
+                          marginVertical: 8,
+                        }}
+                      />
                       <Text
                         allowFontScaling={false}
                         style={{
@@ -1906,7 +2265,10 @@ export default function App() {
                       >
                         {i18n.t("howManyMembers")}
                       </Text>
-                      <Text allowFontScaling={false} style={{ color: "grey", fontFamily: "Varela" }}>
+                      <Text
+                        allowFontScaling={false}
+                        style={{ color: "grey", fontFamily: "Varela" }}
+                      >
                         {i18n.t("howManyPeople")}
                       </Text>
                       <View
@@ -1962,7 +2324,11 @@ export default function App() {
                             height: "100%",
                             marginTop: verticalScale(25),
                           }}
-                          inputStyle={{ fontSize: moderateScale(16) / PixelRatio.getFontScale(), fontFamily: "Varela" }}
+                          inputStyle={{
+                            fontSize:
+                              moderateScale(16) / PixelRatio.getFontScale(),
+                            fontFamily: "Varela",
+                          }}
                           style={{
                             textAlign:
                               i18n.locale === "he" || i18n.locale === "ar"
@@ -1978,7 +2344,7 @@ export default function App() {
                           returnKeyType="done"
                           onChangeText={handleInputChange}
                           value={numPeople}
-                          onBlur={() => onNumFriendsBlurHandler()}
+                          //  onBlur={() => onNumFriendsBlurHandler()}
                           inputAccessoryViewID={inputAccessoryViewID}
                         />
                       </View>
@@ -1996,7 +2362,10 @@ export default function App() {
             value={numPeople}
           /> */}
                         {!FriendsNumIsValid && (
-                          <Text allowFontScaling={false} style={{ color: "red", fontFamily: "Varela" }}>
+                          <Text
+                            allowFontScaling={false}
+                            style={{ color: "red", fontFamily: "Varela" }}
+                          >
                             {i18n.t("membersBetween1And100", {
                               startNumber: friends.length,
                             })}{" "}
@@ -2004,11 +2373,36 @@ export default function App() {
                           </Text>
                         )}
                       </View>
-                      {FriendsNumIsValid && notPaidFriends.length > 0 &&
-                        <TouchableOpacity onPress={() => setNotPaidFriendsModalVisible(true)} style={{ marginTop: verticalScale(20), /* marginHorizontal: horizontalScale(5), */ backgroundColor: "#FDCBE3", alignSelf: "center", justifyContent: "center", alignItems: "center", paddingHorizontal: horizontalScale(5), borderRadius: moderateScale(10), height: verticalScale(35), /* backgroundColor:"yellow" */ }}>
-                          <Text allowFontScaling={false} style={{ fontSize: moderateScale(10), fontFamily: "Varela", color: "purple" }}>{i18n.t("updateNotPaidFriends")}</Text>
-                        </TouchableOpacity>}
-                      <TouchableOpacity
+                      {/* {FriendsNumIsValid && notPaidFriends.length > 0 && (
+                        <TouchableOpacity
+                          onPress={() => setNotPaidFriendsModalVisible(true)}
+                          style={{
+                            marginTop: verticalScale(20),
+                             backgroundColor:
+                              "#FDCBE3",
+                            alignSelf: "center",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            paddingHorizontal: horizontalScale(5),
+                            borderRadius: moderateScale(10),
+                            height:
+                              verticalScale(35) ,
+                          }}
+                        >
+                          <Text
+                            allowFontScaling={false}
+                            style={{
+                              fontSize: moderateScale(10),
+                              fontFamily: "Varela",
+                              color: "purple",
+                            }}
+                          >
+                            {i18n.t("updateNotPaidFriends")}
+                          </Text>
+                        </TouchableOpacity>
+                      )} */}
+
+                      {/*   <TouchableOpacity
                         onPress={onPreviousStep}
                         style={{
                           justifyContent: "center",
@@ -2055,32 +2449,17 @@ export default function App() {
                             </Text>
                           </View>
                         </LinearGradient>
-                      </TouchableOpacity>
+                      </TouchableOpacity> */}
                     </View>
                   ) : null}
-                  {FriendsNumIsValid && currentStep === 2 && (
-                    /* rewardedInterstitialLoaded && */ <TouchableOpacity
+                  {/*  {FriendsNumIsValid && currentStep === 2 && (
+                     <TouchableOpacity
+                    disabled={!FriendsNumIsValid}
                       onPress={async () => {
                         interstitialLoaded
                           ? await interstitial.show()
                           : calculateExpenses();
-                        /*  Alert.alert(
-                          "הפעל פרסום",
-                          "כדי לקבל את התוצאה צריך לאפשר צפיה בפרסומות בהגדרות המכשיר",
-                          [
-                            {
-                              text: "Cancel",
-                              onPress: () => console.log("Cancel Pressed"),
-                              style: "cancel",
-                            },
-                            {
-                              text: "OK",
-                              onPress: () => console.log("OK Pressed"),
-                            },
-                          ],
-                          { cancelable: false }
-                        ); */
-                        //    onCalculateButtonPressed();
+                       
                         console.log(
                           "freind num is valid 1:",
                           FriendsNumIsValid
@@ -2118,7 +2497,7 @@ export default function App() {
                         </Text>
                       </LinearGradient>
                     </TouchableOpacity>
-                  )}
+                  )} */}
 
                   <Modal
                     transparent={true}
@@ -2130,18 +2509,27 @@ export default function App() {
                       style={styles.modalContainer}
                       behavior={Platform.OS === "ios" ? "padding" : "height"}
                       enabled
-                    //  keyboardVerticalOffset={200}
+                      //  keyboardVerticalOffset={200}
                     >
                       <View style={styles.modalContent}>
-                        <View style={{
-                          justifyContent: "flex-start",
-                          maxHeight: windowHeight * 0.3,
-                          //  backgroundColor: "white",
-                          borderRadius: moderateScale(20)
-                          // marginBottom:verticalScale(200)
-                        }}>
-                          {FriendsNumIsValid && notPaidFriends.length > 0 &&
-                            <View style={{ justifyContent: "center", alignItems: "center", marginTop: verticalScale(10), marginBottom: verticalScale(20) }}>
+                        <View
+                          style={{
+                            justifyContent: "flex-start",
+                            maxHeight: windowHeight * 0.3,
+                            //  backgroundColor: "white",
+                            borderRadius: moderateScale(20),
+                            // marginBottom:verticalScale(200)
+                          }}
+                        >
+                          {FriendsNumIsValid && notPaidFriends.length > 0 && (
+                            <View
+                              style={{
+                                justifyContent: "center",
+                                alignItems: "center",
+                                marginTop: verticalScale(10),
+                                marginBottom: verticalScale(20),
+                              }}
+                            >
                               <Text
                                 allowFontScaling={false}
                                 style={{
@@ -2150,7 +2538,7 @@ export default function App() {
                                   fontWeight: "700",
                                   fontFamily: "Varela",
                                   textAlign: "center",
-                                  marginBottom: verticalScale(20)
+                                  marginBottom: verticalScale(20),
                                 }}
                               >
                                 {i18n.t("notPaidFriends")}
@@ -2159,7 +2547,11 @@ export default function App() {
                                 data={notPaidFriends}
                                 horizontal={false}
                                 keyExtractor={(item, index) => index.toString()}
-                                contentContainerStyle={{ flexGrow: 1, /* width: windowWidth, */ marginBottom: verticalScale(100) }}
+                                contentContainerStyle={{
+                                  flexGrow: 1,
+                                  /* width: windowWidth, */ marginBottom:
+                                    verticalScale(100),
+                                }}
                                 keyboardShouldPersistTaps="handled"
                                 renderItem={({ item, index }) => (
                                   <View
@@ -2217,31 +2609,61 @@ export default function App() {
                                           borderColor: "green",
                                           marginTop: verticalScale(25),
                                         }}
-                                        inputStyle={{ fontSize: moderateScale(16) / PixelRatio.getFontScale(), fontFamily: "Varela" }}
-                                        style={{
-                                          textAlign: i18n.locale === "he" || i18n.locale === "ar" ? "right" : "left",
-                                          writingDirection: i18n.locale === "he" || i18n.locale === "ar" ? "rtl" : "ltr",
+                                        inputStyle={{
+                                          fontSize:
+                                            moderateScale(16) /
+                                            PixelRatio.getFontScale(),
+                                          fontFamily: "Varela",
                                         }}
-                                        placeholder={`${i18n.t("friend")} ${index + friends.length + 1}`}
+                                        style={{
+                                          textAlign:
+                                            i18n.locale === "he" ||
+                                            i18n.locale === "ar"
+                                              ? "right"
+                                              : "left",
+                                          writingDirection:
+                                            i18n.locale === "he" ||
+                                            i18n.locale === "ar"
+                                              ? "rtl"
+                                              : "ltr",
+                                        }}
+                                        placeholder={`${i18n.t("friend")} ${
+                                          index + friends.length + 1
+                                        }`}
                                         placeholderTextColor="#707070"
                                         keyboardType="name-phone-pad"
                                         onChangeText={(text) => {
-                                          const updatedNotPaidFriends = [...notPaidFriends];
+                                          const updatedNotPaidFriends = [
+                                            ...notPaidFriends,
+                                          ];
                                           updatedNotPaidFriends[index] = text;
-                                          setNotPaidFriends(updatedNotPaidFriends);
+                                          setNotPaidFriends(
+                                            updatedNotPaidFriends
+                                          );
                                         }}
                                         value={item}
-                                        inputAccessoryViewID={inputAccessoryViewID}
+                                        inputAccessoryViewID={
+                                          inputAccessoryViewID
+                                        }
                                       />
                                     </View>
                                   </View>
                                 )}
                               />
                             </View>
-                          }
+                          )}
                         </View>
 
-                        <View style={[styles.modalBottomContainer, { borderTopColor: "rgba(0,0,0,0.05)", borderWidth: 2, borderColor: 'white' }]}>
+                        <View
+                          style={[
+                            styles.modalBottomContainer,
+                            {
+                              borderTopColor: "rgba(0,0,0,0.05)",
+                              borderWidth: 2,
+                              borderColor: "white",
+                            },
+                          ]}
+                        >
                           <TouchableOpacity
                             onPress={() => setNotPaidFriendsModalVisible(false)}
                             style={{ padding: 10, borderRadius: 20 }}
@@ -2262,7 +2684,8 @@ export default function App() {
                                   color: "white",
                                   fontSize: moderateScale(18),
                                 }}
-                              >{i18n.t("save")}
+                              >
+                                {i18n.t("save")}
                               </Text>
                             </LinearGradient>
                           </TouchableOpacity>
@@ -2278,16 +2701,24 @@ export default function App() {
                   >
                     <View style={styles.modalContainer}>
                       <View style={styles.modalContent}>
-                        <View style={{
-                          justifyContent: "flex-start",
-                          height: windowHeight * 0.8,
-                          // alignItems: "center",
-                          backgroundColor: "white",
-                          borderRadius: moderateScale(10),
-                        }} ref={viewShotRef} collapsable={false} >
+                        <View
+                          style={{
+                            justifyContent: "flex-start",
+                            height: windowHeight * 0.8,
+                            // alignItems: "center",
+                            backgroundColor: "white",
+                            borderRadius: moderateScale(10),
+                          }}
+                          ref={viewShotRef}
+                          collapsable={false}
+                        >
                           {showText ? (
                             <View
-                              style={{ justifyContent: "center", alignItems: "center", paddingTop: verticalScale(10) }}
+                              style={{
+                                justifyContent: "center",
+                                alignItems: "center",
+                                paddingTop: verticalScale(10),
+                              }}
                             >
                               <Image
                                 source={imagePath}
@@ -2296,8 +2727,8 @@ export default function App() {
                                   height: verticalScale(100),
                                   //  alignSelf:"center"
                                 }}
-                              // resizeMode={FastImage.resizeMode.contain}
-                              //  onLoad={handleImageLoad}
+                                // resizeMode={FastImage.resizeMode.contain}
+                                //  onLoad={handleImageLoad}
                               />
                               <Text
                                 allowFontScaling={false}
@@ -2305,7 +2736,7 @@ export default function App() {
                                   fontFamily: "Varela",
                                   fontSize: moderateScale(20),
                                   alignSelf: "center",
-                                  marginTop: -30
+                                  marginTop: -30,
                                 }}
                               >
                                 {i18n.t("membersPaid")}
@@ -2315,7 +2746,7 @@ export default function App() {
                                   width: "100%",
                                   backgroundColor: "grey",
                                   height: 1,
-                                  marginVertical: verticalScale(5)
+                                  marginVertical: verticalScale(5),
                                 }}
                               />
 
@@ -2325,8 +2756,12 @@ export default function App() {
                                 renderItem={renderItem}
                                 keyExtractor={(item, index) => index.toString()}
                                 showsHorizontalScrollIndicator={false}
-                                contentContainerStyle={{/* width:windowWidth,height:windowHeight* 0.3 ,flexWrap: 'wrap' , */ justifyContent: "center", alignItems: "center" }}
-                              //  numColumns={3}
+                                contentContainerStyle={{
+                                  /* width:windowWidth,height:windowHeight* 0.3 ,flexWrap: 'wrap' , */ justifyContent:
+                                    "center",
+                                  alignItems: "center",
+                                }}
+                                //  numColumns={3}
                               />
                               <View
                                 style={{
@@ -2336,10 +2771,14 @@ export default function App() {
                                   marginBottom: verticalScale(10),
                                 }}
                               />
-                              <View style={{
-                                flexDirection: "row", justifyContent: "center", alignItems: "center", /* backgroundColor:"yellow" */
-                              }}>
-
+                              <View
+                                style={{
+                                  flexDirection: "row",
+                                  justifyContent: "center",
+                                  alignItems:
+                                    "center" /* backgroundColor:"yellow" */,
+                                }}
+                              >
                                 <Text
                                   allowFontScaling={false}
                                   style={{
@@ -2348,23 +2787,30 @@ export default function App() {
                                     marginBottom: verticalScale(20),
                                     textAlign: "center",
                                     writingDirection:
-                                      i18n.locale === "he" || i18n.locale === "ar"
+                                      i18n.locale === "he" ||
+                                      i18n.locale === "ar"
                                         ? "rtl"
                                         : "ltr",
                                   }}
-                                >{`${i18n.t(
-                                  "totalPaid"
-                                )} `}
-
+                                >
+                                  {`${i18n.t("totalPaid")} `}
                                 </Text>
-                                <View style={{
-                                  flexDirection: i18n.locale === "he" ||
-                                    i18n.locale === "ar"
-                                    ? "row-reverse"
-                                    : "row", justifyContent: i18n.locale === "he" ||
+                                <View
+                                  style={{
+                                    flexDirection:
+                                      i18n.locale === "he" ||
                                       i18n.locale === "ar"
-                                      ? "flex-start" : "flex-end", alignItems: "center", /* backgroundColor:"yellow" */
-                                }}>
+                                        ? "row-reverse"
+                                        : "row",
+                                    justifyContent:
+                                      i18n.locale === "he" ||
+                                      i18n.locale === "ar"
+                                        ? "flex-start"
+                                        : "flex-end",
+                                    alignItems:
+                                      "center" /* backgroundColor:"yellow" */,
+                                  }}
+                                >
                                   <Text
                                     allowFontScaling={false}
                                     style={{
@@ -2373,10 +2819,12 @@ export default function App() {
                                       marginBottom: verticalScale(15),
                                       textAlign: "center",
                                       writingDirection:
-                                        i18n.locale === "he" || i18n.locale === "ar"
+                                        i18n.locale === "he" ||
+                                        i18n.locale === "ar"
                                           ? "rtl"
                                           : "ltr",
-                                    }}>{`${currencySymbol}`}</Text>
+                                    }}
+                                  >{`${currencySymbol}`}</Text>
                                   <Text
                                     allowFontScaling={false}
                                     style={{
@@ -2385,10 +2833,12 @@ export default function App() {
                                       marginBottom: verticalScale(20),
                                       textAlign: "center",
                                       writingDirection:
-                                        i18n.locale === "he" || i18n.locale === "ar"
+                                        i18n.locale === "he" ||
+                                        i18n.locale === "ar"
                                           ? "rtl"
                                           : "ltr",
-                                    }}>{`${totalAmount.toLocaleString()}`}</Text>
+                                    }}
+                                  >{`${totalAmount.toLocaleString()}`}</Text>
                                 </View>
                               </View>
                               {/*  <Text
@@ -2405,10 +2855,14 @@ export default function App() {
                               >{`${i18n.t(
                                 "totalPaid"
                               )} ${currencySymbol}${totalAmount.toLocaleString()}`}</Text> */}
-                              <View style={{
-                                flexDirection: "row", justifyContent: "center", alignItems: "center", /* backgroundColor:"yellow" */
-                              }}>
-
+                              <View
+                                style={{
+                                  flexDirection: "row",
+                                  justifyContent: "center",
+                                  alignItems:
+                                    "center" /* backgroundColor:"yellow" */,
+                                }}
+                              >
                                 <Text
                                   allowFontScaling={false}
                                   style={{
@@ -2416,22 +2870,29 @@ export default function App() {
                                     color: "grey",
                                     fontFamily: "Varela",
                                     writingDirection:
-                                      i18n.locale === "he" || i18n.locale === "ar"
+                                      i18n.locale === "he" ||
+                                      i18n.locale === "ar"
                                         ? "rtl"
                                         : "ltr",
                                     textAlign: "center",
                                   }}
-                                >{`${i18n.t(
-                                  "pricePerPerson"
-                                )} `}</Text>
-                                <View style={{
-                                  flexDirection: i18n.locale === "he" ||
-                                    i18n.locale === "ar"
-                                    ? "row-reverse"
-                                    : "row", justifyContent: i18n.locale === "he" ||
+                                >{`${i18n.t("pricePerPerson")} `}</Text>
+                                <View
+                                  style={{
+                                    flexDirection:
+                                      i18n.locale === "he" ||
                                       i18n.locale === "ar"
-                                      ? "flex-start" : "flex-end", alignItems: "center", /* backgroundColor:"yellow" */
-                                }}>
+                                        ? "row-reverse"
+                                        : "row",
+                                    justifyContent:
+                                      i18n.locale === "he" ||
+                                      i18n.locale === "ar"
+                                        ? "flex-start"
+                                        : "flex-end",
+                                    alignItems:
+                                      "center" /* backgroundColor:"yellow" */,
+                                  }}
+                                >
                                   <Text
                                     allowFontScaling={false}
                                     style={{
@@ -2441,10 +2902,12 @@ export default function App() {
                                       color: "grey",
                                       textAlign: "center",
                                       writingDirection:
-                                        i18n.locale === "he" || i18n.locale === "ar"
+                                        i18n.locale === "he" ||
+                                        i18n.locale === "ar"
                                           ? "rtl"
                                           : "ltr",
-                                    }}>{`${currencySymbol}`}</Text>
+                                    }}
+                                  >{`${currencySymbol}`}</Text>
                                   <Text
                                     allowFontScaling={false}
                                     style={{
@@ -2454,12 +2917,16 @@ export default function App() {
                                       color: "grey",
                                       textAlign: "center",
                                       writingDirection:
-                                        i18n.locale === "he" || i18n.locale === "ar"
+                                        i18n.locale === "he" ||
+                                        i18n.locale === "ar"
                                           ? "rtl"
                                           : "ltr",
-                                    }}>{`${parseFloat(
-                                      (totalAmount / parseInt(numPeople)).toFixed(2)
-                                    ).toLocaleString()}`}</Text>
+                                    }}
+                                  >{`${parseFloat(
+                                    (totalAmount / parseInt(numPeople)).toFixed(
+                                      2
+                                    )
+                                  ).toLocaleString()}`}</Text>
                                 </View>
                               </View>
 
@@ -2499,107 +2966,178 @@ export default function App() {
                                   //backgroundColor: "green",
                                 }}
                               >
-                                {<FlatList
-                                  data={messages}
-                                  // contentContainerStyle={{backgroundColor:"green"}}
-                                  renderItem={({ item }) => (
-                                    <View style={{ flexDirection: "row", marginBottom: verticalScale(15), justifyContent: "space-between", borderBottomColor: "grey", borderBottomWidth: moderateScale(0.3) /* backgroundColor:"green" */ }}>
-                                      <View style={{
-                                        flexDirection: "column",
-                                        // marginHorizontal: horizontalScale(10),
-                                        alignItems: "center",
-                                        //  paddingVertical: verticalScale(10),
-                                        width: windowWidth * 0.15
-                                      }}>
-                                        <FontAwesome name="user-circle" size={moderateScale(16)} color="purple" />
-
-                                        <Text
-                                          allowFontScaling={false}
+                                {
+                                  <FlatList
+                                    data={messages}
+                                    // contentContainerStyle={{backgroundColor:"green"}}
+                                    renderItem={({ item }) => (
+                                      <View
+                                        style={{
+                                          flexDirection: "row",
+                                          marginBottom: verticalScale(15),
+                                          justifyContent: "space-between",
+                                          borderBottomColor: "grey",
+                                          borderBottomWidth:
+                                            moderateScale(
+                                              0.3
+                                            ) /* backgroundColor:"green" */,
+                                        }}
+                                      >
+                                        <View
                                           style={{
-                                            fontSize: moderateScale(12),
-                                            fontFamily: "Varela",
-                                            textAlign: "center",
-                                            // marginVertical: verticalScale(12),
-                                            writingDirection:
-                                              i18n.locale === "he" ||
+                                            flexDirection: "column",
+                                            // marginHorizontal: horizontalScale(10),
+                                            alignItems: "center",
+                                            //  paddingVertical: verticalScale(10),
+                                            width: windowWidth * 0.15,
+                                          }}
+                                        >
+                                          <FontAwesome
+                                            name="user-circle"
+                                            size={moderateScale(16)}
+                                            color="purple"
+                                          />
+
+                                          <Text
+                                            allowFontScaling={false}
+                                            style={{
+                                              fontSize: moderateScale(12),
+                                              fontFamily: "Varela",
+                                              textAlign: "center",
+                                              // marginVertical: verticalScale(12),
+                                              writingDirection:
+                                                i18n.locale === "he" ||
                                                 i18n.locale === "ar"
-                                                ? "rtl"
-                                                : "ltr",
-                                          }}>
-                                          {item.friend1.length > 20
-                                            ? item.friend1.substring(0, 20) + ".."
+                                                  ? "rtl"
+                                                  : "ltr",
+                                            }}
+                                          >
+                                            {item.friend1.length > 20
+                                              ? item.friend1.substring(0, 20) +
+                                                ".."
+                                              : item.friend1}
+                                          </Text>
+                                        </View>
 
-                                            : item.friend1}
-                                        </Text>
-                                      </View>
-
-                                      <View style={{ /* justifyContent: "center", */ alignItems: "center", marginHorizontal: horizontalScale(5),  /* width:windowWidth*0.28 */ }}>
-                                        <Text
-                                          allowFontScaling={false}
+                                        <View
                                           style={{
-                                            fontSize: moderateScale(12),
-                                            fontFamily: "Varela",
-                                            // marginVertical: verticalScale(12),
-                                            writingDirection:
-                                              i18n.locale === "he" ||
+                                            /* justifyContent: "center", */ alignItems:
+                                              "center",
+                                            marginHorizontal:
+                                              horizontalScale(
+                                                5
+                                              ) /* width:windowWidth*0.28 */,
+                                          }}
+                                        >
+                                          <Text
+                                            allowFontScaling={false}
+                                            style={{
+                                              fontSize: moderateScale(12),
+                                              fontFamily: "Varela",
+                                              // marginVertical: verticalScale(12),
+                                              writingDirection:
+                                                i18n.locale === "he" ||
                                                 i18n.locale === "ar"
-                                                ? "rtl"
-                                                : "ltr",
-                                          }}>{`${i18n.t("owe")}`}</Text>
-                                        <AntDesign name="arrowright" size={24} color="purple" style={{
-                                          transform: [{
-                                            rotate: i18n.locale === "he" ||
+                                                  ? "rtl"
+                                                  : "ltr",
+                                            }}
+                                          >{`${i18n.t("owe")}`}</Text>
+                                          <AntDesign
+                                            name="arrowright"
+                                            size={24}
+                                            color="purple"
+                                            style={{
+                                              transform: [
+                                                {
+                                                  rotate:
+                                                    i18n.locale === "he" ||
+                                                    i18n.locale === "ar"
+                                                      ? "180deg"
+                                                      : "0deg",
+                                                },
+                                              ],
+                                            }}
+                                          />
+                                        </View>
+                                        <View
+                                          style={{
+                                            flexDirection: "column",
+                                            //justifyContent:"center",
+                                            //  marginHorizontal: horizontalScale(5),
+                                            alignItems: "center",
+                                            //  paddingVertical: verticalScale(10),
+                                            width: windowWidth * 0.15,
+                                          }}
+                                        >
+                                          <FontAwesome
+                                            name="user-circle"
+                                            size={moderateScale(16)}
+                                            color="purple"
+                                          />
+
+                                          <Text
+                                            allowFontScaling={false}
+                                            style={{
+                                              fontSize: moderateScale(12),
+                                              fontFamily: "Varela",
+                                              textAlign: "center",
+                                              // marginVertical: verticalScale(12),
+                                              writingDirection:
+                                                i18n.locale === "he" ||
+                                                i18n.locale === "ar"
+                                                  ? "rtl"
+                                                  : "ltr",
+                                            }}
+                                          >
+                                            {item.friend2.length > 20
+                                              ? item.friend2.substring(0, 20) +
+                                                ".."
+                                              : item.friend2}
+                                          </Text>
+                                        </View>
+                                        <View
+                                          style={{
+                                            flexDirection:
+                                              i18n.locale === "he" ||
                                               i18n.locale === "ar"
-                                              ? '180deg' : '0deg'
-                                          }]
-                                        }} />
-                                      </View>
-                                      <View style={{
-                                        flexDirection: "column",
-                                        //justifyContent:"center",
-                                        //  marginHorizontal: horizontalScale(5),
-                                        alignItems: "center",
-                                        //  paddingVertical: verticalScale(10),
-                                        width: windowWidth * 0.15
-                                      }}>
-                                        <FontAwesome name="user-circle" size={moderateScale(16)} color="purple" />
-
-                                        <Text
-                                          allowFontScaling={false}
-                                          style={{
-                                            fontSize: moderateScale(12),
-                                            fontFamily: "Varela",
-                                            textAlign: "center",
-                                            // marginVertical: verticalScale(12),
-                                            writingDirection:
+                                                ? "row-reverse"
+                                                : "row",
+                                            width: windowWidth * 0.3,
+                                            /* marginHorizontal:horizontalScale(30),  */ justifyContent:
                                               i18n.locale === "he" ||
-                                                i18n.locale === "ar"
-                                                ? "rtl"
-                                                : "ltr",
-                                          }}>
-                                          {item.friend2.length > 20
-                                            ? item.friend2.substring(0, 20) + ".."
-
-                                            : item.friend2}
-                                        </Text>
+                                              i18n.locale === "ar"
+                                                ? "flex-start"
+                                                : "flex-end",
+                                            alignItems:
+                                              "center" /*  backgroundColor:"yellow" */,
+                                          }}
+                                        >
+                                          <Text
+                                            allowFontScaling={false}
+                                            style={{
+                                              fontSize: moderateScale(10),
+                                              marginTop: verticalScale(3),
+                                            }}
+                                          >
+                                            {currencySymbol}
+                                          </Text>
+                                          <Text
+                                            allowFontScaling={false}
+                                            style={{
+                                              fontSize: moderateScale(15),
+                                              fontFamily: "Varela",
+                                            }}
+                                          >
+                                            {item.amount}
+                                          </Text>
+                                        </View>
                                       </View>
-                                      <View style={{
-                                        flexDirection: i18n.locale === "he" ||
-                                          i18n.locale === "ar"
-                                          ? "row-reverse"
-                                          : "row", width: windowWidth * 0.3, /* marginHorizontal:horizontalScale(30),  */ justifyContent: i18n.locale === "he" ||
-                                            i18n.locale === "ar"
-                                            ? "flex-start" : "flex-end", alignItems: "center",/*  backgroundColor:"yellow" */
-                                      }}>
-                                        <Text allowFontScaling={false} style={{ fontSize: moderateScale(10), marginTop: verticalScale(3) }}>{currencySymbol}</Text>
-                                        <Text allowFontScaling={false} style={{ fontSize: moderateScale(15), fontFamily: "Varela" }}>{item.amount}</Text>
-                                      </View>
-                                    </View>
-                                  )}
-                                  keyExtractor={(item, index) =>
-                                    index.toString()
-                                  }
-                                />}
+                                    )}
+                                    keyExtractor={(item, index) =>
+                                      index.toString()
+                                    }
+                                  />
+                                }
                                 {/* {messages.map((message, index) => (
                               <Text
                                 key={index}
@@ -2620,7 +3158,7 @@ export default function App() {
                         <View style={styles.modalBottomContainer}>
                           <TouchableOpacity
                             onPress={captureAndShareImage}
-                            style={{ padding: 10, borderRadius: 20, }}
+                            style={{ padding: 10, borderRadius: 20 }}
                           >
                             <LinearGradient
                               colors={["#BD1865", "#88209B"]}
@@ -2712,7 +3250,6 @@ export default function App() {
             )
           }
         </View>
-
       </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
   );
@@ -2778,7 +3315,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     // backgroundColor: "white",
     // borderBottomEndRadius: moderateScale(20),
-
   },
   keyboardAvoidingContainer: {
     flex: 1,
@@ -2813,16 +3349,91 @@ const styles = StyleSheet.create({
     //marginBottom: 10,
   },
   dropdown: {
-    backgroundColor: '#fafafa',
+    backgroundColor: "#fafafa",
   },
   accessory: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: "#f0f0f0",
     padding: 10,
-    alignItems: 'center',
+    alignItems: "center",
   },
   accessoryText: {
-    color: '#007bff',
+    color: "#007bff",
     fontSize: 16,
+  },
+
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 18,
+     width: "90%",
+    maxHeight: "85%",
+    elevation: 6,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 2 },
+     padding:10
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#88209B",
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  description: {
+    fontSize: 16,
+    color: "#333",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  featuresGrid: {
+    marginBottom: 20,
+    // marginHorizontal:5
+  },
+  featureRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 16,
+  },
+  icon: {
+    marginRight: 12,
+    marginTop: 2,
+  },
+  featureTitle: {
+    fontWeight: "bold",
+    fontSize: 16,
+    color: "#88209B",
+  },
+  featureDesc: {
+    fontSize: 14,
+    color: "#666",
+
+  },
+  howItWorksBox: {
+    backgroundColor: "#F3E6F8",
+    borderRadius: 10,
+    padding: 14,
+    marginTop: 10,
+  },
+  howItWorksTitle: {
+    fontWeight: "bold",
+    fontSize: 16,
+    marginBottom: 6,
+    color: "#88209B",
+  },
+  stepsList: {
+    paddingLeft: 8,
+  },
+  step: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 2,
   },
 });
 
