@@ -1,81 +1,63 @@
-import React, { useState, useRef, useEffect } from "react";
-//import { StatusBar } from "expo-status-bar";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useMemo,
+  useCallback,
+  forwardRef,
+} from "react";
 import {
   View,
   Text,
   TextInput,
-  Button,
   StyleSheet,
-  TouchableWithoutFeedback,
   Keyboard,
-  FlatList,
   Image,
   ScrollView,
-  ActivityIndicator,
   TouchableOpacity,
   Dimensions,
   Modal,
   I18nManager,
   KeyboardAvoidingView,
   Platform,
-  NativeModules,
-  // Share,
   Alert,
   Linking,
   Animated,
-  PixelRatio,
   InputAccessoryView,
+  BackHandler,
+  DevSettings,
 } from "react-native";
-//import { Image } from "expo-image";
-
 import {
   BannerAd,
   BannerAdSize,
   TestIds,
   InterstitialAd,
   AdEventType,
-  RewardedAd,
-  RewardedAdEventType,
-  RewardedInterstitialAd,
   mobileAds,
-  AppOpenAd,
-  AdsConsent,
-  AdsConsentStatus,
-  useForeground,
 } from "react-native-google-mobile-ads";
-
-//import * as Device from "expo-device";
 import { captureRef } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
 import { I18n } from "i18n-js";
-import { Feather } from "@expo/vector-icons";
-import { AntDesign } from "@expo/vector-icons";
+import { Feather, MaterialIcons, FontAwesome } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { MaterialIcons } from "@expo/vector-icons";
-import { FontAwesome } from "@expo/vector-icons";
-import { FontAwesome6 } from "@expo/vector-icons";
 import { getLocales } from "expo-localization";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
-//import FastImage from "react-native-fast-image";
 import * as Haptics from "expo-haptics";
-import { Input } from "@rneui/themed";
-//import { SelectList } from "react-native-dropdown-select-list";
-//import { Divider } from "@rneui/themed";
-import {
-  requestTrackingPermissionsAsync,
-  getAdvertisingId,
-  getTrackingPermissionsAsync,
-} from "expo-tracking-transparency";
-import Translations from "./components/languages";
-import * as Device from "expo-device";
-import axios from "axios";
 import * as Updates from "expo-updates";
-import DropDownPicker from "react-native-dropdown-picker";
+import Constants from "expo-constants";
+import { StatusBar } from "expo-status-bar";
 import {
-  checkTrackingStatus,
-  requestTrackingPermission,
-} from "react-native-tracking-transparency";
+  SafeAreaProvider,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
+import axios from "axios";
+import DropDownPicker from "react-native-dropdown-picker";
+import { requestTrackingPermission } from "react-native-tracking-transparency";
+import Translations from "./components/languages";
+import Currencies from "./components/currencies";
+import { calculateSplit, sumExpenses } from "./components/settlement";
+import { loadSavedLists, writeSavedLists } from "./components/savedLists";
 
 SplashScreen.preventAutoHideAsync();
 const windowWidth = Dimensions.get("window").width;
@@ -87,3269 +69,2140 @@ const verticalScale = (size) => (windowHeight / GuideLineBaseHeight) * size;
 const moderateScale = (size, factor = 0.5) =>
   size + (horizontalScale(size) - size) * factor;
 
-let {
-  languageTag,
-  languageCode,
-  textDirection,
-  digitGroupingSeparator,
-  decimalSeparator,
-  measurementSystem,
-  currencyCode,
-  currencySymbol,
-  regionCode,
-} = getLocales()[0];
+const PURPLE = "#88209B";
+const GRADIENT = ["#BD1865", "#88209B"];
 
+let { languageCode, currencyCode: localeCurrencyCode } = getLocales()[0];
 if (languageCode === "iw") {
   languageCode = "he";
 }
-console.log("digitgroupingseperator:", digitGroupingSeparator);
-console.log("decimal seperator", decimalSeparator);
+
 const i18n = new I18n(Translations);
-i18n.fallbacks = true;
-// languageCode = "he";
-console.log("languagecode:", languageCode);
-if (!Translations.hasOwnProperty(languageCode)) {
-  i18n.locale = "en";
-} else {
-  i18n.locale = languageCode;
-}
-
+i18n.enableFallback = true;
 i18n.defaultLocale = "en";
-//i18n.missingBehavior = "error";
-
+i18n.locale = Object.prototype.hasOwnProperty.call(Translations, languageCode)
+  ? languageCode
+  : "en";
 i18n.missingBehavior = "guess";
+const isRTL = i18n.locale === "he";
 
-const iosAppOpen = "ca-app-pub-8754599705550429/6844475216";
-const androidAppOpen = "ca-app-pub-8754599705550429/2760678403";
-const productionAppOpenId =
-  Device.osName === "Android" ? androidAppOpen : iosAppOpen;
-
-const iosAdmobBanner = "ca-app-pub-8754599705550429/4186593720";
-const androidAdmobBanner = "ca-app-pub-8754599705550429/2706265136";
-const productionID =
-  Device.osName === "Android" ? androidAdmobBanner : iosAdmobBanner;
-
-  const iosAdmobBanner2 = "ca-app-pub-8754599705550429/8937907272";
-  const androidAdmobBanner2 = "ca-app-pub-8754599705550429/2522696253";
-  const productionID2 =
-    Device.osName === "Android" ? androidAdmobBanner2 : iosAdmobBanner2;  
-
-const iosAdmobInterstitial = "ca-app-pub-8754599705550429/2597147010";
-const androidAdmobInterstitial = "ca-app-pub-8754599705550429/7575448434";
-const productionInterstitialID =
-  Device.osName === "Android" ? iosAdmobInterstitial : androidAdmobInterstitial;
-
-const iosRewarderdInterstitial = "ca-app-pub-8754599705550429/1379434110";
-const androidRewarderdInterstitial = "ca-app-pub-8754599705550429/8527737330";
-const productionRewarderdInterstitialID =
-  Device.osName === "Android"
-    ? androidRewarderdInterstitial
-    : iosRewarderdInterstitial;
-
-const adUnitIdAppOpen = __DEV__ ? TestIds.APP_OPEN : productionAppOpenId;
-
-const adUnitId = __DEV__ ? TestIds.ADAPTIVE_BANNER : productionID;
-
-const adUnitId2 = __DEV__ ? TestIds.ADAPTIVE_BANNER : productionID2;
-
+const isAndroid = Platform.OS === "android";
+const adUnitId = __DEV__
+  ? TestIds.ADAPTIVE_BANNER
+  : isAndroid
+  ? "ca-app-pub-8754599705550429/2706265136"
+  : "ca-app-pub-8754599705550429/4186593720";
+const adUnitId2 = __DEV__
+  ? TestIds.ADAPTIVE_BANNER
+  : isAndroid
+  ? "ca-app-pub-8754599705550429/2522696253"
+  : "ca-app-pub-8754599705550429/8937907272";
 const adUnitIdInterstitial = __DEV__
   ? TestIds.INTERSTITIAL
-  : productionInterstitialID;
+  : isAndroid
+  ? "ca-app-pub-8754599705550429/7575448434"
+  : "ca-app-pub-8754599705550429/2597147010";
+const adKeywords = ["fashion", "clothing", "food", "cooking", "fruit"];
 
-const adUnitIdRewarded = __DEV__
-  ? TestIds.REWARDED_INTERSTITIAL
-  : productionRewarderdInterstitialID;
+const findCurrency = (code) => Currencies.find((item) => item.value === code);
+const defaultCurrencyCode = findCurrency(localeCurrencyCode)
+  ? localeCurrencyCode
+  : "USD";
 
-let isMobileAdsStartCalled = false;
+const inputAccessoryViewID = "uniqueID";
+const newId = () =>
+  `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
 
-export default function App() {
-  const inputAccessoryViewID = "uniqueID";
-  const [appIsReady, setAppIsReady] = useState(false);
-  const [friends, setFriends] = useState([
-    { amount: "", isValid: true, nickname: "" },
-  ]);
-  const [notPaidFriends, setNotPaidFriends] = useState([""]);
-  const [isFriendExpenseValid, setIsFriendExpenseValid] = useState([false]);
-  const [friendArrayValid, setFrindArrayValid] = useState(false);
-  const [numPeople, setNumPeople] = useState("");
-  const [totalAmount, setTotalAmount] = useState(0);
-  const [FriendsNumIsValid, setFriendsNumValid] = useState(false);
-  const [messages, setMessages] = useState([]);
-  const [showText, setShowText] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [notPaidFriendsModalVisible, setNotPaidFriendsModalVisible] =
-    useState(false);
-  const [modalNickNameVisible, setModalNickNameVisible] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
-  const [nextBtnValid, setNextBtnValid] = useState(false);
-  const input = useRef(null);
-  const nameInput = useRef(null);
-  const notPaidNameInput = useRef(null);
-  const inputNumFriend = useRef(null);
+// Accepts "12", "12.5", "12,50" (comma decimal keyboards) up to 9 digits.
+const parseAmount = (text) => {
+  const normalized = text.trim().replace(",", ".");
+  if (!/^(\d{1,9}(\.\d{0,2})?|\.\d{1,2})$/.test(normalized)) return null;
+  const value = parseFloat(normalized);
+  return value > 0 ? value : null;
+};
+
+const formatAmount = (amount) =>
+  amount.toLocaleString(undefined, {
+    minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
+    maximumFractionDigits: 2,
+  });
+
+// Returns "mustUpdate" when the major/minor version is behind, and
+// "recommendToUpdate" when only the patch version is behind.
+function getUpdateStatus(currentVersion, latestVersion) {
+  const current = currentVersion.split(".").map(Number);
+  const latest = latestVersion.split(".").map(Number);
+  for (let i = 0; i < 2; i++) {
+    const currentPart = current[i] || 0;
+    const latestPart = latest[i] || 0;
+    if (currentPart !== latestPart) {
+      return currentPart < latestPart ? "mustUpdate" : "noUpdate";
+    }
+  }
+  return (current[2] || 0) < (latest[2] || 0) ? "recommendToUpdate" : "noUpdate";
+}
+
+const showUpdateAlert = (title, message, mandatory) => {
+  const openStore = () => {
+    const link =
+      Platform.OS === "ios"
+        ? "https://apps.apple.com/il/app/juba/id6502645038?l=he"
+        : "https://play.google.com/store/apps/details?id=com.gigtunetry.JUBA";
+    Linking.openURL(link).catch((err) =>
+      console.error("An error occurred", err)
+    );
+  };
+  const buttons = [{ text: "Update", onPress: openStore }];
+  if (!mandatory) buttons.unshift({ text: "Cancel", style: "cancel" });
+  Alert.alert(title, message, buttons, { cancelable: false });
+};
+
+function useShake() {
+  const translateX = useRef(new Animated.Value(0)).current;
+  const shake = useCallback(() => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(
+      () => {}
+    );
+    translateX.setValue(0);
+    Animated.sequence(
+      [10, -10, 8, -8, 4, 0].map((toValue) =>
+        Animated.timing(translateX, {
+          toValue,
+          duration: 50,
+          useNativeDriver: true,
+        })
+      )
+    ).start();
+  }, [translateX]);
+  return [{ transform: [{ translateX }] }, shake];
+}
+
+function useToast() {
+  const [message, setMessage] = useState(null);
+  const opacity = useRef(new Animated.Value(0)).current;
+  const timer = useRef(null);
+  const show = useCallback(
+    (text) => {
+      clearTimeout(timer.current);
+      setMessage(text);
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }).start();
+      timer.current = setTimeout(() => {
+        Animated.timing(opacity, {
+          toValue: 0,
+          duration: 250,
+          useNativeDriver: true,
+        }).start(({ finished }) => finished && setMessage(null));
+      }, 1800);
+    },
+    [opacity]
+  );
+  useEffect(() => () => clearTimeout(timer.current), []);
+  return { message, opacity, show };
+}
+
+const AppText = ({ style, ...props }) => (
+  <Text allowFontScaling={false} style={[styles.text, style]} {...props} />
+);
+
+const AppInput = forwardRef(({ style, ...props }, ref) => (
+  <TextInput
+    ref={ref}
+    allowFontScaling={false}
+    placeholderTextColor="#707070"
+    inputAccessoryViewID={
+      Platform.OS === "ios" ? inputAccessoryViewID : undefined
+    }
+    style={[styles.input, style]}
+    {...props}
+  />
+));
+
+const GradientButton = ({ title, icon, onPress, style, small }) => (
+  <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={style}>
+    <LinearGradient
+      colors={GRADIENT}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 0 }}
+      style={[styles.button, small && styles.buttonSmall]}
+    >
+      {icon ? (
+        <Feather
+          name={icon}
+          size={small ? 16 : 18}
+          color="white"
+          style={title ? styles.buttonIcon : null}
+        />
+      ) : null}
+      {title ? (
+        <AppText
+          style={[styles.buttonText, small && styles.buttonTextSmall]}
+          numberOfLines={1}
+        >
+          {title}
+        </AppText>
+      ) : null}
+    </LinearGradient>
+  </TouchableOpacity>
+);
+
+const OutlineButton = ({ title, icon, onPress, style, small }) => (
+  <TouchableOpacity
+    onPress={onPress}
+    activeOpacity={0.7}
+    style={[styles.button, styles.outlineButton, small && styles.buttonSmall, style]}
+  >
+    {icon ? (
+      <Feather
+        name={icon}
+        size={small ? 16 : 18}
+        color={PURPLE}
+        style={title ? styles.buttonIcon : null}
+      />
+    ) : null}
+    {title ? (
+      <AppText
+        style={[
+          styles.buttonText,
+          styles.outlineButtonText,
+          small && styles.buttonTextSmall,
+        ]}
+        numberOfLines={1}
+      >
+        {title}
+      </AppText>
+    ) : null}
+  </TouchableOpacity>
+);
+
+const ToolbarButton = ({ icon, label, onPress }) => (
+  <TouchableOpacity onPress={onPress} style={styles.toolbarButton}>
+    <Feather name={icon} size={20} color={PURPLE} />
+    <AppText style={styles.toolbarButtonText} numberOfLines={1}>
+      {label}
+    </AppText>
+  </TouchableOpacity>
+);
+
+const Avatar = ({ size = 32 }) => (
+  <LinearGradient
+    colors={GRADIENT}
+    style={[
+      styles.avatar,
+      { width: size, height: size, borderRadius: size / 2 },
+    ]}
+  >
+    <MaterialIcons name="emoji-people" size={size * 0.6} color="white" />
+  </LinearGradient>
+);
+
+const CardHeader = ({ title, description }) => (
+  <View style={styles.cardHeader}>
+    <AppText style={styles.cardTitle}>{title}</AppText>
+    <AppText style={styles.cardDescription}>{description}</AppText>
+  </View>
+);
+
+const ErrorText = ({ message, style }) =>
+  message ? (
+    <Animated.View style={style}>
+      <AppText style={styles.errorText}>{message}</AppText>
+    </Animated.View>
+  ) : null;
+
+const ToastView = ({ toast, bottom }) =>
+  toast.message ? (
+    <Animated.View
+      pointerEvents="none"
+      style={[styles.toast, { opacity: toast.opacity, bottom }]}
+    >
+      <AppText style={styles.toastText}>{toast.message}</AppText>
+    </Animated.View>
+  ) : null;
+
+const StepIndicator = ({ currentStep, onStepPress }) => {
+  const steps = [
+    { number: 1, label: i18n.t("stepFriends") },
+    { number: 2, label: i18n.t("stepExpenses") },
+    { number: 3, label: i18n.t("stepParticipants") },
+  ];
+  return (
+    <View style={styles.stepIndicator}>
+      {steps.map((step, index) => {
+        const active = step.number === currentStep;
+        const done = step.number < currentStep;
+        return (
+          <React.Fragment key={step.number}>
+            {index > 0 ? (
+              <View
+                style={[
+                  styles.stepLine,
+                  (active || done) && styles.stepLineActive,
+                ]}
+              />
+            ) : null}
+            <TouchableOpacity
+              disabled={!done}
+              onPress={() => onStepPress(step.number)}
+              style={styles.stepItem}
+            >
+              {active || done ? (
+                <LinearGradient colors={GRADIENT} style={styles.stepCircle}>
+                  {done ? (
+                    <Feather name="check" size={16} color="white" />
+                  ) : (
+                    <AppText style={styles.stepNumberActive}>
+                      {step.number}
+                    </AppText>
+                  )}
+                </LinearGradient>
+              ) : (
+                <View style={[styles.stepCircle, styles.stepCircleInactive]}>
+                  <AppText style={styles.stepNumber}>{step.number}</AppText>
+                </View>
+              )}
+              <AppText
+                style={[styles.stepLabel, active && styles.stepLabelActive]}
+                numberOfLines={1}
+              >
+                {step.label}
+              </AppText>
+            </TouchableOpacity>
+          </React.Fragment>
+        );
+      })}
+    </View>
+  );
+};
+
+const SaveListModal = ({
+  visible,
+  name,
+  onChangeName,
+  error,
+  shakeStyle,
+  onSave,
+  onClose,
+}) => (
+  <Modal
+    visible={visible}
+    transparent
+    animationType="fade"
+    statusBarTranslucent
+    navigationBarTranslucent
+    onRequestClose={onClose}
+  >
+    <KeyboardAvoidingView behavior="padding" style={styles.modalOverlay}>
+      <View style={styles.dialogCard}>
+        <AppText style={styles.dialogTitle}>{i18n.t("saveListTitle")}</AppText>
+        <AppText style={styles.cardDescription}>
+          {i18n.t("saveListDesc")}
+        </AppText>
+        <Animated.View style={[styles.inputRow, shakeStyle]}>
+          <AppInput
+            value={name}
+            onChangeText={onChangeName}
+            placeholder={i18n.t("saveListPlaceholder")}
+            maxLength={40}
+            autoFocus
+            returnKeyType="done"
+            onSubmitEditing={onSave}
+            style={isRTL ? styles.inputRTL : null}
+          />
+        </Animated.View>
+        <ErrorText message={error} />
+        <View style={styles.dialogButtonsRow}>
+          <OutlineButton
+            title={i18n.t("cancelButton")}
+            onPress={onClose}
+            style={styles.flexButton}
+          />
+          <GradientButton
+            icon="save"
+            title={i18n.t("saveButton")}
+            onPress={onSave}
+            style={styles.flexButton}
+          />
+        </View>
+      </View>
+    </KeyboardAvoidingView>
+  </Modal>
+);
+
+// The results body. Rendered in the scrollable results window and again in an
+// off-screen full-height copy that is captured for sharing, because content
+// scrolled out of view is not drawn and would come out blank in the image.
+const ResultsContent = ({ friends, selectedIds, results, formatMoney }) => (
+  <>
+    <Image
+      source={require("./assets/juba-spend.png")}
+      style={styles.resultsImage}
+      resizeMode="contain"
+    />
+    <AppText style={styles.resultsTitle}>
+      {i18n.t("resultsTitle")}
+    </AppText>
+    <View style={styles.statsRow}>
+      <View style={[styles.statBox, styles.statBoxTotal]}>
+        <AppText style={styles.statLabel}>
+          {i18n.t("totalExpenses")}
+        </AppText>
+        <AppText style={styles.statValue}>
+          {formatMoney(results.total)}
+        </AppText>
+      </View>
+      <View style={[styles.statBox, styles.statBoxPerFriend]}>
+        <AppText style={styles.statLabel}>{i18n.t("perFriend")}</AppText>
+        <AppText style={styles.statValue}>
+          {formatMoney(results.perPerson)}
+        </AppText>
+      </View>
+    </View>
+
+    <AppText style={styles.sectionTitle}>
+      {i18n.t("expenseBreakdown")}
+    </AppText>
+    {friends.map((friend) => {
+      const selected = selectedIds.includes(friend.id);
+      return (
+        <View
+          key={friend.id}
+          style={[
+            styles.breakdownRow,
+            !selected && styles.breakdownRowMuted,
+          ]}
+        >
+          <FontAwesome
+            name="user-circle"
+            size={18}
+            color={selected ? PURPLE : "#9E9E9E"}
+          />
+          <AppText
+            style={[styles.breakdownName, !selected && styles.mutedText]}
+            numberOfLines={1}
+          >
+            {selected
+              ? friend.name
+              : `${friend.name} ${i18n.t("notParticipating")}`}
+          </AppText>
+          <AppText style={!selected ? styles.mutedText : null}>
+            {formatMoney(sumExpenses(friend))}
+          </AppText>
+        </View>
+      );
+    })}
+
+    <View style={styles.divider} />
+    <AppText style={styles.sectionTitle}>{i18n.t("repayments")}</AppText>
+    {results.transfers.length === 0 ? (
+      <AppText style={styles.emptyText}>
+        {i18n.t("noRepayments")}
+      </AppText>
+    ) : (
+      results.transfers.map((transfer, index) => (
+        <View key={index} style={styles.transferRow}>
+          <View style={styles.transferPerson}>
+            <FontAwesome name="user-circle" size={20} color={PURPLE} />
+            <AppText style={styles.transferName} numberOfLines={2}>
+              {transfer.from}
+            </AppText>
+          </View>
+          <View style={styles.transferMiddle}>
+            <AppText style={styles.transferPays} numberOfLines={1}>
+              {i18n.t("pays")}
+            </AppText>
+            <Feather
+              name={isRTL ? "arrow-left" : "arrow-right"}
+              size={22}
+              color={PURPLE}
+            />
+          </View>
+          <View style={styles.transferPerson}>
+            <FontAwesome name="user-circle" size={20} color={PURPLE} />
+            <AppText style={styles.transferName} numberOfLines={2}>
+              {transfer.to}
+            </AppText>
+          </View>
+          <AppText style={styles.transferAmount} numberOfLines={1}>
+            {formatMoney(transfer.amount)}
+          </AppText>
+        </View>
+      ))
+    )}
+  </>
+);
+
+function Main() {
+  const insets = useSafeAreaInsets();
   const [fontsLoaded, fontError] = useFonts({
     Varela: require("./assets/fonts/Varela.ttf"),
   });
-  const [selected, setSelected] = React.useState("");
-  const [data, setData] = React.useState([]);
-  const [selectListPressed, setSelectListPressed] = useState([false]);
   const [isTrackingPermission, setIsTrackingPermission] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-  const [appOpenLoaded, setAppOpenLoaded] = useState(false);
-  const [interstitialLoaded, setInterstitialLoaded] = useState(false);
-  const [rewardedInterstitialLoaded, setRewardedInterstitialLoaded] =
-    useState(false);
-  const [loadedRewarded, setLoadedRewarded] = useState(false);
-  const [adClosed, setAdClosed] = useState(false);
   const [trackingPermissionProcessEnd, setTrackingPermissionProcessEnd] =
     useState(false);
-  const [canShowAd, setCanShowAd] = useState(false);
-  const [interstitalClosed, setInterstitialClosed] = useState(false);
-  const [appOpenClosed, setAppOpenClosed] = useState(false);
-  const [isAppOpenAdError, setIsAppOpenAdError] = useState(false);
-  const [translationsJson, setTranslationsJson] = useState({});
-  const [loading, setLoading] = useState(true);
+  const [showDescription, setShowDescription] = useState(false);
+  const [, setTranslationsVersion] = useState(0);
 
-  const [open, setOpen] = useState(false);
-  const [value, setValue] = useState(null);
-  const [items, setItems] = useState([
-    {
-      label: "🇦🇪 United Arab Emirates Dirham (AED)",
-      value: "AED",
-      symbol: "د.إ",
-    },
-    { label: "🇦🇫 Afghan Afghani (AFN)", value: "AFN", symbol: "؋" },
-    { label: "🇦🇱 Albanian Lek (ALL)", value: "ALL", symbol: "L" },
-    { label: "🇦🇲 Armenian Dram (AMD)", value: "AMD", symbol: "֏" },
-    {
-      label: "🇨🇼 Netherlands Antillean Guilder (ANG)",
-      value: "ANG",
-      symbol: "ƒ",
-    },
-    { label: "🇦🇴 Angolan Kwanza (AOA)", value: "AOA", symbol: "Kz" },
-    { label: "🇦🇷 Argentine Peso (ARS)", value: "ARS", symbol: "$" },
-    { label: "🇦🇺 Australian Dollar (AUD)", value: "AUD", symbol: "$" },
-    { label: "🇦🇼 Aruban Florin (AWG)", value: "AWG", symbol: "ƒ" },
-    { label: "🇦🇿 Azerbaijani Manat (AZN)", value: "AZN", symbol: "₼" },
-    {
-      label: "🇧🇦 Bosnia-Herzegovina Convertible Mark (BAM)",
-      value: "BAM",
-      symbol: "KM",
-    },
-    { label: "🇧🇧 Barbadian Dollar (BBD)", value: "BBD", symbol: "$" },
-    { label: "🇧🇩 Bangladeshi Taka (BDT)", value: "BDT", symbol: "৳" },
-    { label: "🇧🇬 Bulgarian Lev (BGN)", value: "BGN", symbol: "лв" },
-    { label: "🇧🇭 Bahraini Dinar (BHD)", value: "BHD", symbol: ".د.ب" },
-    { label: "🇧🇮 Burundian Franc (BIF)", value: "BIF", symbol: "FBu" },
-    { label: "🇧🇲 Bermudan Dollar (BMD)", value: "BMD", symbol: "$" },
-    { label: "🇧🇳 Brunei Dollar (BND)", value: "BND", symbol: "$" },
-    { label: "🇧🇴 Bolivian Boliviano (BOB)", value: "BOB", symbol: "Bs." },
-    { label: "🇧🇷 Brazilian Real (BRL)", value: "BRL", symbol: "R$" },
-    { label: "🇧🇸 Bahamian Dollar (BSD)", value: "BSD", symbol: "$" },
-    { label: "₿ Bitcoin (BTC)", value: "BTC", symbol: "₿" },
-    { label: "🇧🇹 Bhutanese Ngultrum (BTN)", value: "BTN", symbol: "Nu." },
-    { label: "🇧🇼 Botswanan Pula (BWP)", value: "BWP", symbol: "P" },
-    { label: "🇧🇾 New Belarusian Ruble (BYN)", value: "BYN", symbol: "Br" },
-    { label: "🇧🇾 Belarusian Ruble (BYR)", value: "BYR", symbol: "Br" },
-    { label: "🇧🇿 Belize Dollar (BZD)", value: "BZD", symbol: "$" },
-    { label: "🇨🇦 Canadian Dollar (CAD)", value: "CAD", symbol: "$" },
-    { label: "🇨🇩 Congolese Franc (CDF)", value: "CDF", symbol: "FC" },
-    { label: "🇨🇭 Swiss Franc (CHF)", value: "CHF", symbol: "CHF" },
-    {
-      label: "🇨🇱 Chilean Unit Of Account (Uf) (CLF)",
-      value: "CLF",
-      symbol: "UF",
-    },
-    { label: "🇨🇱 Chilean Peso (CLP)", value: "CLP", symbol: "$" },
-    { label: "🇨🇳 Chinese Yuan (CNY)", value: "CNY", symbol: "¥" },
-    { label: "🇨🇴 Colombian Peso (COP)", value: "COP", symbol: "$" },
-    { label: "🇨🇷 Costa Rican Colón (CRC)", value: "CRC", symbol: "₡" },
-    { label: "🇨🇺 Cuban Convertible Peso (CUC)", value: "CUC", symbol: "$" },
-    { label: "🇨🇺 Cuban Peso (CUP)", value: "CUP", symbol: "$" },
-    { label: "🇨🇻 Cape Verdean Escudo (CVE)", value: "CVE", symbol: "$" },
-    { label: "🇨🇿 Czech Republic Koruna (CZK)", value: "CZK", symbol: "Kč" },
-    { label: "🇩🇯 Djiboutian Franc (DJF)", value: "DJF", symbol: "Fdj" },
-    { label: "🇩🇰 Danish Krone (DKK)", value: "DKK", symbol: "kr" },
-    { label: "🇩🇴 Dominican Peso (DOP)", value: "DOP", symbol: "RD$" },
-    { label: "🇩🇿 Algerian Dinar (DZD)", value: "DZD", symbol: "دج" },
-    { label: "🇪🇬 Egyptian Pound (EGP)", value: "EGP", symbol: "£" },
-    { label: "🇪🇷 Eritrean Nakfa (ERN)", value: "ERN", symbol: "Nfk" },
-    { label: "🇪🇹 Ethiopian Birr (ETB)", value: "ETB", symbol: "Br" },
-    { label: "🇪🇺 Euro (EUR)", value: "EUR", symbol: "€" },
-    { label: "🇫🇯 Fijian Dollar (FJD)", value: "FJD", symbol: "$" },
-    { label: "🇫🇰 Falkland Islands Pound (FKP)", value: "FKP", symbol: "£" },
-    { label: "🇬🇧 British Pound Sterling (GBP)", value: "GBP", symbol: "£" },
-    { label: "🇬🇪 Georgian Lari (GEL)", value: "GEL", symbol: "₾" },
-    { label: "🇬🇬 Guernsey Pound (GGP)", value: "GGP", symbol: "£" },
-    { label: "🇬🇭 Ghanaian Cedi (GHS)", value: "GHS", symbol: "GH₵" },
-    { label: "🇬🇮 Gibraltar Pound (GIP)", value: "GIP", symbol: "£" },
-    { label: "🇬🇲 Gambian Dalasi (GMD)", value: "GMD", symbol: "D" },
-    { label: "🇬🇳 Guinean Franc (GNF)", value: "GNF", symbol: "FG" },
-    { label: "🇬🇹 Guatemalan Quetzal (GTQ)", value: "GTQ", symbol: "Q" },
-    { label: "🇬🇾 Guyanaese Dollar (GYD)", value: "GYD", symbol: "$" },
-    { label: "🇭🇰 Hong Kong Dollar (HKD)", value: "HKD", symbol: "$" },
-    { label: "🇭🇳 Honduran Lempira (HNL)", value: "HNL", symbol: "L" },
-    { label: "🇭🇷 Croatian Kuna (HRK)", value: "HRK", symbol: "kn" },
-    { label: "🇭🇹 Haitian Gourde (HTG)", value: "HTG", symbol: "G" },
-    { label: "🇭🇺 Hungarian Forint (HUF)", value: "HUF", symbol: "Ft" },
-    { label: "🇮🇩 Indonesian Rupiah (IDR)", value: "IDR", symbol: "Rp" },
-    { label: "🇮🇱 Israeli New Sheqel (ILS)", value: "ILS", symbol: "₪" },
-    { label: "🇮🇲 Manx Pound (IMP)", value: "IMP", symbol: "£" },
-    { label: "🇮🇳 Indian Rupee (INR)", value: "INR", symbol: "₹" },
-    { label: "🇮🇶 Iraqi Dinar (IQD)", value: "IQD", symbol: "ع.د" },
-    { label: "🇮🇷 Iranian Rial (IRR)", value: "IRR", symbol: "﷼" },
-    { label: "🇮🇸 Icelandic Króna (ISK)", value: "ISK", symbol: "kr" },
-    { label: "🇯🇪 Jersey Pound (JEP)", value: "JEP", symbol: "£" },
-    { label: "🇯🇲 Jamaican Dollar (JMD)", value: "JMD", symbol: "J$" },
-    { label: "🇯🇴 Jordanian Dinar (JOD)", value: "JOD", symbol: "ا.د" },
-    { label: "🇯🇵 Japanese Yen (JPY)", value: "JPY", symbol: "¥" },
-    { label: "🇰🇪 Kenyan Shilling (KES)", value: "KES", symbol: "Sh" },
-    { label: "🇰🇬 Kyrgystani Som (KGS)", value: "KGS", symbol: "лв" },
-    { label: "🇰🇭 Cambodian Riel (KHR)", value: "KHR", symbol: "៛" },
-    { label: "🇰🇲 Comorian Franc (KMF)", value: "KMF", symbol: "CF" },
-    { label: "🇰🇵 North Korean Won (KPW)", value: "KPW", symbol: "₩" },
-    { label: "🇰🇷 South Korean Won (KRW)", value: "KRW", symbol: "₩" },
-    { label: "🇰🇼 Kuwaiti Dinar (KWD)", value: "KWD", symbol: "د.ك" },
-    { label: "🇰🇾 Cayman Islands Dollar (KYD)", value: "KYD", symbol: "$" },
-    { label: "🇰🇿 Kazakhstani Tenge (KZT)", value: "KZT", symbol: "лв" },
-    { label: "🇱🇦 Laotian Kip (LAK)", value: "LAK", symbol: "₭" },
-    { label: "🇱🇧 Lebanese Pound (LBP)", value: "LBP", symbol: "£" },
-    { label: "🇱🇰 Sri Lankan Rupee (LKR)", value: "LKR", symbol: "₨" },
-    { label: "🇱🇷 Liberian Dollar (LRD)", value: "LRD", symbol: "$" },
-    { label: "🇱🇸 Lesotho Loti (LSL)", value: "LSL", symbol: "L" },
-    { label: "🇱🇹 Lithuanian Litas (LTL)", value: "LTL", symbol: "Lt" },
-    { label: "🇱🇻 Latvian Lats (LVL)", value: "LVL", symbol: "Ls" },
-    { label: "🇱🇾 Libyan Dinar (LYD)", value: "LYD", symbol: "د.ل" },
-    { label: "🇲🇦 Moroccan Dirham (MAD)", value: "MAD", symbol: "د.م." },
-    { label: "🇲🇩 Moldovan Leu (MDL)", value: "MDL", symbol: "L" },
-    { label: "🇲🇬 Malagasy Ariary (MGA)", value: "MGA", symbol: "Ar" },
-    { label: "🇲🇰 Macedonian Denar (MKD)", value: "MKD", symbol: "ден" },
-    { label: "🇲🇲 Myanma Kyat (MMK)", value: "MMK", symbol: "K" },
-    { label: "🇲🇳 Mongolian Tugrik (MNT)", value: "MNT", symbol: "₮" },
-    { label: "🇲🇴 Macanese Pataca (MOP)", value: "MOP", symbol: "MOP$" },
-    { label: "🇲🇷 Mauritanian Ouguiya (MRO)", value: "MRO", symbol: "UM" },
-    { label: "🇲🇺 Mauritian Rupee (MUR)", value: "MUR", symbol: "₨" },
-    { label: "🇲🇻 Maldivian Rufiyaa (MVR)", value: "MVR", symbol: "Rf" },
-    { label: "🇲🇼 Malawian Kwacha (MWK)", value: "MWK", symbol: "MK" },
-    { label: "🇲🇽 Mexican Peso (MXN)", value: "MXN", symbol: "$" },
-    { label: "🇲🇾 Malaysian Ringgit (MYR)", value: "MYR", symbol: "RM" },
-    { label: "🇲🇿 Mozambican Metical (MZN)", value: "MZN", symbol: "MT" },
-    { label: "🇳🇦 Namibian Dollar (NAD)", value: "NAD", symbol: "$" },
-    { label: "🇳🇬 Nigerian Naira (NGN)", value: "NGN", symbol: "₦" },
-    { label: "🇳🇮 Nicaraguan Córdoba (NIO)", value: "NIO", symbol: "C$" },
-    { label: "🇳🇴 Norwegian Krone (NOK)", value: "NOK", symbol: "kr" },
-    { label: "🇳🇵 Nepalese Rupee (NPR)", value: "NPR", symbol: "₨" },
-    { label: "🇳🇿 New Zealand Dollar (NZD)", value: "NZD", symbol: "$" },
-    { label: "🇴🇲 Omani Rial (OMR)", value: "OMR", symbol: "﷼" },
-    { label: "🇵🇦 Panamanian Balboa (PAB)", value: "PAB", symbol: "B/." },
-    { label: "🇵🇪 Peruvian Nuevo Sol (PEN)", value: "PEN", symbol: "S/." },
-    { label: "🇵🇬 Papua New Guinean Kina (PGK)", value: "PGK", symbol: "K" },
-    { label: "🇵🇭 Philippine Peso (PHP)", value: "PHP", symbol: "₱" },
-    { label: "🇵🇰 Pakistani Rupee (PKR)", value: "PKR", symbol: "₨" },
-    { label: "🇵🇱 Polish Zloty (PLN)", value: "PLN", symbol: "zł" },
-    { label: "🇵🇾 Paraguayan Guarani (PYG)", value: "PYG", symbol: "Gs" },
-    { label: "🇶🇦 Qatari Rial (QAR)", value: "QAR", symbol: "﷼" },
-    { label: "🇷🇴 Romanian Leu (RON)", value: "RON", symbol: "lei" },
-    { label: "🇷🇸 Serbian Dinar (RSD)", value: "RSD", symbol: "Дин." },
-    { label: "🇷🇺 Russian Ruble (RUB)", value: "RUB", symbol: "₽" },
-    { label: "🇷🇼 Rwandan Franc (RWF)", value: "RWF", symbol: "FRw" },
-    { label: "🇸🇦 Saudi Riyal (SAR)", value: "SAR", symbol: "﷼" },
-    { label: "🇸🇧 Solomon Islands Dollar (SBD)", value: "SBD", symbol: "$" },
-    { label: "🇸🇨 Seychellois Rupee (SCR)", value: "SCR", symbol: "₨" },
-    { label: "🇸🇩 Sudanese Pound (SDG)", value: "SDG", symbol: "ج.س." },
-    { label: "🇸🇪 Swedish Krona (SEK)", value: "SEK", symbol: "kr" },
-    { label: "🇸🇬 Singapore Dollar (SGD)", value: "SGD", symbol: "$" },
-    { label: "🇸🇭 Saint Helena Pound (SHP)", value: "SHP", symbol: "£" },
-    { label: "🇸🇱 Sierra Leonean Leone (SLL)", value: "SLL", symbol: "Le" },
-    { label: "🇸🇴 Somali Shilling (SOS)", value: "SOS", symbol: "Sh" },
-    { label: "🇸🇷 Surinamese Dollar (SRD)", value: "SRD", symbol: "$" },
-    { label: "🇸🇸 South Sudanese Pound (SSP)", value: "SSP", symbol: "£" },
-    {
-      label: "🇸🇹 São Tomé and Príncipe Dobra (STD)",
-      value: "STD",
-      symbol: "Db",
-    },
-    { label: "🇸🇾 Syrian Pound (SYP)", value: "SYP", symbol: "£" },
-    { label: "🇸🇿 Swazi Lilangeni (SZL)", value: "SZL", symbol: "L" },
-    { label: "🇹🇭 Thai Baht (THB)", value: "THB", symbol: "฿" },
-    { label: "🇹🇿 Tanzanian Shilling (TZS)", value: "TZS", symbol: "Sh" },
-    { label: "🇹🇿 Tanzanian Shilling (TZS)", value: "TZS", symbol: "Sh" },
-    { label: "🇹🇳 Tunisian Dinar (TND)", value: "TND", symbol: "د.ت" },
-    { label: "🇹🇷 Turkish Lira (TRY)", value: "TRY", symbol: "₺" },
-    {
-      label: "🇹🇹 Trinidad and Tobago Dollar (TTD)",
-      value: "TTD",
-      symbol: "TT$",
-    },
-    { label: "🇹🇻 Tuvaluan Dollar (TVD)", value: "TVD", symbol: "$" },
-    { label: "🇺🇦 Ukrainian Hryvnia (UAH)", value: "UAH", symbol: "₴" },
-    { label: "🇺🇬 Ugandan Shilling (UGX)", value: "UGX", symbol: "USh" },
-    { label: "🇺🇸 United States Dollar (USD)", value: "USD", symbol: "$" },
-    { label: "🇺🇾 Uruguayan Peso (UYU)", value: "UYU", symbol: "$" },
-    { label: "🇺🇿 Uzbekistani Som (UZS)", value: "UZS", symbol: "лв" },
-    {
-      label: "🇻🇪 Venezuelan Bolívar Fuerte (VEF)",
-      value: "VEF",
-      symbol: "Bs F",
-    },
-    { label: "🇻🇳 Vietnamese Dong (VND)", value: "VND", symbol: "₫" },
-    { label: "🇻🇺 Vanuatu Vatu (VUV)", value: "VUV", symbol: "VT" },
-    { label: "🇼🇸 Samoan Tala (WST)", value: "WST", symbol: "T" },
-    { label: "🇾🇪 Yemeni Rial (YER)", value: "YER", symbol: "﷼" },
-    { label: "🇿🇦 South African Rand (ZAR)", value: "ZAR", symbol: "R" },
-    { label: "🇿🇲 Zambian Kwacha (ZMW)", value: "ZMW", symbol: "ZK" },
-    { label: "🇿🇼 Zimbabwean Dollar (ZWL)", value: "ZWL", symbol: "$" },
-  ]);
+  // The current expense list.
+  const [friends, setFriends] = useState([]);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [currencyCode, setCurrencyCode] = useState(defaultCurrencyCode);
+  const [currentListName, setCurrentListName] = useState("");
+  const [currentStep, setCurrentStep] = useState(1);
 
-  //"https://itamarn01.github.io/Juba-backend/components/languages.js"
+  // Wizard inputs.
+  const [friendName, setFriendName] = useState("");
+  const [friendError, setFriendError] = useState("");
+  const [payerId, setPayerId] = useState(null);
+  const [expenseAmount, setExpenseAmount] = useState("");
+  const [expenseDescription, setExpenseDescription] = useState("");
+  const [expenseError, setExpenseError] = useState("");
+  const [stepError, setStepError] = useState("");
+  const descriptionInput = useRef(null);
+
+  // Modals.
+  const [currencyOpen, setCurrencyOpen] = useState(false);
+  const [resultsVisible, setResultsVisible] = useState(false);
+  const [saveModalVisible, setSaveModalVisible] = useState(false);
+  const [saveListName, setSaveListName] = useState("");
+  const [saveError, setSaveError] = useState("");
+  const [savedListsVisible, setSavedListsVisible] = useState(false);
+  const [savedLists, setSavedLists] = useState([]);
+  const resultsShotRef = useRef(null);
+
+  // Ads.
+  const interstitialRef = useRef(null);
+  const [interstitialLoaded, setInterstitialLoaded] = useState(false);
+  const awaitingAdRef = useRef(false);
+
+  const [friendShakeStyle, shakeFriend] = useShake();
+  const [expenseShakeStyle, shakeExpense] = useShake();
+  const [stepShakeStyle, shakeStep] = useShake();
+  const [saveShakeStyle, shakeSave] = useShake();
+  const toast = useToast();
+
+  const currencySymbol = findCurrency(currencyCode)?.symbol ?? currencyCode;
+  const formatMoney = (amount) => `${currencySymbol}${formatAmount(amount)}`;
+  const results = useMemo(
+    () => calculateSplit(friends, selectedIds),
+    [friends, selectedIds]
+  );
+  const appReady = (fontsLoaded || !!fontError) && trackingPermissionProcessEnd;
+
   useEffect(() => {
+    const fetchTranslations = async () => {
+      try {
+        const response = await axios.get(
+          "https://itamarn01.github.io/Juba-backend/components/languages.json",
+          { timeout: 10000 }
+        );
+        if (response.data && typeof response.data === "object") {
+          i18n.store(response.data);
+          setTranslationsVersion((version) => version + 1);
+        }
+      } catch (error) {
+        console.log("Error fetching translations:", error);
+      }
+    };
+
+    const appVersionChecker = async () => {
+      try {
+        const currentVersion = Constants.expoConfig?.version;
+        if (!currentVersion) return;
+        const response = await axios.get(
+          "https://itamarn01.github.io/Juba-backend/components/version.json",
+          { timeout: 10000 }
+        );
+        const latestVersion =
+          Platform.OS === "ios"
+            ? response.data.iosUpdatedVersion
+            : response.data.updatedVersion;
+        if (typeof latestVersion !== "string") return;
+        const updateStatus = getUpdateStatus(currentVersion, latestVersion);
+        if (updateStatus === "mustUpdate") {
+          showUpdateAlert(
+            "Update Required",
+            "A new version of the app is available. Please update to continue using the app.",
+            true
+          );
+        } else if (updateStatus === "recommendToUpdate") {
+          showUpdateAlert(
+            "Update Recommended",
+            "A new version of the app is available. We recommend updating to the latest version.",
+            false
+          );
+        }
+      } catch (error) {
+        console.log("error to fetch version", error);
+      }
+    };
+
     fetchTranslations();
     appVersionChecker();
   }, []);
 
-  const appVersionChecker = async () => {
-    try {
-      let currentVersion = "1.0.2"; //change the version
-      let iosCurrentVersion = "1.0.3";
-      const response = await axios.get(
-        "https://itamarn01.github.io/Juba-backend/components/version.json"
-      );
-      // console.log("version:", response.data.version);
-      const latestVersion = response.data.updatedVersion;
-      const iosLatestVersion = response.data.iosUpdatedVersion;
-      console.log("version:", iosLatestVersion);
-      console.log("----------------------------------------------------------");
-      const updateStatus = getUpdateStatus(
-        Platform.OS === "ios" ? iosCurrentVersion : currentVersion,
-        Platform.OS === "ios" ? iosLatestVersion : latestVersion
-      );
-
-      if (updateStatus === "mustUpdate") {
-        showMandatoryUpdateAlert(
-          "Update Required",
-          "A new version of the app is available. Please update to continue using the app.",
-          "https://apps.apple.com/il/app/juba/id6502645038?l=he",
-          "https://play.google.com/store/apps/details?id=com.gigtunetry.JUBA"
-        );
-      } else if (updateStatus === "recommendToUpdate") {
-        showAlert(
-          "Update Recommended",
-          "A new version of the app is available. We recommend updating to the latest version.",
-          "https://apps.apple.com/il/app/juba/id6502645038?l=he",
-          "https://play.google.com/store/apps/details?id=com.gigtunetry.JUBA"
-        );
-      }
-    } catch (error) {
-      console.log("error to fetch version", error);
-    }
-  };
-
-  const showAlert = (title, message, appStoreLink, googlePlayLink) => {
-    Alert.alert(
-      title,
-      message,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Update",
-          onPress: () => {
-            // Modify the link based on the platform
-            const link = Platform.OS === "ios" ? appStoreLink : googlePlayLink;
-            Linking.openURL(link).catch((err) =>
-              console.error("An error occurred", err)
-            );
-          },
-        },
-      ],
-      { cancelable: false }
-    );
-  };
-  const showMandatoryUpdateAlert = (
-    title,
-    message,
-    appStoreLink,
-    googlePlayLink
-  ) => {
-    Alert.alert(
-      title,
-      message,
-      [
-        {
-          text: "Update",
-          onPress: () => {
-            const link = Platform.OS === "ios" ? appStoreLink : googlePlayLink;
-            Linking.openURL(link).catch((err) =>
-              console.error("An error occurred", err)
-            );
-          },
-        },
-      ],
-      { cancelable: false }
-    );
-  };
-
-  // Your getUpdateStatus function
-  function getUpdateStatus(currentVersion, latestVersion) {
-    const currentVersionArray = currentVersion.split(".").map(Number);
-    const latestVersionArray = latestVersion.split(".").map(Number);
-
-    // Compare each segment of the version number
-    for (let i = 0; i < currentVersionArray.length - 1; i++) {
-      if (currentVersionArray[i] < latestVersionArray[i]) {
-        return "mustUpdate"; // Major or minor version update
-      }
-    }
-    if (currentVersionArray[2] < latestVersionArray[2]) {
-      return "recommendToUpdate";
-    }
-
-    return "noUpdate"; // Versions are identical
-  }
-
-  const fetchTranslations = async () => {
-    try {
-      setLoading(true); // Show loading indicator while fetching
-      const response = await axios.get(
-        "https://itamarn01.github.io/Juba-backend/components/languages.json"
-      );
-      console.log("responseData[0]:", response.data[0]);
-      const translations = response.data;
-
-      setTranslationsJson(translations); // Update state with fetched translations
-
-      setLoading(false);
-    } catch (error) {
-      console.error("Error fetching translations:", error);
-      setLoading(false);
-    }
-  };
-  const languageRestart = async () => {
-    if (!I18nManager.isRTL) {
-      I18nManager.allowRTL(true);
-      I18nManager.forceRTL(true);
-      await Updates.reloadAsync();
-    }
-  };
-  // const i18n = new I18n();
+  // Hebrew needs an RTL layout, which only applies after a reload.
   useEffect(() => {
-    if (loading) return;
-    i18n.store(translationsJson);
-  }, [translationsJson, loading]);
-
-  useEffect(() => {
-    const locales = getLocales();
-    console.log("i18n.locale:", i18n.locale);
-    // console.log("local:", locales[0].textDirection);
-    if (
-      (locales &&
-        /* locales[0].textDirection === "rtl" */ i18n.locale === "he") ||
-      i18n.locale === "ar"
-    ) {
-      /*   I18nManager.forceRTL(true);
-        console.log("forcing rtl");
-       restartApp() */
-      languageRestart();
+    if (I18nManager.isRTL === isRTL) return;
+    I18nManager.allowRTL(isRTL);
+    I18nManager.forceRTL(isRTL);
+    if (__DEV__) {
+      DevSettings.reload();
     } else {
-      I18nManager.forceRTL(false);
+      Updates.reloadAsync().catch((error) =>
+        console.log("Error reloading for RTL:", error)
+      );
     }
-    console.log("is rtl?", I18nManager.isRTL);
   }, []);
-
-  React.useEffect(() => {
-    //Get Values from database
-
-    // Store Values in Temporary Array
-    let newArray = NickNames.map((item) => {
-      return { key: item.he, value: item.he };
-    });
-    //Set Data Variable
-    setData(newArray);
-  }, []);
-  const [appOpen, setAppOpen] = useState(null);
-  const [interstitial, setInterstitial] = useState(null);
-  const [rewardedInterstitial, setRewardedInterstitial] = useState(null);
-  const [showDescription, setShowDescription] = React.useState(false);
 
   useEffect(() => {
     const getTrackingPermission = async () => {
-      console.log("start tracking permission process.....");
       try {
-        /* const status = await checkTrackingStatus();
-        console.log("status tracking:", status);
-        if (status === 'not-determined') { */
         const permission = await requestTrackingPermission();
-        console.log("permission tracking:", permission);
         if (permission === "authorized") {
           setIsTrackingPermission(true);
-          console.log("Permission to track data granted.");
         }
-        /*  } else if (status === 'authorized') {
-           setIsTrackingPermission(true);
-           console.log("Permission to track data granted.");
-         } */
       } catch (error) {
         console.log("Error during tracking permissions request:", error);
       } finally {
-        console.log("Finalizing permissions and initializing ads...");
-
         setTrackingPermissionProcessEnd(true);
-        await mobileAds().initialize();
-        console.log("Ads initialized.");
+        try {
+          await mobileAds().initialize();
+        } catch (error) {
+          console.log("Error initializing ads:", error);
+        }
       }
     };
 
     getTrackingPermission();
   }, []);
-  //------------------------------------tracking permisiion for android-----------------
-  /* useEffect(() => {
-    (async () => {
-      try {
-        console.log("Requesting tracking status...");
-        const { status: trackingStatus, canAskAgain } =
-          await requestTrackingPermissionsAsync();
-
-        console.log("Tracking status:", trackingStatus);
-        console.log("Can ask again:", canAskAgain);
-
-        if (trackingStatus === "granted") {
-          setIsTrackingPermission(true);
-          console.log("Permission to track data granted.");
-        }
-      } catch (error) {
-        console.error("Error during tracking permissions request:", error);
-      } finally {
-        console.log("Finalizing permissions and initializing ads...");
-        setTrackingPermissionProcessEnd(true);
-        await mobileAds().initialize();
-        console.log("Ads initialized.");
-      }
-    })();
-  }, []); */
-
-  /*  const removeSplash = useCallback(async () => {
-    console.log("soger tasplash");
-    try {
-      if (canShowAd) await SplashScreen.hideAsync();
-      console.log("Splash screen hidden successfully");
-    } catch (hideError) {
-      console.error("Error hiding splash screen:", hideError);
-    }
-    if (!canShowAd) {
-      return null;
-    }
-  }, [canShowAd]); */
-
-  /*  const onLayoutRootView1 = useCallback(async () => {
-    if (trackingPermissionProcessEnd) {
-      // This tells the splash screen to hide immediately! If we call this after
-      // `setAppIsReady`, then we may see a blank screen while the app is
-      // loading its initial state and rendering its first pixels. So instead,
-      // we hide the splash screen once we know the root view has already
-      // performed layout.
-      
-    }
-  }, [trackingPermissionProcessEnd]);
-
-  if (!trackingPermissionProcessEnd) {
-    return null;
-  } */
-
-  /* const HideSplashScreen = async () => {
-    // if (!trackingPermissionProcessEnd) return;
-    console.log("tracking permission end", trackingPermissionProcessEnd);
-    if (trackingPermissionProcessEnd) {
-      // This tells the splash screen to hide immediately! If we call this after
-      // `setAppIsReady`, then we may see a blank screen while the app is
-      // loading its initial state and rendering its first pixels. So instead,
-      // we hide the splash screen once we know the root view has already
-      // performed layout.
-      await SplashScreen.hideAsync();
-      setCanShowAd(true);
-    }
-  };
 
   useEffect(() => {
-    HideSplashScreen();
-  }, [trackingPermissionProcessEnd]);
- */
-  useEffect(() => {
-    if (!trackingPermissionProcessEnd) {
-      console.log("tracking process doesn't finish");
-      return;
-    }
-    setAppOpenClosed(true);
-    console.log("change to app open closed");
-  }, [trackingPermissionProcessEnd, isTrackingPermission]);
+    if (!appReady) return;
+    SplashScreen.hideAsync().catch(() => {});
+    setShowDescription(true);
+  }, [appReady]);
 
   useEffect(() => {
-    if (fontsLoaded && appOpenClosed) {
-      SplashScreen.hideAsync();
-      console.log("splash screen hidden");
-      setShowDescription(true);
-    }
-  }, [fontsLoaded, appOpenClosed]);
-  //---------------------------------------------------check without app open-------------
-  /*  useEffect(() => {
-     if (!trackingPermissionProcessEnd) {
-       console.log("tracking process doesn't finish");
-       return;
-     }
-     console.log("Start initialize appOpenAd");
-     const invalidAdUnitIdAppOpen = "invalid_ad_unit_id";
-     const newAppOpen = AppOpenAd.createForAdRequest(adUnitIdAppOpen, {
-       keywords: ["fashion", "clothing", "food", "cooking", "fruit"],
-       requestNonPersonalizedAdsOnly: !isTrackingPermission,
-     });
- 
-     setAppOpen(newAppOpen);
-     const unsubscribe = newAppOpen.addAdEventListener(
-       AdEventType.LOADED,
-       () => {
-         console.log("appOpen ad loaded");
-         setAppOpenLoaded(true);
-         newAppOpen.show();
-       }
-     );
- 
-     const unsubscribeClosed = newAppOpen.addAdEventListener(
-       AdEventType.CLOSED,
-       () => {
-         console.log("app open ad closed");
-         setAppOpenClosed(true);
-       }
-     );
- 
-     const unsubscribeErorr = newAppOpen.addAdEventListener(
-       AdEventType.ERROR,
-       (error) => {
-         console.log(`error loading appOpen :`, error);
-         setAppOpenClosed(true);
-       }
-     );
- 
-     // Start loading the interstitial straight away
-     newAppOpen.load();
- 
-     // Unsubscribe from events on unmount
-     return () => {
-       unsubscribe();
-       unsubscribeClosed();
-       unsubscribeErorr();
-     };
-   }, [isTrackingPermission, trackingPermissionProcessEnd]);
-  */
-  /*  useEffect(() => {
-    if (!trackingPermissionProcessEnd) {
-      console.log("tracking process doesn't finish");
-      return;
-    }
-    console.log("tracking process load interstitial");
-    console.log;
-    const newInterstitial = InterstitialAd.createForAdRequest(
+    if (!trackingPermissionProcessEnd) return;
+    const interstitial = InterstitialAd.createForAdRequest(
       adUnitIdInterstitial,
       {
-        keywords: ["fashion", "clothing", "food", "cooking", "fruit"],
+        keywords: adKeywords,
         requestNonPersonalizedAdsOnly: !isTrackingPermission,
       }
     );
+    interstitialRef.current = interstitial;
+    let retryTimer = null;
 
-    setInterstitial(newInterstitial);
-    const unsubscribe = newInterstitial.addAdEventListener(
-      AdEventType.LOADED,
-      () => {
-        console.log("interstitial loaded");
-        setLoaded(true);
-        newInterstitial.show();
+    const showPendingResults = () => {
+      if (awaitingAdRef.current) {
+        awaitingAdRef.current = false;
+        setResultsVisible(true);
       }
-    );
-
-    const unsubscribeClosed = newInterstitial.addAdEventListener(
-      AdEventType.CLOSED,
-      () => {
-        console.log("interstitial closed");
-        setInterstitialClosed(true);
-      }
-    );
-
-    // Start loading the interstitial straight away
-    newInterstitial.load();
-
-    // Unsubscribe from events on unmount
-    return () => {
-      unsubscribe();
-      unsubscribeClosed();
     };
-  }, [isTrackingPermission, trackingPermissionProcessEnd]); */
 
-  useEffect(() => {
-    if (adClosed) {
-      calculateExpenses();
-    }
-  }, [adClosed]);
+    const unsubscribers = [
+      interstitial.addAdEventListener(AdEventType.LOADED, () => {
+        setInterstitialLoaded(true);
+      }),
+      interstitial.addAdEventListener(AdEventType.ERROR, (error) => {
+        console.log("Interstitial error:", error);
+        setInterstitialLoaded(false);
+        showPendingResults();
+        clearTimeout(retryTimer);
+        retryTimer = setTimeout(() => interstitial.load(), 30000);
+      }),
+      interstitial.addAdEventListener(AdEventType.CLOSED, () => {
+        setInterstitialLoaded(false);
+        interstitial.load();
+        showPendingResults();
+      }),
+    ];
 
+    interstitial.load();
+
+    return () => {
+      clearTimeout(retryTimer);
+      unsubscribers.forEach((unsubscribe) => unsubscribe());
+      interstitialRef.current = null;
+      setInterstitialLoaded(false);
+    };
+  }, [isTrackingPermission, trackingPermissionProcessEnd]);
+
+  // Keep a valid payer selected in the expenses step.
   useEffect(() => {
-    if (currentStep === 2 && inputNumFriend.current) {
-      inputNumFriend.current.focus();
+    if (!friends.some((friend) => friend.id === payerId)) {
+      setPayerId(friends[0]?.id ?? null);
     }
+  }, [friends, payerId]);
+
+  const clearErrors = () => {
+    setFriendError("");
+    setExpenseError("");
+    setStepError("");
+  };
+
+  const goToStep = (step) => {
+    Keyboard.dismiss();
+    clearErrors();
+    setCurrentStep(step);
+  };
+
+  // Android back button steps back through the wizard before leaving the app.
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        if (currentStep > 1) {
+          goToStep(currentStep - 1);
+          return true;
+        }
+        return false;
+      }
+    );
+    return () => subscription.remove();
   }, [currentStep]);
 
-  const loadInterstitial = () => {
-    const invalidAdUnitIdInterstitial = "invalid_ad_unit_id";
-    const newInterstitial = InterstitialAd.createForAdRequest(
-      adUnitIdInterstitial,
-      {
-        keywords: ["fashion", "clothing", "food", "cooking", "fruit"],
-        requestNonPersonalizedAdsOnly: !isTrackingPermission,
-      }
-    );
-
-    setInterstitial(newInterstitial);
-
-    const unsubscribeLoaded = newInterstitial.addAdEventListener(
-      AdEventType.LOADED,
-      () => {
-        console.log("loading interstitial process done");
-        setInterstitialLoaded(true);
-      }
-    );
-
-    /*  const unsubscribeErorr = newInterstitial.addAdEventListener(
-      AdEventType.ERROR,
-      (error) => {
-        console.log(`error loading interstitial ad :`, error);
-        //  onCalculateButtonPressed();
-        // setIsInterstitialError(true);
-        setInterstitialLoaded(false);
-        newInterstitial.load();
-        setAdClosed(true);
-      }
-    ); */
-
-    const unsubscribeClosed = newInterstitial.addAdEventListener(
-      AdEventType.CLOSED,
-      () => {
-        setInterstitialLoaded(false);
-        newInterstitial.load();
-        setAdClosed(true);
-      }
-    );
-
-    newInterstitial.load();
-
-    return () => {
-      unsubscribeLoaded();
-      unsubscribeClosed();
-      // unsubscribeErorr();
-    };
+  const failStep = (message) => {
+    setStepError(message);
+    shakeStep();
   };
 
-  useEffect(() => {
-    if (!trackingPermissionProcessEnd) {
-      console.log("tracking process doesn't finish");
+  const addFriend = () => {
+    const name = friendName.trim();
+    if (!name) {
+      setFriendError(i18n.t("errorEnterName"));
+      shakeFriend();
       return;
     }
-    const unsubscribeInterstitialEvents = loadInterstitial();
-
-    return () => {
-      unsubscribeInterstitialEvents();
-    };
-  }, [isTrackingPermission, trackingPermissionProcessEnd]);
-
-  const loadRewardedInterstitial = () => {
-    const newRewardedInterstitial = RewardedInterstitialAd.createForAdRequest(
-      adUnitIdRewarded,
-      {
-        keywords: ["fashion", "clothing", "food", "cooking", "fruit"],
-        requestNonPersonalizedAdsOnly: !isTrackingPermission,
-      }
+    const nameTaken = friends.some(
+      (friend) => friend.name.toLocaleLowerCase() === name.toLocaleLowerCase()
     );
-
-    setRewardedInterstitial(newRewardedInterstitial);
-
-    const unsubscribeLoaded = newRewardedInterstitial.addAdEventListener(
-      RewardedAdEventType.LOADED,
-      () => {
-        console.log("loading rewarded interstitial process done");
-        setRewardedInterstitialLoaded(true);
-      }
-    );
-
-    const unsubscribeEarned = newRewardedInterstitial.addAdEventListener(
-      RewardedAdEventType.EARNED_REWARD,
-      (reward) => {
-        console.log(`User earned reward of ${reward.amount} ${reward.type}`);
-        //  onCalculateButtonPressed();
-      }
-    );
-
-    const unsubscribeClosed = newRewardedInterstitial.addAdEventListener(
-      AdEventType.CLOSED,
-      () => {
-        setRewardedInterstitialLoaded(false);
-        newRewardedInterstitial.load();
-        setAdClosed(true);
-      }
-    );
-
-    newRewardedInterstitial.load();
-
-    return () => {
-      unsubscribeLoaded();
-      unsubscribeClosed();
-      unsubscribeEarned();
-    };
-  };
-
-  useEffect(() => {
-    if (!trackingPermissionProcessEnd) {
-      console.log("tracking process doesn't finish");
+    if (nameTaken) {
+      setFriendError(i18n.t("errorNameExists"));
+      shakeFriend();
       return;
     }
-    const unsubscribeRewardedInterstitialEvents = loadRewardedInterstitial();
+    const friend = { id: newId(), name, expenses: [] };
+    setFriends((prev) => [...prev, friend]);
+    setSelectedIds((prev) => [...prev, friend.id]);
+    setFriendName("");
+    clearErrors();
+  };
 
-    return () => {
-      unsubscribeRewardedInterstitialEvents();
+  const removeFriend = (friend) => {
+    const remove = () => {
+      setFriends((prev) => prev.filter((item) => item.id !== friend.id));
+      setSelectedIds((prev) => prev.filter((id) => id !== friend.id));
     };
-  }, [isTrackingPermission, trackingPermissionProcessEnd]);
-
-  /*  if (!loaded) {
-    return null;
-  } */
-
-  const onLayoutRootView = useEffect(() => {
-    if (fontsLoaded || fontError) {
-      setAppIsReady(true);
+    if (friend.expenses.length === 0) {
+      remove();
+      return;
     }
-  }, [fontsLoaded, fontError]);
-
-  /*  async function loadFonts() {
-    
-    setAppIsReady(true)
-  }
-
-  useEffect(() => {
-    loadFonts();
-  }, []);
- 
- */
-
-  const onNextStep = () => {
-    setCurrentStep(currentStep + 1);
+    Alert.alert("", i18n.t("confirmRemoveFriend", { name: friend.name }), [
+      { text: i18n.t("cancelButton"), style: "cancel" },
+      { text: i18n.t("removeButton"), style: "destructive", onPress: remove },
+    ]);
   };
 
-  const onPreviousStep = () => {
-    setCurrentStep(currentStep - 1);
+  const addExpense = () => {
+    const amount = parseAmount(expenseAmount);
+    if (!payerId || amount === null) {
+      setExpenseError(i18n.t("errorInvalidExpense"));
+      shakeExpense();
+      return;
+    }
+    const expense = { id: newId(), amount };
+    const description = expenseDescription.trim();
+    if (description) expense.description = description;
+    setFriends((prev) =>
+      prev.map((friend) =>
+        friend.id === payerId
+          ? { ...friend, expenses: [...friend.expenses, expense] }
+          : friend
+      )
+    );
+    setExpenseAmount("");
+    setExpenseDescription("");
+    clearErrors();
   };
-  const imagePath = require("./assets/juba-spend.png");
-  const viewShotRef = useRef(null);
-  //להחזיר
-  const captureAndShareImage = async () => {
+
+  const removeExpense = (friendId, expenseId) => {
+    setFriends((prev) =>
+      prev.map((friend) =>
+        friend.id === friendId
+          ? {
+              ...friend,
+              expenses: friend.expenses.filter((e) => e.id !== expenseId),
+            }
+          : friend
+      )
+    );
+  };
+
+  const toggleParticipant = (friendId) => {
+    setStepError("");
+    setSelectedIds((prev) =>
+      prev.includes(friendId)
+        ? prev.filter((id) => id !== friendId)
+        : [...prev, friendId]
+    );
+  };
+
+  const onNext = () => {
+    if (currentStep === 1 && friends.length < 2) {
+      failStep(i18n.t("errorMinFriends"));
+      return;
+    }
+    if (
+      currentStep === 2 &&
+      !friends.some((friend) => friend.expenses.length > 0)
+    ) {
+      failStep(i18n.t("errorNoExpenses"));
+      return;
+    }
+    goToStep(currentStep + 1);
+  };
+
+  // The results window opens only after the interstitial ad is closed.
+  // If no ad could be loaded, the results open directly.
+  const onCalculate = async () => {
+    if (selectedIds.length === 0) {
+      failStep(i18n.t("errorNoParticipants"));
+      return;
+    }
+    if (awaitingAdRef.current) return;
+    Keyboard.dismiss();
+    setStepError("");
+    const interstitial = interstitialRef.current;
+    if (interstitialLoaded && interstitial) {
+      awaitingAdRef.current = true;
+      try {
+        await interstitial.show();
+      } catch (error) {
+        console.log("Error showing interstitial:", error);
+        awaitingAdRef.current = false;
+        setResultsVisible(true);
+      }
+    } else {
+      setResultsVisible(true);
+    }
+  };
+
+  const shareResults = async () => {
     try {
-      const uri = await captureRef(viewShotRef, {
+      const uri = await captureRef(resultsShotRef, {
         format: "jpg",
         quality: 0.9,
+        // The snapshot view is off-screen; iOS can only render it this way.
+        useRenderInContext: Platform.OS === "ios",
       });
-
-      // Share the captured image
-      shareImage(uri);
-    } catch (error) {
-      console.error("Error capturing and sharing image:", error);
-    }
-  };
-  ///להחזיר
-  const shareImage = async (imageUri) => {
-    try {
-      await Sharing.shareAsync(imageUri, {
+      await Sharing.shareAsync(uri, {
         mimeType: "image/jpeg",
-        dialogTitle: "Share via",
-        UTI: "com.instagram.photo",
+        dialogTitle: i18n.t("share"),
+        UTI: "public.jpeg",
       });
     } catch (error) {
-      console.error("Error sharing image:", error.message);
+      console.log("Error capturing and sharing image:", error);
     }
   };
 
-  const handleSelectNickName = (nickName, index) => {
-    setFriends([{ ...friends[index], nickName: nickName }]);
-    setModalNickNameVisible(false);
+  const resetList = () => {
+    setFriends([]);
+    setSelectedIds([]);
+    setCurrentListName("");
+    setFriendName("");
+    setExpenseAmount("");
+    setExpenseDescription("");
+    goToStep(1);
   };
 
-  const addMessage = (message) => {
-    setMessages((prevMessages) => [...prevMessages, message]);
+  const startNewList = () => {
+    if (friends.length === 0) {
+      resetList();
+      return;
+    }
+    Alert.alert("", i18n.t("confirmNewList"), [
+      { text: i18n.t("cancelButton"), style: "cancel" },
+      {
+        text: i18n.t("continueButton"),
+        style: "destructive",
+        onPress: resetList,
+      },
+    ]);
   };
 
-  const handleInputChange = (text) => {
-    // Regular expression for a whole number
-    const integerRegex = /^(?:[1-9]?\d|100)$/;
+  const openSaveModal = () => {
+    if (friends.length === 0) {
+      toast.show(i18n.t("errorNothingToSave"));
+      return;
+    }
+    setSaveListName(currentListName);
+    setSaveError("");
+    setSaveModalVisible(true);
+  };
 
-    // Check if the input is a whole number
-    const isInteger = integerRegex.test(text);
-
-    // Check if the input is greater than or equal to the array length
-    const isValidInput = isInteger && parseInt(text, 10) >= friends.length;
-
-    // Update the state based on the validation result
-    setFriendsNumValid(isValidInput);
-    setNumPeople(text);
-
-    let notPaidFriendsArray = [];
-    if (isValidInput) {
-      for (let i = 0; i < text - friends.length; i++) {
-        notPaidFriendsArray[i] = "";
-      }
-      console.log("notPaidFriendsArray:", notPaidFriendsArray);
-      setNotPaidFriends(notPaidFriendsArray);
+  const saveCurrentList = async () => {
+    const name = saveListName.trim();
+    if (!name) {
+      setSaveError(i18n.t("errorListName"));
+      shakeSave();
+      return;
+    }
+    const list = {
+      id: newId(),
+      name,
+      savedAt: Date.now(),
+      currency: currencyCode,
+      friends,
+      selectedIds,
+    };
+    try {
+      const existing = await loadSavedLists();
+      // Saving under an existing name replaces that list.
+      const updated = [
+        list,
+        ...existing.filter(
+          (item) => item.name.toLocaleLowerCase() !== name.toLocaleLowerCase()
+        ),
+      ];
+      await writeSavedLists(updated);
+      setSavedLists(updated);
+      setCurrentListName(name);
+      setSaveModalVisible(false);
+      toast.show(i18n.t("listSaved"));
+    } catch (error) {
+      console.log("Error saving list:", error);
     }
   };
 
-  const addFriend = (amount) => {
-    setFriends([...friends, { amount: amount, isValid: true, nickname: "" }]);
-    // focusInput()
-  };
-  const focusInput = () => {
-    input.current.focus();
+  const openSavedLists = async () => {
+    setSavedLists(await loadSavedLists());
+    setSavedListsVisible(true);
   };
 
-  const deleteFriend = (index) => {
-    const updatedFriends = [...friends];
-    updatedFriends.splice(index, 1);
-    setFriends(updatedFriends);
-  };
-
-  const validateFriendsInput = (index) => {
-    const moneyRegex = /^(?=.*[1-9])\d{1,9}(\.\d{1,2})?$/;
-
-    // Your validation logic here
-    const isValidInput = moneyRegex.test(friends[index].amount);
-    const updatedFriends = [...friends];
-    updatedFriends[index].isValid = isValidInput;
-    setFriends(updatedFriends);
-    return isValidInput;
-  };
-
-  const onBlurHandler = (index) => {
-    validateFriendsInput(index);
-  };
-
-  const onNumFriendsBlurHandler = () => {
-    let notPaidFriendsArray = [];
-    if (FriendsNumIsValid) {
-      for (let i = 0; i < numPeople - friends.length; i++) {
-        notPaidFriendsArray[i] = "";
-      }
-      console.log("notPaidFriendsArray:", notPaidFriendsArray);
-      setNotPaidFriends(notPaidFriendsArray);
+  const loadList = (list) => {
+    const apply = () => {
+      const loadedFriends = Array.isArray(list.friends) ? list.friends : [];
+      const friendIds = loadedFriends.map((friend) => friend.id);
+      setFriends(loadedFriends);
+      setSelectedIds(
+        (Array.isArray(list.selectedIds) ? list.selectedIds : []).filter(
+          (id) => friendIds.includes(id)
+        )
+      );
+      if (findCurrency(list.currency)) setCurrencyCode(list.currency);
+      setCurrentListName(list.name);
+      setFriendName("");
+      setExpenseAmount("");
+      setExpenseDescription("");
+      const complete =
+        loadedFriends.length >= 2 &&
+        loadedFriends.some((friend) => friend.expenses.length > 0);
+      goToStep(complete ? 3 : 1);
+      setSavedListsVisible(false);
+      toast.show(i18n.t("listLoaded"));
+    };
+    if (friends.length === 0) {
+      apply();
+      return;
     }
+    Alert.alert("", i18n.t("confirmLoadList", { name: list.name }), [
+      { text: i18n.t("cancelButton"), style: "cancel" },
+      { text: i18n.t("loadButton"), onPress: apply },
+    ]);
   };
 
-  const onNextButtonPressed = () => {
-    // Alert.alert("button pressed");
-    let allInputsValid = true;
-    friends.forEach((friend, index) => {
-      if (!validateFriendsInput(index)) {
-        allInputsValid = false;
-      }
-    });
-
-    if (allInputsValid) {
-      setCurrentStep(2);
-      setNumPeople("");
-      setNotPaidFriends([]);
-      setFriendsNumValid(false);
-
-      // Proceed with your logic if all inputs are valid
-      //  Alert.alert("Success", "All inputs are valid!");
-    } else {
-      /*   Alert.alert("Error", "Please enter valid inputs."); */
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      input.current.shake();
-    }
+  const deleteList = (list) => {
+    Alert.alert("", i18n.t("confirmDeleteList", { name: list.name }), [
+      { text: i18n.t("cancelButton"), style: "cancel" },
+      {
+        text: i18n.t("deleteButton"),
+        style: "destructive",
+        onPress: async () => {
+          const updated = savedLists.filter((item) => item.id !== list.id);
+          setSavedLists(updated);
+          try {
+            await writeSavedLists(updated);
+          } catch (error) {
+            console.log("Error deleting list:", error);
+          }
+        },
+      },
+    ]);
   };
 
-  const onCalculateButtonPressed = () => {
-    // console.log("friendsNumisvalid:", FriendsNumIsValid);
-    // console.log("friend length:", friends.length);
-    if (FriendsNumIsValid) {
-      onCalculateButtonPressed();
-    } else {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      inputNumFriend.current.shake();
-    }
-  };
+  const inputDirectionStyle = isRTL ? styles.inputRTL : null;
 
-  const validateMoneyFormat = (text, index) => {
-    // Regular expression to validate money format with 2 decimal places
-    const moneyRegex = /^(?=.*[1-9])\d+(\.\d{1,2})?$/;
-
-    // console.log("textregex:", moneyRegex.test(text));
-    const updateValidate = [...isFriendExpenseValid];
-    updateValidate[index] = moneyRegex.test(text);
-    setIsFriendExpenseValid(updateValidate);
-    //  console.log("updatevalidate", updateValidate);
-    return moneyRegex.test(text);
-  };
-
-  const CheckArray = () => {
-    //console.log("isFriendExpenseValid:", isFriendExpenseValid);
-    // Use the every method to check if all elements are true
-    const allTrue = isFriendExpenseValid.every((item) => item === true);
-
-    // if (allTrue) {setNextBtnValid(true)} else {setNextBtnValid(false)}
-    // console.log("arrayall true:", allTrue);
-    // setNextBtnValid(allTrue)
-    return allTrue;
-  };
-  const calculateExpenses = () => {
-    setMessages("");
-    const friendsArray = [];
-    const namesArray = [];
-    const total = friends.reduce(
-      (acc, friend) => acc + parseFloat(friend.amount),
-      0
-    );
-    setTotalAmount(total);
-    friendsArray.push(
-      ...friends.map((friend) => friend.amount),
-      ...Array(Math.max(0, numPeople - friends.length)).fill("0")
-    );
-    namesArray.push(
-      ...friends.map((friend) => friend.nickname),
-      ...notPaidFriends
-      // ...Array(Math.max(0, numPeople - friends.length)).fill("")
-    );
-    for (let i = 0; i < friendsArray.length; i++) {
-      friendsArray[i] -= total / parseInt(numPeople);
-      friendsArray[i] = parseFloat(friendsArray[i].toFixed(2));
-    }
-    for (let i = 0; i < friendsArray.length; i++) {
-      let person = i + 1;
-      let iterationCount = 0;
-      const maxIterations = 30;
-
-      while (friendsArray[i] < -0.1 && iterationCount < maxIterations) {
-        let maxIndex = friendsArray.indexOf(Math.max(...friendsArray));
-        let friend = maxIndex + 1;
-
-        const friend1 =
-          namesArray[person - 1] === ""
-            ? `${i18n.t("friend")} ${person}`
-            : namesArray[person - 1].length > 14
-            ? namesArray[person - 1].substring(0, 14) + ".."
-            : namesArray[person - 1];
-
-        const friend2 =
-          namesArray[friend - 1] !== ""
-            ? namesArray[friend - 1].length > 14
-              ? namesArray[friend - 1].substring(0, 14) + ".."
-              : namesArray[friend - 1]
-            : `${i18n.t("friend")} ${friend}`;
-
-        const amount = (parseFloat(friendsArray[i]) * -1).toFixed(2);
-
-        if (friendsArray[maxIndex] + friendsArray[i] >= 0) {
-          friendsArray[maxIndex] += friendsArray[i];
-          friendsArray[maxIndex] = parseFloat(
-            friendsArray[maxIndex].toFixed(2)
-          );
-
-          addMessage({
-            textMessage: i18n.t("owe"),
-            friend1: friend1,
-            friend2: friend2,
-            amount: parseFloat(amount).toLocaleString(),
-          });
-
-          /*    addMessage(
-               i18n.t("member1OwesMember2", {
-                 friend1,
-                 friend2,
-                 amount: parseFloat(amount).toLocaleString(),
-                 currency: currencySymbol,
-               })
-             ); */
-          friendsArray[i] = 0;
-        } else {
-          friendsArray[i] += friendsArray[maxIndex];
-          friendsArray[i] = parseFloat(friendsArray[i].toFixed(2));
-          addMessage({
-            textMessage: i18n.t("owe"),
-            friend1: friend1,
-            friend2: friend2,
-            amount: parseFloat(
-              friendsArray[maxIndex].toFixed(2)
-            ).toLocaleString(),
-          });
-          /*  addMessage(
-             i18n.t("member1OwesMember2", {
-               friend1,
-               friend2,
-               amount: parseFloat(
-                 friendsArray[maxIndex].toFixed(2)
-               ).toLocaleString(),
-               currency: currencySymbol,
-             })
-           ); */
-          friendsArray[maxIndex] = 0;
-        }
-        iterationCount++;
-
-        if (iterationCount >= maxIterations) {
-          console.warn("Maximum iterations reached. Exiting loop.");
-          break;
-        }
-      }
-      setShowText(true);
-      setModalVisible(true);
-      setAdClosed(false);
-    }
-  };
-
-  const handlePress = async () => {
-    console.log("rewarded interstitial load:", rewardedInterstitialLoaded);
-    if (rewardedInterstitialLoaded) {
-      await rewardedInterstitial.show();
-    } else {
-      calculateExpenses();
-    }
-  };
-
-  const updateFriendNickname = (index, nickname) => {
-    console.log("index:", index);
-    const updatedFriends = [...friends];
-    updatedFriends[index].nickname = nickname;
-    setFriends(updatedFriends);
-    setModalNickNameVisible(false);
-  };
-  const renderItem = ({ item, index }) => (
-    <View style={styles.itemContainer}>
-      <FontAwesome name="user-circle" size={moderateScale(24)} color="purple" />
-      <View style={styles.textContainer}>
-        <Text allowFontScaling={false} style={styles.nickname}>
-          {item.nickname.length > 20
-            ? item.nickname.substring(0, 20) + ".."
-            : item.nickname === ""
-            ? `${i18n.t("friend")} ${index + 1}`
-            : item.nickname}
-        </Text>
-        <View
-          style={{
-            flexDirection:
-              i18n.locale === "he" || i18n.locale === "ar"
-                ? "row-reverse"
-                : "row",
-            justifyContent:
-              i18n.locale === "he" || i18n.locale === "ar"
-                ? "flex-start"
-                : "flex-end",
-            alignItems: "center" /* backgroundColor:"yellow" */,
+  const renderFriendsStep = () => (
+    <>
+      <CardHeader
+        title={i18n.t("friendsTitle")}
+        description={i18n.t("friendsDesc")}
+      />
+      <Animated.View style={[styles.inputRow, friendShakeStyle]}>
+        <AppInput
+          value={friendName}
+          onChangeText={(text) => {
+            setFriendName(text);
+            setFriendError("");
           }}
-        >
-          <Text
-            allowFontScaling={false}
-            style={{
-              fontSize: moderateScale(9),
-              fontFamily: "Varela",
-              marginTop: verticalScale(5),
-              textAlign: "center",
-              writingDirection:
-                i18n.locale === "he" || i18n.locale === "ar" ? "rtl" : "ltr",
-            }}
-          >
-            {currencySymbol}
-          </Text>
-          <Text allowFontScaling={false} style={styles.amount}>{`${Number(
-            item.amount
-          ).toLocaleString()}`}</Text>
-        </View>
-        {/*  <Text style={styles.amount}>{`${currencySymbol}${Number(
-          item.amount
-        ).toLocaleString()}`}</Text> */}
-      </View>
-    </View>
-  );
-  const NickNameSelectorModal = ({ visible, onClose, onSelect }) => {
-    return (
-      <Modal visible={visible} animationType="slide" transparent>
-        <View
-          style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-          }}
-        >
-          <View
-            style={{ backgroundColor: "white", padding: 20, borderRadius: 10 }}
-          >
-            <ScrollView>
-              {NickNames.map((nickname, index) => (
-                <TouchableOpacity
-                  key={index}
-                  onPress={() => onSelect(nickname.he)}
-                  style={{
-                    padding: 10,
-                    borderBottomWidth: 1,
-                    borderBottomColor: "#ccc",
-                  }}
-                >
-                  <Text allowFontScaling={false} style={{ fontSize: 16 }}>
-                    {nickname.he}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+          placeholder={i18n.t("friendNamePlaceholder")}
+          maxLength={30}
+          autoCapitalize="words"
+          returnKeyType="done"
+          submitBehavior="submit"
+          onSubmitEditing={addFriend}
+          style={inputDirectionStyle}
+        />
+        <GradientButton
+          small
+          icon="plus"
+          title={i18n.t("addButton")}
+          onPress={addFriend}
+          style={styles.inputRowButton}
+        />
+      </Animated.View>
+      <ErrorText message={friendError} />
+      {friends.length === 0 ? (
+        <AppText style={styles.emptyText}>{i18n.t("noFriendsYet")}</AppText>
+      ) : (
+        friends.map((friend) => (
+          <View key={friend.id} style={styles.listRow}>
+            <Avatar />
+            <AppText style={styles.listRowTitle} numberOfLines={1}>
+              {friend.name}
+            </AppText>
             <TouchableOpacity
-              onPress={onClose}
-              style={{
-                marginTop: 10,
-                padding: 10,
-                backgroundColor: "#ccc",
-                borderRadius: 5,
+              onPress={() => removeFriend(friend)}
+              hitSlop={8}
+            >
+              <Feather name="x-circle" size={24} color="#BDBDBD" />
+            </TouchableOpacity>
+          </View>
+        ))
+      )}
+    </>
+  );
+
+  const renderExpensesStep = () => (
+    <>
+      <CardHeader
+        title={i18n.t("expensesTitle")}
+        description={i18n.t("expensesDesc")}
+      />
+      <AppText style={styles.fieldLabel}>{i18n.t("whoPaid")}</AppText>
+      <View style={styles.chipsRow}>
+        {friends.map((friend) => {
+          const selected = friend.id === payerId;
+          const chipContent = (
+            <AppText
+              style={[styles.chipText, selected && styles.chipTextSelected]}
+              numberOfLines={1}
+            >
+              {friend.name}
+            </AppText>
+          );
+          return (
+            <TouchableOpacity
+              key={friend.id}
+              onPress={() => {
+                setPayerId(friend.id);
+                setExpenseError("");
               }}
             >
-              <Text allowFontScaling={false}>Close</Text>
+              {selected ? (
+                <LinearGradient colors={GRADIENT} style={styles.chip}>
+                  {chipContent}
+                </LinearGradient>
+              ) : (
+                <View style={[styles.chip, styles.chipUnselected]}>
+                  {chipContent}
+                </View>
+              )}
             </TouchableOpacity>
+          );
+        })}
+      </View>
+      <Animated.View style={[styles.inputRow, expenseShakeStyle]}>
+        <AppInput
+          value={expenseAmount}
+          onChangeText={(text) => {
+            setExpenseAmount(text);
+            setExpenseError("");
+          }}
+          placeholder={`${i18n.t("expenseAmountPlaceholder")} (${currencySymbol})`}
+          keyboardType="decimal-pad"
+          maxLength={12}
+          returnKeyType="next"
+          onSubmitEditing={() => descriptionInput.current?.focus()}
+          style={[styles.amountInput, inputDirectionStyle]}
+        />
+        <AppInput
+          ref={descriptionInput}
+          value={expenseDescription}
+          onChangeText={setExpenseDescription}
+          placeholder={i18n.t("expenseDescriptionPlaceholder")}
+          maxLength={40}
+          returnKeyType="done"
+          submitBehavior="blurAndSubmit"
+          onSubmitEditing={addExpense}
+          style={[styles.inputRowSecond, inputDirectionStyle]}
+        />
+      </Animated.View>
+      <ErrorText message={expenseError} />
+      <GradientButton
+        icon="plus"
+        title={i18n.t("addExpenseButton")}
+        onPress={addExpense}
+        style={styles.fullWidthButton}
+      />
+      <View style={styles.divider} />
+      {friends.map((friend) => (
+        <View key={friend.id} style={styles.expenseGroup}>
+          <View style={styles.expenseGroupHeader}>
+            <Avatar size={26} />
+            <AppText style={styles.expenseGroupName} numberOfLines={1}>
+              {friend.name}
+            </AppText>
+            {friend.expenses.length > 0 ? (
+              <AppText style={styles.mutedText}>
+                {i18n.t("totalLabel", {
+                  amount: formatMoney(sumExpenses(friend)),
+                })}
+              </AppText>
+            ) : null}
+          </View>
+          {friend.expenses.length === 0 ? (
+            <AppText style={styles.emptyTextSmall}>
+              {i18n.t("noExpensesYet")}
+            </AppText>
+          ) : (
+            friend.expenses.map((expense) => (
+              <View key={expense.id} style={styles.expenseRow}>
+                <Feather name="tag" size={16} color="#BD1865" />
+                <AppText style={styles.expenseDescription} numberOfLines={1}>
+                  {expense.description || i18n.t("generalExpense")}
+                </AppText>
+                <AppText style={styles.expenseAmount}>
+                  {formatMoney(expense.amount)}
+                </AppText>
+                <TouchableOpacity
+                  onPress={() => removeExpense(friend.id, expense.id)}
+                  hitSlop={8}
+                >
+                  <Feather name="trash-2" size={18} color="#E53935" />
+                </TouchableOpacity>
+              </View>
+            ))
+          )}
+        </View>
+      ))}
+    </>
+  );
+
+  const renderParticipantsStep = () => (
+    <>
+      <CardHeader
+        title={i18n.t("participantsTitle")}
+        description={i18n.t("participantsDesc")}
+      />
+      <View style={styles.selectionButtonsRow}>
+        <OutlineButton
+          small
+          icon="check-square"
+          title={i18n.t("selectAll")}
+          onPress={() => {
+            setStepError("");
+            setSelectedIds(friends.map((friend) => friend.id));
+          }}
+          style={styles.flexButton}
+        />
+        <OutlineButton
+          small
+          icon="square"
+          title={i18n.t("clearSelection")}
+          onPress={() => setSelectedIds([])}
+          style={styles.flexButton}
+        />
+      </View>
+      {friends.map((friend) => {
+        const selected = selectedIds.includes(friend.id);
+        return (
+          <TouchableOpacity
+            key={friend.id}
+            onPress={() => toggleParticipant(friend.id)}
+            activeOpacity={0.7}
+            style={[
+              styles.participantRow,
+              selected && styles.participantRowSelected,
+            ]}
+          >
+            <Feather
+              name={selected ? "check-square" : "square"}
+              size={24}
+              color={selected ? PURPLE : "#9E9E9E"}
+            />
+            <AppText style={styles.participantName} numberOfLines={1}>
+              {friend.name}
+            </AppText>
+            {friend.expenses.length > 0 ? (
+              <AppText style={styles.mutedText}>
+                {i18n.t("spentLabel", {
+                  amount: formatMoney(sumExpenses(friend)),
+                })}
+              </AppText>
+            ) : null}
+          </TouchableOpacity>
+        );
+      })}
+      <AppText style={styles.selectionSummary}>
+        {selectedIds.length === 0
+          ? i18n.t("noneSelected")
+          : i18n.t("selectedCount", {
+              count: selectedIds.length,
+              total: friends.length,
+            })}
+      </AppText>
+    </>
+  );
+
+  const renderResultsModal = () => (
+    <Modal
+      transparent
+      animationType="slide"
+      statusBarTranslucent
+      navigationBarTranslucent
+      visible={resultsVisible}
+      onRequestClose={() => setResultsVisible(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View
+          style={[
+            styles.resultsCard,
+            { maxHeight: windowHeight - insets.top - insets.bottom - 32 },
+          ]}
+        >
+          <ScrollView
+            style={styles.resultsScroll}
+            contentContainerStyle={styles.resultsContent}
+          >
+            <ResultsContent
+              friends={friends}
+              selectedIds={selectedIds}
+              results={results}
+              formatMoney={formatMoney}
+            />
+          </ScrollView>
+
+          <View style={styles.dialogButtonsRow}>
+            <GradientButton
+              small
+              icon="share-2"
+              title={i18n.t("share")}
+              onPress={shareResults}
+              style={styles.flexButton}
+            />
+            <OutlineButton
+              small
+              icon="save"
+              title={i18n.t("saveList")}
+              onPress={openSaveModal}
+              style={styles.flexButton}
+            />
+            <OutlineButton
+              small
+              title={i18n.t("close")}
+              onPress={() => setResultsVisible(false)}
+              style={styles.flexButton}
+            />
+          </View>
+        </View>
+        <View
+          ref={resultsShotRef}
+          collapsable={false}
+          pointerEvents="none"
+          style={[styles.resultsContent, styles.shareSnapshot]}
+        >
+          <ResultsContent
+            friends={friends}
+            selectedIds={selectedIds}
+            results={results}
+            formatMoney={formatMoney}
+          />
+        </View>
+        <ToastView toast={toast} bottom={insets.bottom + 24} />
+      </View>
+      {/* Rendered inside the results modal so iOS can stack it on top. */}
+      <SaveListModal
+        visible={saveModalVisible && resultsVisible}
+        name={saveListName}
+        onChangeName={(text) => {
+          setSaveListName(text);
+          setSaveError("");
+        }}
+        error={saveError}
+        shakeStyle={saveShakeStyle}
+        onSave={saveCurrentList}
+        onClose={() => setSaveModalVisible(false)}
+      />
+    </Modal>
+  );
+
+  const renderSavedListsModal = () => (
+    <Modal
+      transparent
+      animationType="slide"
+      statusBarTranslucent
+      navigationBarTranslucent
+      visible={savedListsVisible}
+      onRequestClose={() => setSavedListsVisible(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View
+          style={[
+            styles.dialogCard,
+            { maxHeight: windowHeight - insets.top - insets.bottom - 32 },
+          ]}
+        >
+          <AppText style={styles.dialogTitle}>
+            {i18n.t("savedListsTitle")}
+          </AppText>
+          <ScrollView style={styles.savedListsScroll}>
+            {savedLists.length === 0 ? (
+              <AppText style={styles.emptyText}>
+                {i18n.t("noSavedLists")}
+              </AppText>
+            ) : (
+              savedLists.map((list) => {
+                const listFriends = Array.isArray(list.friends)
+                  ? list.friends
+                  : [];
+                const listTotal = listFriends.reduce(
+                  (sum, friend) => sum + sumExpenses(friend),
+                  0
+                );
+                const listSymbol =
+                  findCurrency(list.currency)?.symbol ?? currencySymbol;
+                return (
+                  <View key={list.id} style={styles.savedListRow}>
+                    <TouchableOpacity
+                      style={styles.savedListInfo}
+                      onPress={() => loadList(list)}
+                    >
+                      <AppText style={styles.savedListName} numberOfLines={1}>
+                        {list.name}
+                      </AppText>
+                      <AppText style={styles.mutedText} numberOfLines={1}>
+                        {`${new Date(list.savedAt).toLocaleDateString()} · ${i18n.t(
+                          "friendsCount",
+                          { count: listFriends.length }
+                        )} · ${listSymbol}${formatAmount(listTotal)}`}
+                      </AppText>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => loadList(list)}
+                      hitSlop={6}
+                      style={styles.savedListAction}
+                    >
+                      <Feather name="folder" size={22} color={PURPLE} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => deleteList(list)}
+                      hitSlop={6}
+                      style={styles.savedListAction}
+                    >
+                      <Feather name="trash-2" size={22} color="#E53935" />
+                    </TouchableOpacity>
+                  </View>
+                );
+              })
+            )}
+          </ScrollView>
+          <OutlineButton
+            title={i18n.t("close")}
+            onPress={() => setSavedListsVisible(false)}
+            style={styles.fullWidthButton}
+          />
+        </View>
+      </View>
+    </Modal>
+  );
+
+  const renderDescriptionModal = () => {
+    const rtlTextStyle = {
+      textAlign: isRTL ? "left" : "right",
+      writingDirection: isRTL ? "rtl" : "ltr",
+    };
+    const features = [
+      { icon: "users", title: "addFriendsTitle", desc: "addFriendsDesc" },
+      { icon: "edit-3", title: "recordExpensesTitle", desc: "recordExpensesDesc" },
+      {
+        icon: "check-circle",
+        title: "autoCalculationTitle",
+        desc: "autoCalculationDesc",
+      },
+      { icon: "share-2", title: "easySharingTitle", desc: "easySharingDesc" },
+    ];
+    return (
+      <Modal
+        visible={showDescription}
+        animationType="slide"
+        transparent
+        statusBarTranslucent
+        navigationBarTranslucent
+        onRequestClose={() => setShowDescription(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.descriptionCard}>
+            <TouchableOpacity
+              onPress={() => setShowDescription(false)}
+              style={styles.descriptionClose}
+            >
+              <Feather name="x-circle" size={28} color={PURPLE} />
+            </TouchableOpacity>
+            <ScrollView contentContainerStyle={styles.descriptionContent}>
+              <Text style={styles.descriptionTitle}>
+                {i18n.t("whatIsJuba")}
+              </Text>
+              <Text style={styles.descriptionText}>
+                {i18n.t("appDescription")}
+              </Text>
+              <View style={styles.featuresGrid}>
+                {features.map((feature) => (
+                  <View key={feature.icon} style={styles.featureRow}>
+                    <Feather
+                      name={feature.icon}
+                      size={28}
+                      color={PURPLE}
+                      style={styles.featureIcon}
+                    />
+                    <View style={styles.featureTextContainer}>
+                      <Text style={[styles.featureTitle, rtlTextStyle]}>
+                        {i18n.t(feature.title)}
+                      </Text>
+                      <Text style={[styles.featureDesc, rtlTextStyle]}>
+                        {i18n.t(feature.desc)}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+              <View style={styles.howItWorksBox}>
+                <Text style={[styles.howItWorksTitle, rtlTextStyle]}>
+                  {i18n.t("howItWorksTitle")}
+                </Text>
+                {[1, 2, 3, 4, 5].map((step) => (
+                  <Text key={step} style={[styles.howItWorksStep, rtlTextStyle]}>
+                    {`${step}. ${i18n.t(`howStep${step}`)}`}
+                  </Text>
+                ))}
+              </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
     );
   };
 
-  const handleValueChange = (code) => {
-    searchItem = items.find((item) => item.value === code);
-    currencySymbol = searchItem.symbol;
-  };
+  if (!appReady) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Image
+          style={styles.loadingImage}
+          source={require("./assets/JubaGif.gif")}
+          resizeMode="contain"
+        />
+        <Text style={styles.loadingText}>loading...</Text>
+      </View>
+    );
+  }
 
-  const isRTL = languageCode === 'he' || languageCode === 'ar';
-const rtlTextStyle = {
-   textAlign: isRTL ? 'left' : 'right',
-  writingDirection: isRTL ? 'rtl' : 'ltr',
-};
-
-  
+  const banner = (unitId) =>
+    trackingPermissionProcessEnd ? (
+      <View style={styles.banner}>
+        <BannerAd
+          unitId={unitId}
+          size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+          requestOptions={{
+            requestNonPersonalizedAdsOnly: !isTrackingPermission,
+          }}
+        />
+      </View>
+    ) : null;
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS == "ios" ? "padding" : "height"}
-        enabled
-        keyboardVerticalOffset={10}
-        /*  behavior="padding" // or "height" or "position" */
-        style={styles.keyboardAvoidingContainer}
+    <View style={styles.root}>
+      <StatusBar style="light" />
+      <LinearGradient
+        colors={GRADIENT}
+        style={[styles.header, { paddingTop: insets.top + verticalScale(12) }]}
       >
-        <View
-          style={[
-            styles.container,
-            {
-              backgroundColor: /* !appIsReady || */ !appOpenClosed
-                ? "white"
-                : "#EDEDED",
-            },
+        <TouchableOpacity
+          onPress={() => setShowDescription(true)}
+          hitSlop={10}
+          style={[styles.headerInfoButton, { top: insets.top + 10 }]}
+        >
+          <Feather name="info" size={24} color="white" />
+        </TouchableOpacity>
+        <AppText style={styles.headerTitle}>JUBA</AppText>
+        <AppText style={styles.headerSubtitle}>
+          {i18n.t("expenseCalculator")}
+        </AppText>
+      </LinearGradient>
+
+      <View style={styles.toolbar}>
+        <View style={styles.currencyPicker}>
+          <DropDownPicker
+            open={currencyOpen}
+            setOpen={setCurrencyOpen}
+            value={currencyCode}
+            setValue={setCurrencyCode}
+            items={Currencies}
+            listMode="MODAL"
+            searchable
+            searchPlaceholder={i18n.t("searchCurrency")}
+            modalProps={{
+              animationType: "slide",
+              statusBarTranslucent: true,
+              navigationBarTranslucent: true,
+            }}
+            modalContentContainerStyle={{
+              paddingTop: insets.top,
+              paddingBottom: insets.bottom,
+            }}
+            style={styles.dropdown}
+            textStyle={styles.dropdownText}
+            searchTextInputProps={{ maxLength: 25, allowFontScaling: false }}
+            labelProps={{ numberOfLines: 1, allowFontScaling: false }}
+          />
+        </View>
+        <ToolbarButton
+          icon="folder"
+          label={i18n.t("savedListsTitle")}
+          onPress={openSavedLists}
+        />
+        <ToolbarButton
+          icon="save"
+          label={i18n.t("saveList")}
+          onPress={openSaveModal}
+        />
+        <ToolbarButton
+          icon="file-plus"
+          label={i18n.t("newList")}
+          onPress={startNewList}
+        />
+      </View>
+
+      <KeyboardAvoidingView behavior="padding" style={styles.flex}>
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: insets.bottom + 16 },
           ]}
         >
-          {
-            /* !appIsReady || */ !fontsLoaded || !appOpenClosed ? (
-              <>
-                {console.log("fonts loaded:", fontsLoaded)}
-                <Image
-                  style={{
-                    width: horizontalScale(200),
-                    height: verticalScale(200),
-                  }}
-                  source={require("./assets/JubaGif.gif")}
-                  contentFit="contain"
-                />
-                <Text
-                  style={{ fontSize: moderateScale(20), fontFamily: "Varela" }}
-                >
-                  loading...
-                </Text>
-                {/*  <ActivityIndicator
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                }}
-                size="large"
-                color="orange"
-              /> */}
-              </>
+          {banner(adUnitId)}
+          <StepIndicator currentStep={currentStep} onStepPress={goToStep} />
+          <View style={styles.card}>
+            {currentStep === 1 ? renderFriendsStep() : null}
+            {currentStep === 2 ? renderExpensesStep() : null}
+            {currentStep === 3 ? renderParticipantsStep() : null}
+          </View>
+          <ErrorText message={stepError} style={stepShakeStyle} />
+          <View style={styles.navRow}>
+            {currentStep > 1 ? (
+              <OutlineButton
+                icon={isRTL ? "chevron-right" : "chevron-left"}
+                title={i18n.t("previous")}
+                onPress={() => goToStep(currentStep - 1)}
+                style={styles.flexButton}
+              />
             ) : (
-              <View>
-      {/*           <AppDescriptionModal
-  visible={showDescription}
-  onClose={() => setShowDescription(false)}
- 
-/> */}
-<Modal
-      visible={showDescription}
-      animationType="slide"
-      transparent
-      onRequestClose={() => setShowDescription(false)}
-    >
-      <View style={styles.overlay}>
-        <View style={styles.card}>
-          {/* Close button at top-right */}
-          <TouchableOpacity onPress={() => setShowDescription(false)} style={{ position: 'absolute', top: 10, right: 10, zIndex: 10 }}>
-            <Feather name="x-circle" size={28} color="#88209B" />
-          </TouchableOpacity>
-          <ScrollView contentContainerStyle={{ padding: 5, marginHorizontal:20 }}>
-            <Text style={styles.title}>{i18n.t("whatIsJuba")}</Text>
-            <Text style={styles.description}>{i18n.t("appDescription")}</Text>
-
-            <View style={styles.featuresGrid}>
-              <View style={styles.featureRow}>
-                <Feather name="users" size={28} color="#88209B" style={styles.icon} />
-                <View>
-                  <Text style={[styles.featureTitle, rtlTextStyle]}>{i18n.t("addFriendsTitle")}</Text>
-                  <Text style={[styles.featureDesc, rtlTextStyle]}>{i18n.t("addFriendsDesc")}</Text>
-                </View>
-              </View>
-              <View style={styles.featureRow}>
-                <Feather name="edit-3" size={28} color="#88209B" style={styles.icon} />
-                <View>
-                  <Text style={[styles.featureTitle, rtlTextStyle]}>{i18n.t("recordExpensesTitle")}</Text>
-                  <Text style={[styles.featureDesc, rtlTextStyle]}>{i18n.t("recordExpensesDesc")}</Text>
-                </View>
-              </View>
-              <View style={styles.featureRow}>
-                <Feather name="check-circle" size={28} color="#88209B" style={styles.icon} />
-                <View>
-                  <Text style={[styles.featureTitle, rtlTextStyle]}>{i18n.t("autoCalculationTitle")}</Text>
-                  <Text style={[styles.featureDesc, rtlTextStyle]}>{i18n.t("autoCalculationDesc")}</Text>
-                </View>
-              </View>
-              <View style={styles.featureRow}>
-                <Feather name="share-2" size={28} color="#88209B" style={styles.icon} />
-                <View>
-                  <Text style={[styles.featureTitle, rtlTextStyle]}>{i18n.t("easySharingTitle")}</Text>
-                  <Text style={[styles.featureDesc, rtlTextStyle]}>{i18n.t("easySharingDesc")}</Text>
-                </View>
-              </View>
-            </View>
-
-            <View style={styles.howItWorksBox}>
-              <Text style={[styles.howItWorksTitle, rtlTextStyle]}>{i18n.t("howItWorksTitle")}</Text>
-              <View style={styles.stepsList}>
-                <Text style={[styles.step, rtlTextStyle]}>1. {i18n.t("step1")}</Text>
-                <Text style={[styles.step, rtlTextStyle]}>2. {i18n.t("step2")}</Text>
-                <Text style={[styles.step, rtlTextStyle]}>3. {i18n.t("step3")}</Text>
-                <Text style={[styles.step, rtlTextStyle]}>4. {i18n.t("step4")}</Text>
-              </View>
-            </View>
-          </ScrollView>
-        </View>
-      </View>
-    </Modal>
-                <LinearGradient
-                  // Button Linear Gradient
-                  colors={["#BD1865", "#88209B"]}
-                  style={{
-                    width: windowWidth,
-                    height: verticalScale(200),
-                    // backgroundColor: "purple",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    // flexDirection: "row",
-                    shadowColor: "#000",
-                    shadowOffset: {
-                      width: 0,
-                      height: 2,
-                    },
-                    shadowOpacity: 0.25,
-                    shadowRadius: 4,
-                    elevation: 5,
-                  }}
-                >
-                  <Text
-                    allowFontScaling={false}
-                    style={{
-                      color: "white",
-                      fontSize: moderateScale(50), // width: horizontalScale(150),
-                      fontFamily: "Varela",
-                      //  backgroundColor:"green",
-                      // width:windowWidth,
-                      //alignSelf:"center"
-                      //  height: verticalScale(50),
-                      //marginTop: verticalScale(40),
-                      // marginHorizontal: horizontalScale(250),
-                    }}
-                  >
-                    JUBA
-                  </Text>
-                  <Text
-                    allowFontScaling={false}
-                    style={{
-                      fontFamily: "Varela",
-                      fontSize: 20,
-                      color: "white",
-                    }}
-                  >
-                    {i18n.t("expenseCalculator")}
-                  </Text>
-                </LinearGradient>
-                <DropDownPicker
-                  open={open}
-                  value={value}
-                  items={items}
-                  setOpen={setOpen}
-                  setValue={setValue}
-                  setItems={setItems}
-                  onChangeValue={handleValueChange}
-                  searchable={true}
-                  placeholder={currencySymbol + " " + currencyCode}
-                  searchPlaceholder={i18n.t("searchCurrency")}
-                  style={styles.dropdown}
-                  containerStyle={{
-                    height: verticalScale(40),
-                    /* width:horizontalScale(250), */ marginTop:
-                      verticalScale(10),
-                  }}
-                  dropDownStyle={{ backgroundColor: "#fafafa" }}
-                  placeholderStyle={{
-                    // color: "grey",
-                    fontSize: 16 / PixelRatio.getFontScale(),
-                    fontFamily: "Varela",
-                  }}
-                  labelStyle={{
-                    fontSize: moderateScale(16) / PixelRatio.getFontScale(),
-                    fontFamily: "Varela",
-                  }}
-                  modalTitleStyle={{
-                    fontSize: moderateScale(16) / PixelRatio.getFontScale(),
-                    fontFamily: "Varela",
-                  }}
-                  searchTextInputProps={{
-                    maxLength: 25,
-                    fontSize: moderateScale(16) / PixelRatio.getFontScale(),
-                    fontFamily: "Varela",
-                  }}
-                  listChildLabelStyle={{
-                    fontSize: moderateScale(16) / PixelRatio.getFontScale(),
-                    fontFamily: "Varela",
-                  }}
-                  listParentLabelStyle={{
-                    fontSize: moderateScale(16) / PixelRatio.getFontScale(),
-                    fontFamily: "Varela",
-                  }}
-
-                  // theme="DARK"
-                />
-                <ScrollView
-                  nestedScrollEnabled={true}
-                  showsVerticalScrollIndicator={false}
-                  // keyboardDismissMode={"interactive"}
-                  keyboardShouldPersistTaps={"handled"}
-                  contentContainerStyle={{
-                    justifyContent: "flex-start",
-                    alignItems: "center",
-                    //  backgroundColor: "green",
-                    width: windowWidth,
-                    flexGrow: 1,
-
-                    //  zIndex: 1,
-                  }}
-                >
-                  {trackingPermissionProcessEnd && (
-                    <View style={{ marginVertical: verticalScale(15) }}>
-                      <BannerAd
-                        //    ref={bannerRef}
-                        unitId={adUnitId}
-                        size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
-                        requestOptions={{
-                          requestNonPersonalizedAdsOnly: !isTrackingPermission,
-                          // You can change this setting depending on whether you want to use the permissions tracking we set up in the initializing
-                        }}
-                      />
-                    </View>
-                  )}
-                  {currentStep === 1 ? (
-                    /*   <KeyboardAvoidingView
-                        behavior={Platform.OS === "ios" ? "padding" : "height"}
-                        style={{ flex: 1 }}
-                      > */
-                    <View
-                      style={{
-                        backgroundColor: "white",
-                        borderRadius: moderateScale(10),
-                        width: horizontalScale(400),
-                        height: "auto",
-                        justifyContent: "flex-start",
-                        zIndex: 1,
-                        alignItems: "center",
-                        // marginTop: verticalScale(10),
-                        paddingTop: verticalScale(5),
-                      }}
-                    >
-                       <TouchableOpacity
-                        onPress={onNextButtonPressed}
-                        style={{
-                          justifyContent: "center",
-                          alignItems: "center",
-                           width: "30%",
-                          // paddingHorizontal:horizontalScale(20),
-                          height: verticalScale(50),
-                          borderRadius: moderateScale(20),
-                           marginBottom: verticalScale(10),
-                          // marginTop: verticalScale(30),
-                          alignSelf:"flex-end"
-                        }}
-                      >
-                        <LinearGradient
-                          colors={["#BD1865", "#88209B"]}
-                          style={{
-                            justifyContent: "center",
-                            alignItems: "center",
-                            width: "90%",
-                            height: verticalScale(50),
-                            borderRadius: moderateScale(20),
-                          }}
-                        >
-                          <Text
-                            allowFontScaling={false}
-                            style={{
-                              color: "white",
-                              fontSize: 12,
-                              fontFamily: "Varela",
-                            }}
-                          >
-                            {i18n.t("next")}
-                          </Text>
-                        </LinearGradient>
-                      </TouchableOpacity>
-                      <View
-                        style={{
-                          width: "90%",
-                          height: 1,
-                          backgroundColor: "#E0E0E0",
-                          marginBottom: verticalScale(10),
-                          alignSelf: "center",
-                        }}
-                      />
-                      <Text
-                        allowFontScaling={false}
-                        style={{
-                          color: "#474747",
-                          fontSize: 25,
-                          fontWeight: "700",
-                          fontFamily: "Varela",
-                        }}
-                      >
-                        {i18n.t("whoPaidHowMuch")}
-                      </Text>
-                      <Text
-                        allowFontScaling={false}
-                        style={{ color: "grey", fontFamily: "Varela" }}
-                      >
-                        {i18n.t("eachMemberPaid")}
-                      </Text>
-                      {friends.map((friendAmount, index) => (
-                        <View
-                          key={index}
-                          style={{
-                            justifyContent: "center",
-                            alignItems: "center",
-                            marginVertical: verticalScale(5),
-
-                            // backgroundColor: "blue",
-                          }}
-                        >
-                          {/*  <Button
-                        title="הוסף כינוי"
-                        onPress={() => setModalNickNameVisible(true)}
-                      /> */}
-                          {/* <Text>{friends[index].nickName}</Text> */}
-
-                          {/*    <NickNameSelectorModal
-                        visible={modalNickNameVisible}
-                        onClose={() => setModalNickNameVisible(false)}
-                        onSelect={(nickname) =>
-                          
-                          {
-                            console.log("index:", index)
-                           /*  const updatedFriends = [...friends];
-                            updatedFriends[index].nickName = nickname;
-                            setFriends(updatedFriends);
-                            setModalNickNameVisible(false) 
-                           updateFriendNickname(index,nickname)
-                          }
-                        }
-                        // onSelect={handleSelectNickName}
-                      /> */}
-                          <View style={styles.friendInputContainer}>
-                            <View
-                              style={{
-                                flexDirection: "row",
-                                justifyContent: "space-between",
-                                alignItems: "center",
-                                height: verticalScale(47),
-
-                                borderColor: "#CECECE",
-                                borderWidth: 1,
-                                // marginBottom: 10,
-                                //  padding: 10,
-                                width: "45%",
-                                borderRadius: moderateScale(10),
-                                //  backgroundColor: "yellow",
-                              }}
-                            >
-                              <LinearGradient
-                                colors={["#BD1865", "#88209B"]}
-                                style={{
-                                  width: horizontalScale(25),
-                                  height: verticalScale(25),
-                                  borderRadius: 100,
-                                  marginLeft: horizontalScale(8),
-                                  //backgroundColor: "purple",
-                                  justifyContent: "center",
-                                  alignItems: "center",
-                                  //flexDirection: "row",
-                                  shadowColor: "#000",
-                                  shadowOffset: {
-                                    width: 0,
-                                    height: 2,
-                                  },
-                                  shadowOpacity: 0.25,
-                                  shadowRadius: 4,
-                                  elevation: 5,
-                                }}
-                              >
-                                <MaterialIcons
-                                  name="emoji-people"
-                                  size={moderateScale(18)}
-                                  color="white"
-                                />
-                              </LinearGradient>
-                              <Input
-                                allowFontScaling={false}
-                                ref={nameInput}
-                                inputContainerStyle={{
-                                  //   backgroundColor: "grey",
-                                  borderBottomWidth: 0,
-                                  width: "80%",
-                                  height: "100%",
-                                  marginHorizontal: horizontalScale(5),
-                                  borderColor: "green",
-                                  marginTop: verticalScale(30),
-                                  //borderWidth:1
-                                }}
-                                inputAccessoryViewID={inputAccessoryViewID}
-                                inputStyle={{
-                                  fontSize:
-                                    moderateScale(16) /
-                                    PixelRatio.getFontScale(),
-                                  fontFamily: "Varela",
-                                }}
-                                style={{
-                                  //color: "green",
-                                  textAlign:
-                                    i18n.locale === "he" || i18n.locale === "ar"
-                                      ? "right"
-                                      : "left", // Aligns text conditionally
-                                  writingDirection:
-                                    i18n.locale === "he" || i18n.locale === "ar"
-                                      ? "rtl"
-                                      : "ltr",
-                                }}
-                                placeholder={`${i18n.t("name")} ${index + 1}`}
-                                placeholderTextColor="#707070"
-                                keyboardType="name-phone-pad"
-                                onChangeText={(text) => {
-                                  const updatedFriends = [...friends];
-                                  updatedFriends[index].nickname = text;
-                                  setFriends(updatedFriends);
-                                }}
-                                value={friendAmount.nickname}
-                                //onBlur={() => onBlurHandler(index)}
-                              />
-                            </View>
-                            <View
-                              style={{
-                                flexDirection: "row",
-                                justifyContent: "space-between",
-                                alignItems: "center",
-                                height: verticalScale(47),
-
-                                borderColor: "#CECECE",
-                                borderWidth: 1,
-                                // marginBottom: 10,
-                                //  padding: 10,
-                                width: "45%",
-                                borderRadius: 10,
-                                //     backgroundColor: "yellow",
-                              }}
-                            >
-                              <LinearGradient
-                                colors={["#BD1865", "#88209B"]}
-                                style={{
-                                  width: horizontalScale(25),
-                                  height: verticalScale(25),
-                                  borderRadius: 100,
-                                  marginLeft: horizontalScale(8),
-                                  //backgroundColor: "purple",
-                                  justifyContent: "center",
-                                  alignItems: "center",
-                                  //flexDirection: "row",
-                                  shadowColor: "#000",
-                                  shadowOffset: {
-                                    width: 0,
-                                    height: 2,
-                                  },
-                                  shadowOpacity: 0.25,
-                                  shadowRadius: 4,
-                                  elevation: 5,
-                                }}
-                              >
-                                <FontAwesome6
-                                  name="coins"
-                                  size={12}
-                                  color="white"
-                                />
-                              </LinearGradient>
-                              <Input
-                                allowFontScaling={false}
-                                ref={input}
-                                inputContainerStyle={{
-                                  // backgroundColor: "grey",
-                                  borderBottomWidth: 0,
-                                  width: "80%",
-                                  height: "100%",
-                                  marginHorizontal: horizontalScale(5),
-                                  borderColor: "green",
-                                  marginTop: verticalScale(30),
-                                  //borderWidth:1
-                                }}
-                                inputStyle={{
-                                  fontSize:
-                                    moderateScale(16) /
-                                    PixelRatio.getFontScale(),
-                                  fontFamily: "Varela",
-                                }}
-                                style={{
-                                  textAlign:
-                                    i18n.locale === "he" || i18n.locale === "ar"
-                                      ? "right"
-                                      : "left", // Aligns text conditionally
-                                  writingDirection:
-                                    i18n.locale === "he" || i18n.locale === "ar"
-                                      ? "rtl"
-                                      : "ltr",
-                                }}
-                                inputAccessoryViewID={inputAccessoryViewID}
-                                placeholder={`${i18n.t("amount")} ${index + 1}`}
-                                placeholderTextColor="#707070"
-                                keyboardType="numeric"
-                                onChangeText={(text) => {
-                                  const updatedFriends = [...friends];
-                                  updatedFriends[index].amount = text;
-                                  setFriends(updatedFriends);
-                                }}
-                                value={friendAmount.amount}
-                                onBlur={() => onBlurHandler(index)}
-                              />
-                            </View>
-                            {/* {!selectListPressed[index] ? (
-                          <View
-                            style={{
-                              flexDirection: "row",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                              height: verticalScale(47),
-                              borderColor: "#CECECE",
-                              borderWidth: 1,
-                              width: "45%",
-                              borderRadius: 10,
-                            }}
-                          >
-                            <LinearGradient
-                              colors={["#BD1865", "#88209B"]}
-                              style={{
-                                width: horizontalScale(50),
-                                height: verticalScale(25),
-                                borderRadius: moderateScale(10),
-                                marginLeft: horizontalScale(8),
-                                //backgroundColor: "purple",
-                                justifyContent: "center",
-                                alignItems: "center",
-                                //flexDirection: "row",
-                                shadowColor: "#000",
-                                shadowOffset: {
-                                  width: 0,
-                                  height: 2,
-                                },
-                                shadowOpacity: 0.25,
-                                shadowRadius: 4,
-                                elevation: 5,
-                              }}
-                            >
-                              <TouchableOpacity
-                                onPress={() => {
-                                  const updateBtnPressed = [
-                                    ...selectListPressed,
-                                  ];
-                                  updateBtnPressed[index] = true;
-                                  setSelectListPressed(updateBtnPressed);
-                                }}
-                              >
-                                <Text
-                                  style={{ color: "white", fontSize: 10 }}
-                                >
-                                  בחר כינוי
-                                </Text>
-                              </TouchableOpacity>
-                            </LinearGradient>
-                            <Input
-                              ref={nameInput}
-                              inputContainerStyle={{
-                                // backgroundColor: "grey",
-                                borderBottomWidth: 0,
-                                width: "60%",
-                                height: "100%",
-                                marginHorizontal: horizontalScale(5),
-                                borderColor: "green",
-                                marginTop: verticalScale(25),
-                                //borderWidth:1
-                              }}
-                              placeholder={`שם ${index + 1}`}
-                              placeholderTextColor="#707070"
-                              keyboardType="name-phone-pad"
-                              onChangeText={(text) => {
-                                const updatedFriends = [...friends];
-                                updatedFriends[index].nickname = text;
-                                setFriends(updatedFriends);
-                              }}
-                              value={friendAmount.nickname}
-                              //onBlur={() => onBlurHandler(index)}
-                            />
-                          </View>
-                        ) : (
-                          <SelectList
-                            setSelected={(val) => {
-                              setSelected(val);
-                              const updatedFriends = [...friends];
-                              updatedFriends[index].nickname = val;
-                              setFriends(updatedFriends);
-                            }}
-                            data={data}
-                            search={false}
-                            maxHeight={200}
-                            notFoundText={"איתמר"}
-                            save="he"
-                            dropdownShown="true"
-                            fontFamily="Varela"
-                            placeholder={"בחר כינוי"}
-                            boxStyles={{
-                               width:
-                                horizontalScale(170),
-                              borderColor: "#CECECE",
-                            }}
-                          />
-                        )} */}
-                            {/* <View style={{width:horizontalScale(300), backgroundColor:"green"}}>
-                          {selectListPressed[index] ? (
-                          <SelectList
-                            setSelected={(val) => {
-                              setSelected(val);
-                              const updatedFriends = [...friends];
-                              updatedFriends[index].nickname = val;
-                              setFriends(updatedFriends);
-                            }}
-                            data={data}
-                            search={false}
-                            notFoundText={"איתמר"}
-                            save="he"
-                            fontFamily="Varela"
-                            placeholder={"בחר כינוי"}
-                            boxStyles={{
-                               width:
-                                horizontalScale(170),
-                              borderColor: "#CECECE",
-                            }}
-                          />
-                        ) : null}
-                   </View> */}
-                            {index !== 0 ? (
-                              <TouchableOpacity
-                                onPress={() => deleteFriend(index)}
-                                style={{}}
-                              >
-                                <Feather
-                                  name="x-circle"
-                                  size={30}
-                                  color="#CECECE"
-                                />
-                              </TouchableOpacity>
-                            ) : (
-                              <TouchableOpacity onPress={() => {}} style={{}}>
-                                <Feather
-                                  name="x-circle"
-                                  size={30}
-                                  color="white"
-                                />
-                              </TouchableOpacity>
-                            )}
-
-                            {/*  <Button title="Delete" onPress={() => deleteFriend(index)} /> */}
-                          </View>
-                          {!friendAmount.isValid ? (
-                            <Text
-                              allowFontScaling={false}
-                              style={{ color: "red", fontFamily: "Varela" }}
-                            >
-                              {i18n.t("invalidAmount")}
-                            </Text>
-                          ) : null}
-                          {Number(friends[index].amount) > 999999999 ? (
-                            <Text
-                              allowFontScaling={false}
-                              style={{ color: "red", fontFamily: "Varela" }}
-                            >
-                              מספר גבוה מדי
-                            </Text>
-                          ) : null}
-                        </View>
-                      ))}
-                      <TouchableOpacity
-                        onPress={() => {
-                          addFriend("");
-                        }}
-                        style={{
-                          padding: 10,
-                          borderRadius: 20,
-                          // backgroundColor: "yellow",
-                        }}
-                      >
-                        <LinearGradient
-                          colors={["#BD1865", "#88209B"]}
-                          style={{
-                            width: horizontalScale(200),
-                            height: verticalScale(40),
-
-                            borderRadius: moderateScale(20),
-                            borderColor: "transparent",
-                            justifyContent: "center",
-                            alignItems: "center",
-                          }}
-                        >
-                          <View
-                            style={{
-                              backgroundColor: "white", // Solid color for the button
-                              borderRadius: moderateScale(20),
-
-                              //padding:10,
-                              width: horizontalScale(195),
-                              height: verticalScale(35),
-                              overflow: "hidden",
-                              justifyContent: "center",
-                              alignItems: "center",
-                            }}
-                          >
-                            <Text
-                              allowFontScaling={false}
-                              style={{
-                                color: "#2B2B2B",
-                                fontFamily: "Varela",
-                                fontSize: moderateScale(15),
-                              }}
-                            >
-                              {i18n.t("addMember")}
-                            </Text>
-                          </View>
-                        </LinearGradient>
-                      </TouchableOpacity>
-                    
-                      {/*  <Button title="הוסף חבר" onPress={() => addFriend(0)} /> */}
-
-                     {/*  <TouchableOpacity
-                        onPress={onNextButtonPressed}
-                        style={{
-                          justifyContent: "center",
-                          alignItems: "center",
-                          width: "90%",
-                          height: verticalScale(50),
-                          borderRadius: moderateScale(30),
-                          marginBottom: verticalScale(50),
-                          marginTop: verticalScale(30),
-                        }}
-                      >
-                        <LinearGradient
-                          colors={["#BD1865", "#88209B"]}
-                          style={{
-                            justifyContent: "center",
-                            alignItems: "center",
-                            width: "90%",
-                            height: verticalScale(50),
-                            borderRadius: moderateScale(30),
-                          }}
-                        >
-                          <Text
-                            allowFontScaling={false}
-                            style={{
-                              color: "white",
-                              fontSize: 24,
-                              fontFamily: "Varela",
-                            }}
-                          >
-                            {i18n.t("next")}
-                          </Text>
-                        </LinearGradient>
-                      </TouchableOpacity> */}
-                    </View>
-                  ) : /*  </KeyboardAvoidingView> */
-                  null}
-                  
-                  <InputAccessoryView nativeID={inputAccessoryViewID}>
-                    <View style={styles.accessory}>
-                      <TouchableOpacity onPress={() => Keyboard.dismiss()}>
-                        <Text style={styles.accessoryText}>Close</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </InputAccessoryView>
-                  {trackingPermissionProcessEnd && (
-                    <View style={{ marginVertical: verticalScale(15) }}>
-                      <BannerAd
-                        //    ref={bannerRef}
-                        unitId={adUnitId2}
-                        size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
-                        requestOptions={{
-                          requestNonPersonalizedAdsOnly: !isTrackingPermission,
-                          // You can change this setting depending on whether you want to use the permissions tracking we set up in the initializing
-                        }}
-                      />
-                    </View>
-                  )}
-                  
-                  {currentStep === 2 ? (
-                    <View
-                      style={{
-                        backgroundColor: "white",
-                        borderRadius: moderateScale(10),
-                        width: horizontalScale(400),
-                        height: "auto",
-                        justifyContent: "flex-start",
-                        paddingVertical: verticalScale(5),
-                        alignItems: "center",
-                        // marginTop: verticalScale(50),
-                      }}
-                    >
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          width: "100%",
-                        }}
-                      >
-                        <View
-                          style={{
-                            width: "20%",
-                            alignItems: "flex-start",
-                            padding: 2,
-                          }}
-                        >
-                          <TouchableOpacity
-                            onPress={onPreviousStep}
-                            style={{ padding: 8 }}
-                          >
-                            <Feather
-                              name="x-circle"
-                              size={28}
-                              color="#88209B"
-                            />
-                          </TouchableOpacity>
-                        </View>
-                        <View
-                          style={{
-                            flexDirection: "row",
-                              justifyContent: "flex-end",
-                            alignItems: "center",
-                            width: "70%",
-                            // backgroundColor: "green",
-                          }}
-                        >
-                          <TouchableOpacity
-                          disabled={!(FriendsNumIsValid && notPaidFriends.length > 0)}
-                            onPress={() => setNotPaidFriendsModalVisible(true)}
-                            style={{
-                              // marginTop: verticalScale(20),
-                              backgroundColor: (FriendsNumIsValid && notPaidFriends.length > 0) ?  "white" : "#E0E0E0" ,
-                              alignSelf: "center",
-                              justifyContent: "center",
-                              alignItems: "center",
-                              paddingHorizontal: horizontalScale(5),
-                              borderRadius: moderateScale(10),
-                              borderColor: (FriendsNumIsValid && notPaidFriends.length > 0) ? "#88209B" : "#BDBDBD" ,
-                              borderWidth:1,
-                            
-                                width: horizontalScale(100),
-                                height: verticalScale(50),
-                                borderRadius: moderateScale(20),
-                                paddingHorizontal: 10,
-                            }}
-                          >
-                            <Text
-                              allowFontScaling={false}
-                              style={{
-                                fontSize: moderateScale(10),
-                                fontFamily: "Varela",
-                                color: (FriendsNumIsValid && notPaidFriends.length > 0) ? "purple" : "#9E9E9E",
-                              }}
-                            >
-                              {i18n.t("updateNotPaidFriends")}
-                            </Text>
-                          </TouchableOpacity>
-                          
-                          <TouchableOpacity
-                            disabled={!FriendsNumIsValid}
-                            onPress={async () => {
-                              interstitialLoaded
-                                ? await interstitial.show()
-                                : calculateExpenses();
-                              console.log(
-                                "freind num is valid 1:",
-                                FriendsNumIsValid
-                              );
-                            }}
-                            style={{
-                              width: horizontalScale(100),
-                              height: verticalScale(50),
-                              borderRadius: moderateScale(30),
-                              paddingHorizontal: 10,
-                            }}
-                          >
-                            <LinearGradient
-                              colors={
-                                FriendsNumIsValid
-                                  ? ["#BD1865", "#88209B"]
-                                  : ["#cccccc", "#888888"]
-                              }
-                              style={{
-                                justifyContent: "center",
-                                alignItems: "center",
-                                height: verticalScale(50),
-                                borderRadius: moderateScale(20),
-                              }}
-                            >
-                              <Text
-                                allowFontScaling={false}
-                                style={{
-                                  color: "white",
-                                  fontSize: moderateScale(12),
-                                  fontFamily: "Varela",
-                                }}
-                              >
-                                {i18n.t("calculate")}
-                              </Text>
-                            </LinearGradient>
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                      <View
-                        style={{
-                          width: "90%",
-                          height: verticalScale(2),
-                          backgroundColor: "#E0E0E0",
-                          marginVertical: 8,
-                        }}
-                      />
-                      <Text
-                        allowFontScaling={false}
-                        style={{
-                          color: "#474747",
-                          fontSize: 25,
-                          fontWeight: "700",
-                          fontFamily: "Varela",
-                          textAlign: "center",
-                        }}
-                      >
-                        {i18n.t("howManyMembers")}
-                      </Text>
-                      <Text
-                        allowFontScaling={false}
-                        style={{ color: "grey", fontFamily: "Varela" }}
-                      >
-                        {i18n.t("howManyPeople")}
-                      </Text>
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          height: verticalScale(70),
-
-                          borderColor: "#CECECE",
-                          borderWidth: 1,
-                          // marginBottom: 10,
-                          //  padding: 10,
-                          width: "95%",
-                          borderRadius: 30,
-                          //     backgroundColor: "yellow",
-                        }}
-                      >
-                        <LinearGradient
-                          colors={["#BD1865", "#88209B"]}
-                          style={{
-                            width: horizontalScale(45),
-                            height: verticalScale(45),
-                            borderRadius: 100,
-                            marginLeft: horizontalScale(8),
-                            //backgroundColor: "purple",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            //flexDirection: "row",
-                            shadowColor: "#000",
-                            shadowOffset: {
-                              width: 0,
-                              height: 2,
-                            },
-                            shadowOpacity: 0.25,
-                            shadowRadius: 4,
-                            elevation: 5,
-                          }}
-                        >
-                          <FontAwesome6
-                            name="people-group"
-                            size={24}
-                            color="white"
-                          />
-                        </LinearGradient>
-                        <Input
-                          allowFontScaling={false}
-                          ref={inputNumFriend}
-                          inputContainerStyle={{
-                            borderBottomWidth: 0,
-                            //  backgroundColor: "grey",
-                            width: "80%",
-                            height: "100%",
-                            marginTop: verticalScale(25),
-                          }}
-                          inputStyle={{
-                            fontSize:
-                              moderateScale(16) / PixelRatio.getFontScale(),
-                            fontFamily: "Varela",
-                          }}
-                          style={{
-                            textAlign:
-                              i18n.locale === "he" || i18n.locale === "ar"
-                                ? "right"
-                                : "left", // Aligns text conditionally
-                            writingDirection:
-                              i18n.locale === "he" || i18n.locale === "ar"
-                                ? "rtl"
-                                : "ltr",
-                          }}
-                          placeholder={i18n.t("numberOfPeople")}
-                          keyboardType="number-pad"
-                          returnKeyType="done"
-                          onChangeText={handleInputChange}
-                          value={numPeople}
-                          //  onBlur={() => onNumFriendsBlurHandler()}
-                          inputAccessoryViewID={inputAccessoryViewID}
-                        />
-                      </View>
-                      <View>
-                        {/* <TextInput
-            style={{
-              height: 40,
-              borderColor: "gray",
-              borderWidth: 1,
-              padding: 10,
-            }}
-            placeholder={`Enter a number >= ${friends.length}`}
-            keyboardType="numeric"
-            onChangeText={handleInputChange}
-            value={numPeople}
-          /> */}
-                        {!FriendsNumIsValid && (
-                          <Text
-                            allowFontScaling={false}
-                            style={{ color: "red", fontFamily: "Varela" }}
-                          >
-                            {i18n.t("membersBetween1And100", {
-                              startNumber: friends.length,
-                            })}{" "}
-                            {/* {friends.length} ל 100 */}
-                          </Text>
-                        )}
-                      </View>
-                      {/* {FriendsNumIsValid && notPaidFriends.length > 0 && (
-                        <TouchableOpacity
-                          onPress={() => setNotPaidFriendsModalVisible(true)}
-                          style={{
-                            marginTop: verticalScale(20),
-                             backgroundColor:
-                              "#FDCBE3",
-                            alignSelf: "center",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            paddingHorizontal: horizontalScale(5),
-                            borderRadius: moderateScale(10),
-                            height:
-                              verticalScale(35) ,
-                          }}
-                        >
-                          <Text
-                            allowFontScaling={false}
-                            style={{
-                              fontSize: moderateScale(10),
-                              fontFamily: "Varela",
-                              color: "purple",
-                            }}
-                          >
-                            {i18n.t("updateNotPaidFriends")}
-                          </Text>
-                        </TouchableOpacity>
-                      )} */}
-
-                      {/*   <TouchableOpacity
-                        onPress={onPreviousStep}
-                        style={{
-                          justifyContent: "center",
-                          alignItems: "center",
-                          width: "90%",
-                          height: verticalScale(50),
-                          borderRadius: moderateScale(30),
-                          marginBottom: verticalScale(50),
-                          marginTop: verticalScale(30),
-                        }}
-                      >
-                        <LinearGradient
-                          colors={["#BD1865", "#88209B"]}
-                          style={{
-                            justifyContent: "center",
-                            alignItems: "center",
-                            width: horizontalScale(200),
-                            height: verticalScale(40),
-                            borderRadius: moderateScale(20),
-                          }}
-                        >
-                          <View
-                            style={{
-                              backgroundColor: "white", // Solid color for the button
-                              borderRadius: moderateScale(20),
-
-                              //padding:10,
-                              width: horizontalScale(195),
-                              height: verticalScale(35),
-                              overflow: "hidden",
-                              justifyContent: "center",
-                              alignItems: "center",
-                            }}>
-
-                            <Text
-                              allowFontScaling={false}
-                              style={{
-                                color: "#2B2B2B",
-                                fontSize: moderateScale(24),
-                                fontFamily: "Varela",
-                              }}
-                            >
-                              {i18n.t("previous")}
-                            </Text>
-                          </View>
-                        </LinearGradient>
-                      </TouchableOpacity> */}
-                    </View>
-                  ) : null}
-                  {/*  {FriendsNumIsValid && currentStep === 2 && (
-                     <TouchableOpacity
-                    disabled={!FriendsNumIsValid}
-                      onPress={async () => {
-                        interstitialLoaded
-                          ? await interstitial.show()
-                          : calculateExpenses();
-                       
-                        console.log(
-                          "freind num is valid 1:",
-                          FriendsNumIsValid
-                        );
-                      }}
-                      style={{
-                        justifyContent: "center",
-                        alignItems: "center",
-                        width: "90%",
-                        height: verticalScale(50),
-                        borderRadius: moderateScale(30),
-                        marginBottom: verticalScale(200),
-                        marginTop: verticalScale(30),
-                      }}
-                    >
-                      <LinearGradient
-                        colors={["#BD1865", "#88209B"]}
-                        style={{
-                          justifyContent: "center",
-                          alignItems: "center",
-                          width: "90%",
-                          height: verticalScale(50),
-                          borderRadius: moderateScale(30),
-                        }}
-                      >
-                        <Text
-                          allowFontScaling={false}
-                          style={{
-                            color: "white",
-                            fontSize: 24,
-                            fontFamily: "Varela",
-                          }}
-                        >
-                          {i18n.t("calculate")}
-                        </Text>
-                      </LinearGradient>
-                    </TouchableOpacity>
-                  )} */}
-
-                  <Modal
-                    transparent={true}
-                    animationType="slide"
-                    visible={notPaidFriendsModalVisible}
-                    onRequestClose={() => setNotPaidFriendsModalVisible(false)}
-                  >
-                    <KeyboardAvoidingView
-                      style={styles.modalContainer}
-                      behavior={Platform.OS === "ios" ? "padding" : "height"}
-                      enabled
-                      //  keyboardVerticalOffset={200}
-                    >
-                      <View style={styles.modalContent}>
-                        <View
-                          style={{
-                            justifyContent: "flex-start",
-                            maxHeight: windowHeight * 0.3,
-                            //  backgroundColor: "white",
-                            borderRadius: moderateScale(20),
-                            // marginBottom:verticalScale(200)
-                          }}
-                        >
-                          {FriendsNumIsValid && notPaidFriends.length > 0 && (
-                            <View
-                              style={{
-                                justifyContent: "center",
-                                alignItems: "center",
-                                marginTop: verticalScale(10),
-                                marginBottom: verticalScale(20),
-                              }}
-                            >
-                              <Text
-                                allowFontScaling={false}
-                                style={{
-                                  color: "#474747",
-                                  fontSize: moderateScale(25),
-                                  fontWeight: "700",
-                                  fontFamily: "Varela",
-                                  textAlign: "center",
-                                  marginBottom: verticalScale(20),
-                                }}
-                              >
-                                {i18n.t("notPaidFriends")}
-                              </Text>
-                              <FlatList
-                                data={notPaidFriends}
-                                horizontal={false}
-                                keyExtractor={(item, index) => index.toString()}
-                                contentContainerStyle={{
-                                  flexGrow: 1,
-                                  /* width: windowWidth, */ marginBottom:
-                                    verticalScale(100),
-                                }}
-                                keyboardShouldPersistTaps="handled"
-                                renderItem={({ item, index }) => (
-                                  <View
-                                    style={{
-                                      justifyContent: "center",
-                                      alignItems: "center",
-                                      marginVertical: verticalScale(5),
-                                    }}
-                                  >
-                                    <View
-                                      style={{
-                                        flexDirection: "row",
-                                        justifyContent: "space-between",
-                                        alignItems: "center",
-                                        height: verticalScale(47),
-                                        borderColor: "#CECECE",
-                                        borderWidth: 1,
-                                        width: "80%",
-                                        borderRadius: moderateScale(10),
-                                      }}
-                                    >
-                                      <LinearGradient
-                                        colors={["#BD1865", "#88209B"]}
-                                        style={{
-                                          width: horizontalScale(25),
-                                          height: verticalScale(25),
-                                          borderRadius: 100,
-                                          marginLeft: horizontalScale(8),
-                                          justifyContent: "center",
-                                          alignItems: "center",
-                                          shadowColor: "#000",
-                                          shadowOffset: {
-                                            width: 0,
-                                            height: 2,
-                                          },
-                                          shadowOpacity: 0.25,
-                                          shadowRadius: 4,
-                                          elevation: 5,
-                                        }}
-                                      >
-                                        <MaterialIcons
-                                          name="emoji-people"
-                                          size={18}
-                                          color="white"
-                                        />
-                                      </LinearGradient>
-                                      <Input
-                                        allowFontScaling={false}
-                                        ref={notPaidNameInput}
-                                        inputContainerStyle={{
-                                          borderBottomWidth: 0,
-                                          width: "80%",
-                                          height: "100%",
-                                          marginHorizontal: horizontalScale(5),
-                                          borderColor: "green",
-                                          marginTop: verticalScale(25),
-                                        }}
-                                        inputStyle={{
-                                          fontSize:
-                                            moderateScale(16) /
-                                            PixelRatio.getFontScale(),
-                                          fontFamily: "Varela",
-                                        }}
-                                        style={{
-                                          textAlign:
-                                            i18n.locale === "he" ||
-                                            i18n.locale === "ar"
-                                              ? "right"
-                                              : "left",
-                                          writingDirection:
-                                            i18n.locale === "he" ||
-                                            i18n.locale === "ar"
-                                              ? "rtl"
-                                              : "ltr",
-                                        }}
-                                        placeholder={`${i18n.t("friend")} ${
-                                          index + friends.length + 1
-                                        }`}
-                                        placeholderTextColor="#707070"
-                                        keyboardType="name-phone-pad"
-                                        onChangeText={(text) => {
-                                          const updatedNotPaidFriends = [
-                                            ...notPaidFriends,
-                                          ];
-                                          updatedNotPaidFriends[index] = text;
-                                          setNotPaidFriends(
-                                            updatedNotPaidFriends
-                                          );
-                                        }}
-                                        value={item}
-                                        inputAccessoryViewID={
-                                          inputAccessoryViewID
-                                        }
-                                      />
-                                    </View>
-                                  </View>
-                                )}
-                              />
-                            </View>
-                          )}
-                        </View>
-
-                        <View
-                          style={[
-                            styles.modalBottomContainer,
-                            {
-                              borderTopColor: "rgba(0,0,0,0.05)",
-                              borderWidth: 2,
-                              borderColor: "white",
-                            },
-                          ]}
-                        >
-                          <TouchableOpacity
-                            onPress={() => setNotPaidFriendsModalVisible(false)}
-                            style={{ padding: 10, borderRadius: 20 }}
-                          >
-                            <LinearGradient
-                              colors={["#BD1865", "#88209B"]}
-                              style={{
-                                width: horizontalScale(150),
-                                height: verticalScale(40),
-                                borderRadius: 20,
-                                justifyContent: "center",
-                                alignItems: "center",
-                              }}
-                            >
-                              <Text
-                                allowFontScaling={false}
-                                style={{
-                                  color: "white",
-                                  fontSize: moderateScale(18),
-                                }}
-                              >
-                                {i18n.t("save")}
-                              </Text>
-                            </LinearGradient>
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    </KeyboardAvoidingView>
-                  </Modal>
-                  <Modal
-                    transparent={true}
-                    animationType="slide"
-                    visible={modalVisible}
-                    onRequestClose={() => setModalVisible(false)}
-                  >
-                    <View style={styles.modalContainer}>
-                      <View style={styles.modalContent}>
-                        <View
-                          style={{
-                            justifyContent: "flex-start",
-                            height: windowHeight * 0.8,
-                            // alignItems: "center",
-                            backgroundColor: "white",
-                            borderRadius: moderateScale(10),
-                          }}
-                          ref={viewShotRef}
-                          collapsable={false}
-                        >
-                          {showText ? (
-                            <View
-                              style={{
-                                justifyContent: "center",
-                                alignItems: "center",
-                                paddingTop: verticalScale(10),
-                              }}
-                            >
-                              <Image
-                                source={imagePath}
-                                style={{
-                                  width: horizontalScale(250),
-                                  height: verticalScale(100),
-                                  //  alignSelf:"center"
-                                }}
-                                // resizeMode={FastImage.resizeMode.contain}
-                                //  onLoad={handleImageLoad}
-                              />
-                              <Text
-                                allowFontScaling={false}
-                                style={{
-                                  fontFamily: "Varela",
-                                  fontSize: moderateScale(20),
-                                  alignSelf: "center",
-                                  marginTop: -30,
-                                }}
-                              >
-                                {i18n.t("membersPaid")}
-                              </Text>
-                              <View
-                                style={{
-                                  width: "100%",
-                                  backgroundColor: "grey",
-                                  height: 1,
-                                  marginVertical: verticalScale(5),
-                                }}
-                              />
-
-                              <FlatList
-                                data={friends}
-                                horizontal
-                                renderItem={renderItem}
-                                keyExtractor={(item, index) => index.toString()}
-                                showsHorizontalScrollIndicator={false}
-                                contentContainerStyle={{
-                                  /* width:windowWidth,height:windowHeight* 0.3 ,flexWrap: 'wrap' , */ justifyContent:
-                                    "center",
-                                  alignItems: "center",
-                                }}
-                                //  numColumns={3}
-                              />
-                              <View
-                                style={{
-                                  width: "100%",
-                                  backgroundColor: "grey",
-                                  height: 1,
-                                  marginBottom: verticalScale(10),
-                                }}
-                              />
-                              <View
-                                style={{
-                                  flexDirection: "row",
-                                  justifyContent: "center",
-                                  alignItems:
-                                    "center" /* backgroundColor:"yellow" */,
-                                }}
-                              >
-                                <Text
-                                  allowFontScaling={false}
-                                  style={{
-                                    fontSize: moderateScale(25),
-                                    fontFamily: "Varela",
-                                    marginBottom: verticalScale(20),
-                                    textAlign: "center",
-                                    writingDirection:
-                                      i18n.locale === "he" ||
-                                      i18n.locale === "ar"
-                                        ? "rtl"
-                                        : "ltr",
-                                  }}
-                                >
-                                  {`${i18n.t("totalPaid")} `}
-                                </Text>
-                                <View
-                                  style={{
-                                    flexDirection:
-                                      i18n.locale === "he" ||
-                                      i18n.locale === "ar"
-                                        ? "row-reverse"
-                                        : "row",
-                                    justifyContent:
-                                      i18n.locale === "he" ||
-                                      i18n.locale === "ar"
-                                        ? "flex-start"
-                                        : "flex-end",
-                                    alignItems:
-                                      "center" /* backgroundColor:"yellow" */,
-                                  }}
-                                >
-                                  <Text
-                                    allowFontScaling={false}
-                                    style={{
-                                      fontSize: moderateScale(18),
-                                      fontFamily: "Varela",
-                                      marginBottom: verticalScale(15),
-                                      textAlign: "center",
-                                      writingDirection:
-                                        i18n.locale === "he" ||
-                                        i18n.locale === "ar"
-                                          ? "rtl"
-                                          : "ltr",
-                                    }}
-                                  >{`${currencySymbol}`}</Text>
-                                  <Text
-                                    allowFontScaling={false}
-                                    style={{
-                                      fontSize: moderateScale(25),
-                                      fontFamily: "Varela",
-                                      marginBottom: verticalScale(20),
-                                      textAlign: "center",
-                                      writingDirection:
-                                        i18n.locale === "he" ||
-                                        i18n.locale === "ar"
-                                          ? "rtl"
-                                          : "ltr",
-                                    }}
-                                  >{`${totalAmount.toLocaleString()}`}</Text>
-                                </View>
-                              </View>
-                              {/*  <Text
-                                style={{
-                                  fontSize: moderateScale(25),
-                                  fontFamily: "Varela",
-                                  marginBottom: verticalScale(20),
-                                  textAlign: "center",
-                                  writingDirection:
-                                    i18n.locale === "he" || i18n.locale === "ar"
-                                      ? "rtl"
-                                      : "ltr",
-                                }}
-                              >{`${i18n.t(
-                                "totalPaid"
-                              )} ${currencySymbol}${totalAmount.toLocaleString()}`}</Text> */}
-                              <View
-                                style={{
-                                  flexDirection: "row",
-                                  justifyContent: "center",
-                                  alignItems:
-                                    "center" /* backgroundColor:"yellow" */,
-                                }}
-                              >
-                                <Text
-                                  allowFontScaling={false}
-                                  style={{
-                                    fontSize: moderateScale(25),
-                                    color: "grey",
-                                    fontFamily: "Varela",
-                                    writingDirection:
-                                      i18n.locale === "he" ||
-                                      i18n.locale === "ar"
-                                        ? "rtl"
-                                        : "ltr",
-                                    textAlign: "center",
-                                  }}
-                                >{`${i18n.t("pricePerPerson")} `}</Text>
-                                <View
-                                  style={{
-                                    flexDirection:
-                                      i18n.locale === "he" ||
-                                      i18n.locale === "ar"
-                                        ? "row-reverse"
-                                        : "row",
-                                    justifyContent:
-                                      i18n.locale === "he" ||
-                                      i18n.locale === "ar"
-                                        ? "flex-start"
-                                        : "flex-end",
-                                    alignItems:
-                                      "center" /* backgroundColor:"yellow" */,
-                                  }}
-                                >
-                                  <Text
-                                    allowFontScaling={false}
-                                    style={{
-                                      fontSize: moderateScale(18),
-                                      fontFamily: "Varela",
-                                      marginTop: verticalScale(5),
-                                      color: "grey",
-                                      textAlign: "center",
-                                      writingDirection:
-                                        i18n.locale === "he" ||
-                                        i18n.locale === "ar"
-                                          ? "rtl"
-                                          : "ltr",
-                                    }}
-                                  >{`${currencySymbol}`}</Text>
-                                  <Text
-                                    allowFontScaling={false}
-                                    style={{
-                                      fontSize: moderateScale(25),
-                                      fontFamily: "Varela",
-                                      // marginBottom: verticalScale(5),
-                                      color: "grey",
-                                      textAlign: "center",
-                                      writingDirection:
-                                        i18n.locale === "he" ||
-                                        i18n.locale === "ar"
-                                          ? "rtl"
-                                          : "ltr",
-                                    }}
-                                  >{`${parseFloat(
-                                    (totalAmount / parseInt(numPeople)).toFixed(
-                                      2
-                                    )
-                                  ).toLocaleString()}`}</Text>
-                                </View>
-                              </View>
-
-                              {/* <Text
-                                style={{
-                                  fontSize: moderateScale(27),
-                                  color: "grey",
-                                  fontFamily: "Varela",
-                                  writingDirection:
-                                    i18n.locale === "he" || i18n.locale === "ar"
-                                      ? "rtl"
-                                      : "ltr",
-                                  textAlign: "center",
-                                }}
-                              >{`${i18n.t(
-                                "pricePerPerson"
-                              )} ${currencySymbol}${parseFloat(
-                                (totalAmount / parseInt(numPeople)).toFixed(2)
-                              ).toLocaleString()}`}</Text> */}
-                              <View
-                                style={{
-                                  width: "100%",
-                                  backgroundColor: "grey",
-                                  height: 1,
-                                  marginVertical: verticalScale(10),
-                                }}
-                              />
-
-                              <View
-                                style={{
-                                  // height: 200,
-                                  // marginTop: verticalScale(100),
-                                  //  marginBottom:verticalScale(40),
-                                  justifyContent: "center",
-                                  alignItems: "center",
-                                  maxHeight: verticalScale(400),
-                                  //backgroundColor: "green",
-                                }}
-                              >
-                                {
-                                  <FlatList
-                                    data={messages}
-                                    // contentContainerStyle={{backgroundColor:"green"}}
-                                    renderItem={({ item }) => (
-                                      <View
-                                        style={{
-                                          flexDirection: "row",
-                                          marginBottom: verticalScale(15),
-                                          justifyContent: "space-between",
-                                          borderBottomColor: "grey",
-                                          borderBottomWidth:
-                                            moderateScale(
-                                              0.3
-                                            ) /* backgroundColor:"green" */,
-                                        }}
-                                      >
-                                        <View
-                                          style={{
-                                            flexDirection: "column",
-                                            // marginHorizontal: horizontalScale(10),
-                                            alignItems: "center",
-                                            //  paddingVertical: verticalScale(10),
-                                            width: windowWidth * 0.15,
-                                          }}
-                                        >
-                                          <FontAwesome
-                                            name="user-circle"
-                                            size={moderateScale(16)}
-                                            color="purple"
-                                          />
-
-                                          <Text
-                                            allowFontScaling={false}
-                                            style={{
-                                              fontSize: moderateScale(12),
-                                              fontFamily: "Varela",
-                                              textAlign: "center",
-                                              // marginVertical: verticalScale(12),
-                                              writingDirection:
-                                                i18n.locale === "he" ||
-                                                i18n.locale === "ar"
-                                                  ? "rtl"
-                                                  : "ltr",
-                                            }}
-                                          >
-                                            {item.friend1.length > 20
-                                              ? item.friend1.substring(0, 20) +
-                                                ".."
-                                              : item.friend1}
-                                          </Text>
-                                        </View>
-
-                                        <View
-                                          style={{
-                                            /* justifyContent: "center", */ alignItems:
-                                              "center",
-                                            marginHorizontal:
-                                              horizontalScale(
-                                                5
-                                              ) /* width:windowWidth*0.28 */,
-                                          }}
-                                        >
-                                          <Text
-                                            allowFontScaling={false}
-                                            style={{
-                                              fontSize: moderateScale(12),
-                                              fontFamily: "Varela",
-                                              // marginVertical: verticalScale(12),
-                                              writingDirection:
-                                                i18n.locale === "he" ||
-                                                i18n.locale === "ar"
-                                                  ? "rtl"
-                                                  : "ltr",
-                                            }}
-                                          >{`${i18n.t("owe")}`}</Text>
-                                          <AntDesign
-                                            name="arrowright"
-                                            size={24}
-                                            color="purple"
-                                            style={{
-                                              transform: [
-                                                {
-                                                  rotate:
-                                                    i18n.locale === "he" ||
-                                                    i18n.locale === "ar"
-                                                      ? "180deg"
-                                                      : "0deg",
-                                                },
-                                              ],
-                                            }}
-                                          />
-                                        </View>
-                                        <View
-                                          style={{
-                                            flexDirection: "column",
-                                            //justifyContent:"center",
-                                            //  marginHorizontal: horizontalScale(5),
-                                            alignItems: "center",
-                                            //  paddingVertical: verticalScale(10),
-                                            width: windowWidth * 0.15,
-                                          }}
-                                        >
-                                          <FontAwesome
-                                            name="user-circle"
-                                            size={moderateScale(16)}
-                                            color="purple"
-                                          />
-
-                                          <Text
-                                            allowFontScaling={false}
-                                            style={{
-                                              fontSize: moderateScale(12),
-                                              fontFamily: "Varela",
-                                              textAlign: "center",
-                                              // marginVertical: verticalScale(12),
-                                              writingDirection:
-                                                i18n.locale === "he" ||
-                                                i18n.locale === "ar"
-                                                  ? "rtl"
-                                                  : "ltr",
-                                            }}
-                                          >
-                                            {item.friend2.length > 20
-                                              ? item.friend2.substring(0, 20) +
-                                                ".."
-                                              : item.friend2}
-                                          </Text>
-                                        </View>
-                                        <View
-                                          style={{
-                                            flexDirection:
-                                              i18n.locale === "he" ||
-                                              i18n.locale === "ar"
-                                                ? "row-reverse"
-                                                : "row",
-                                            width: windowWidth * 0.3,
-                                            /* marginHorizontal:horizontalScale(30),  */ justifyContent:
-                                              i18n.locale === "he" ||
-                                              i18n.locale === "ar"
-                                                ? "flex-start"
-                                                : "flex-end",
-                                            alignItems:
-                                              "center" /*  backgroundColor:"yellow" */,
-                                          }}
-                                        >
-                                          <Text
-                                            allowFontScaling={false}
-                                            style={{
-                                              fontSize: moderateScale(10),
-                                              marginTop: verticalScale(3),
-                                            }}
-                                          >
-                                            {currencySymbol}
-                                          </Text>
-                                          <Text
-                                            allowFontScaling={false}
-                                            style={{
-                                              fontSize: moderateScale(15),
-                                              fontFamily: "Varela",
-                                            }}
-                                          >
-                                            {item.amount}
-                                          </Text>
-                                        </View>
-                                      </View>
-                                    )}
-                                    keyExtractor={(item, index) =>
-                                      index.toString()
-                                    }
-                                  />
-                                }
-                                {/* {messages.map((message, index) => (
-                              <Text
-                                key={index}
-                                style={{
-                                  fontSize: moderateScale(12),
-                                  fontFamily: "Varela",
-                                  marginVertical: verticalScale(12),
-                                }}
-                              >
-                                {message}
-                              </Text>
-                            ))} */}
-                              </View>
-                            </View>
-                          ) : null}
-                        </View>
-
-                        <View style={styles.modalBottomContainer}>
-                          <TouchableOpacity
-                            onPress={captureAndShareImage}
-                            style={{ padding: 10, borderRadius: 20 }}
-                          >
-                            <LinearGradient
-                              colors={["#BD1865", "#88209B"]}
-                              style={{
-                                width: horizontalScale(150),
-                                height: verticalScale(40),
-                                /* paddingVertical:verticalScale(10), */ borderRadius: 20,
-                                justifyContent: "center",
-                                alignItems: "center",
-                              }}
-                            >
-                              <Text
-                                allowFontScaling={false}
-                                style={{
-                                  color: "white",
-                                  fontFamily: "Varela",
-                                  fontSize: moderateScale(18),
-                                }}
-                              >
-                                {i18n.t("share")}
-                              </Text>
-                            </LinearGradient>
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            onPress={() => {
-                              setFriends([
-                                { amount: "", isValid: true, nickname: "" },
-                              ]),
-                                setNumPeople(""),
-                                setModalVisible(false);
-                              setFriendsNumValid(false);
-                              setCurrentStep(1);
-                              CheckArray();
-                            }}
-                            style={{
-                              justifyContent: "center",
-                              alignItems: "center",
-                            }}
-                          >
-                            <LinearGradient
-                              colors={["#BD1865", "#88209B"]}
-                              style={{
-                                width: horizontalScale(150),
-                                //paddingVertical:verticalScale(10),
-                                height: verticalScale(40), //padding: 10,
-                                borderRadius: moderateScale(20),
-                                // borderWidth: 1, // Border width
-                                borderColor: "transparent",
-                                justifyContent: "center",
-                                alignItems: "center",
-                              }}
-                            >
-                              <View
-                                style={{
-                                  backgroundColor: "white", // Solid color for the button
-                                  borderRadius: moderateScale(20),
-
-                                  //padding:10,
-                                  width: horizontalScale(145),
-                                  height: verticalScale(35),
-                                  overflow: "hidden",
-                                  justifyContent: "center",
-                                  alignItems: "center",
-                                }}
-                              >
-                                <Text
-                                  allowFontScaling={false}
-                                  style={{
-                                    color: "#2B2B2B",
-                                    fontFamily: "Varela",
-                                    fontSize: moderateScale(18),
-                                  }}
-                                >
-                                  {i18n.t("close")}
-                                </Text>
-                              </View>
-                            </LinearGradient>
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    </View>
-                  </Modal>
-                  {/*             <WebView
-      source={{ uri: 'https://web.whatsapp.com/' }} // Specify the URL you want to load
-      style={{width:windowWidth, height:600}}
-    /> */}
-                </ScrollView>
-              </View>
-            )
-          }
-        </View>
+              <View style={styles.flex} />
+            )}
+            {currentStep < 3 ? (
+              <GradientButton
+                title={i18n.t("next")}
+                onPress={onNext}
+                style={styles.flexButton}
+              />
+            ) : (
+              <GradientButton
+                icon="check-circle"
+                title={i18n.t("calculate")}
+                onPress={onCalculate}
+                style={styles.flexButton}
+              />
+            )}
+          </View>
+          {banner(adUnitId2)}
+        </ScrollView>
       </KeyboardAvoidingView>
-    </TouchableWithoutFeedback>
+
+      {Platform.OS === "ios" ? (
+        <InputAccessoryView nativeID={inputAccessoryViewID}>
+          <View style={styles.accessory}>
+            <TouchableOpacity onPress={() => Keyboard.dismiss()}>
+              <Text style={styles.accessoryText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </InputAccessoryView>
+      ) : null}
+
+      <ToastView toast={toast} bottom={insets.bottom + 24} />
+      {renderDescriptionModal()}
+      {renderResultsModal()}
+      {renderSavedListsModal()}
+      <SaveListModal
+        visible={saveModalVisible && !resultsVisible}
+        name={saveListName}
+        onChangeName={(text) => {
+          setSaveListName(text);
+          setSaveError("");
+        }}
+        error={saveError}
+        shakeStyle={saveShakeStyle}
+        onSave={saveCurrentList}
+        onClose={() => setSaveModalVisible(false)}
+      />
+    </View>
+  );
+}
+
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      <Main />
+    </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  flex: {
+    flex: 1,
+  },
+  root: {
+    flex: 1,
+    backgroundColor: "#EDEDED",
+  },
+  text: {
+    fontFamily: "Varela",
+    color: "#2B2B2B",
+  },
+  loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    //  padding: 80,
-  },
-  input: {
-    height: verticalScale(40),
-    borderColor: "#CECECE",
-    borderWidth: 1,
-    marginBottom: verticalScale(10),
-    padding: moderateScale(10),
-    width: "70%",
-    borderRadius: moderateScale(20),
-  },
-  friendInputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-around",
-    width: "100%",
-
-    // backgroundColor: "green",
-  },
-  messageContainer: {
-    backgroundColor: "#e0e0e0",
-    padding: moderateScale(50),
-    width: horizontalScale(400),
-    marginVertical: verticalScale(5),
-    borderRadius: moderateScale(8),
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  messageText: {
-    fontSize: moderateScale(16),
-    color: "black",
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // Adjust the alpha value for transparency
-  },
-  modalContent: {
-    justifyContent: "space-between",
     backgroundColor: "white",
-    width: windowWidth * 0.95,
-    // height: windowHeight * 0.9,
-    borderRadius: moderateScale(10),
+  },
+  loadingImage: {
+    width: horizontalScale(200),
+    height: verticalScale(200),
+  },
+  loadingText: {
+    fontSize: moderateScale(20),
+  },
+  header: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingBottom: verticalScale(14),
     elevation: 5,
-    //maxHeight: "90%", // Adjust the maximum height as needed
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
   },
-  modalBottomContainer: {
-    //alignSelf:"flex-end",
-    marginTop: verticalScale(10),
+  headerInfoButton: {
+    position: "absolute",
+    end: 16,
+  },
+  headerTitle: {
+    color: "white",
+    fontSize: moderateScale(44),
+  },
+  headerSubtitle: {
+    color: "white",
+    fontSize: 18,
+  },
+  toolbar: {
     flexDirection: "row",
-    justifyContent: "space-around",
     alignItems: "center",
-    // backgroundColor: "white",
-    // borderBottomEndRadius: moderateScale(20),
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    backgroundColor: "white",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
   },
-  keyboardAvoidingContainer: {
+  currencyPicker: {
     flex: 1,
-  },
-  itemContainer: {
-    //width:"100%",
-    flexDirection: "column",
-    marginHorizontal: moderateScale(10),
-    alignItems: "center",
-    paddingVertical: verticalScale(5),
-    marginVertical: verticalScale(4),
-    // maxHeight: verticalScale(100),
-    // backgroundColor:"green"
-  },
-  avatar: {
-    width: horizontalScale(50),
-    height: verticalScale(50),
-    borderRadius: moderateScale(25),
-  },
-  textContainer: {
-    alignItems: "center",
-    marginVertical: verticalScale(5),
-  },
-  nickname: {
-    fontSize: moderateScale(16),
-    fontWeight: "bold",
-    // writingDirection: i18n.
-  },
-  amount: {
-    fontSize: moderateScale(14),
-    // marginTop: 3,
-    //marginBottom: 10,
+    marginEnd: 4,
   },
   dropdown: {
     backgroundColor: "#fafafa",
+    borderColor: "#CECECE",
+    minHeight: 44,
+  },
+  dropdownText: {
+    fontFamily: "Varela",
+    fontSize: 14,
+  },
+  toolbarButton: {
+    width: 60,
+    alignItems: "center",
+    paddingHorizontal: 2,
+  },
+  toolbarButtonText: {
+    fontSize: 10,
+    color: PURPLE,
+    marginTop: 2,
+  },
+  scrollContent: {
+    alignItems: "center",
+    paddingTop: 4,
+  },
+  banner: {
+    marginVertical: verticalScale(10),
+  },
+  stepIndicator: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    width: "92%",
+    marginBottom: 12,
+  },
+  stepItem: {
+    alignItems: "center",
+    width: 84,
+  },
+  stepCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  stepCircleInactive: {
+    backgroundColor: "white",
+    borderWidth: 1,
+    borderColor: "#BDBDBD",
+  },
+  stepNumber: {
+    color: "#9E9E9E",
+    fontSize: 15,
+  },
+  stepNumberActive: {
+    color: "white",
+    fontSize: 15,
+  },
+  stepLabel: {
+    marginTop: 4,
+    fontSize: 12,
+    color: "#757575",
+  },
+  stepLabelActive: {
+    color: PURPLE,
+  },
+  stepLine: {
+    flex: 1,
+    height: 2,
+    marginTop: 15,
+    backgroundColor: "#BDBDBD",
+  },
+  stepLineActive: {
+    backgroundColor: PURPLE,
+  },
+  card: {
+    backgroundColor: "white",
+    borderRadius: moderateScale(12),
+    width: "92%",
+    padding: 16,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  cardHeader: {
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  cardTitle: {
+    color: "#474747",
+    fontSize: 22,
+    textAlign: "center",
+  },
+  cardDescription: {
+    color: "grey",
+    textAlign: "center",
+    marginTop: 4,
+  },
+  input: {
+    flex: 1,
+    height: 48,
+    borderWidth: 1,
+    borderColor: "#CECECE",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    fontFamily: "Varela",
+    fontSize: 16,
+    color: "#2B2B2B",
+    backgroundColor: "white",
+  },
+  inputRTL: {
+    textAlign: "right",
+    writingDirection: "rtl",
+  },
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+  },
+  inputRowButton: {
+    marginStart: 8,
+  },
+  inputRowSecond: {
+    flex: 1.6,
+    marginStart: 8,
+  },
+  amountInput: {
+    flex: 1,
+  },
+  errorText: {
+    color: "#E53935",
+    textAlign: "center",
+    marginTop: 6,
+  },
+  emptyText: {
+    color: "grey",
+    textAlign: "center",
+    paddingVertical: 16,
+  },
+  emptyTextSmall: {
+    color: "#9E9E9E",
+    fontSize: 13,
+    paddingVertical: 4,
+    paddingHorizontal: 34,
+  },
+  mutedText: {
+    color: "#9E9E9E",
+    fontSize: 13,
+  },
+  listRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+  },
+  listRowTitle: {
+    flex: 1,
+    fontSize: 16,
+    marginHorizontal: 10,
+  },
+  avatar: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  fieldLabel: {
+    color: "#474747",
+    fontSize: 15,
+    marginBottom: 8,
+  },
+  chipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: 8,
+  },
+  chip: {
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    marginEnd: 8,
+    marginBottom: 8,
+    maxWidth: horizontalScale(180),
+  },
+  chipUnselected: {
+    borderWidth: 1,
+    borderColor: "#CECECE",
+    backgroundColor: "#FAFAFA",
+  },
+  chipText: {
+    fontSize: 14,
+  },
+  chipTextSelected: {
+    color: "white",
+  },
+  fullWidthButton: {
+    alignSelf: "stretch",
+    marginTop: 12,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#E0E0E0",
+    marginVertical: 14,
+    alignSelf: "stretch",
+  },
+  expenseGroup: {
+    marginBottom: 12,
+  },
+  expenseGroupHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  expenseGroupName: {
+    flex: 1,
+    fontSize: 16,
+    marginHorizontal: 8,
+  },
+  expenseRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F7F2F9",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginTop: 4,
+  },
+  expenseDescription: {
+    flex: 1,
+    marginHorizontal: 8,
+  },
+  expenseAmount: {
+    marginEnd: 12,
+  },
+  selectionButtonsRow: {
+    flexDirection: "row",
+    marginBottom: 8,
+  },
+  participantRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
+    borderRadius: 10,
+    marginTop: 6,
+    borderWidth: 1,
+    borderColor: "#EEEEEE",
+  },
+  participantRowSelected: {
+    borderColor: "#D9B8E3",
+    backgroundColor: "#F7F2F9",
+  },
+  participantName: {
+    flex: 1,
+    fontSize: 16,
+    marginHorizontal: 10,
+  },
+  selectionSummary: {
+    color: "grey",
+    textAlign: "center",
+    marginTop: 12,
+  },
+  navRow: {
+    flexDirection: "row",
+    width: "92%",
+    marginTop: 14,
+  },
+  button: {
+    flexDirection: "row",
+    height: 48,
+    borderRadius: 24,
+    paddingHorizontal: 18,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  buttonSmall: {
+    height: 40,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+  },
+  buttonIcon: {
+    marginEnd: 6,
+  },
+  buttonText: {
+    color: "white",
+    fontSize: 17,
+  },
+  buttonTextSmall: {
+    fontSize: 14,
+  },
+  outlineButton: {
+    backgroundColor: "white",
+    borderWidth: 1.5,
+    borderColor: PURPLE,
+  },
+  outlineButtonText: {
+    color: PURPLE,
+  },
+  flexButton: {
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  dialogCard: {
+    backgroundColor: "white",
+    borderRadius: 16,
+    width: "90%",
+    padding: 18,
+    elevation: 6,
+  },
+  dialogTitle: {
+    color: PURPLE,
+    fontSize: 20,
+    textAlign: "center",
+    marginBottom: 6,
+  },
+  dialogButtonsRow: {
+    flexDirection: "row",
+    marginTop: 14,
+  },
+  resultsCard: {
+    backgroundColor: "white",
+    borderRadius: 16,
+    width: windowWidth * 0.95,
+    paddingBottom: 12,
+    paddingHorizontal: 8,
+    elevation: 6,
+  },
+  resultsScroll: {
+    flexGrow: 0,
+  },
+  resultsContent: {
+    backgroundColor: "white",
+    padding: 12,
+  },
+  shareSnapshot: {
+    position: "absolute",
+    top: 0,
+    left: windowWidth * 2,
+    width: windowWidth * 0.95,
+    paddingHorizontal: 20,
+  },
+  resultsImage: {
+    width: horizontalScale(250),
+    height: verticalScale(100),
+    alignSelf: "center",
+  },
+  resultsTitle: {
+    fontSize: moderateScale(22),
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  statsRow: {
+    flexDirection: "row",
+    marginBottom: 12,
+  },
+  statBox: {
+    flex: 1,
+    borderRadius: 10,
+    padding: 10,
+    marginHorizontal: 4,
+    alignItems: "center",
+  },
+  statBoxTotal: {
+    backgroundColor: "#F3E6F8",
+  },
+  statBoxPerFriend: {
+    backgroundColor: "#FDE7F0",
+  },
+  statLabel: {
+    color: "#757575",
+    fontSize: 13,
+  },
+  statValue: {
+    fontSize: moderateScale(20),
+    marginTop: 4,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    color: "#474747",
+    marginBottom: 6,
+  },
+  breakdownRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F5F5F5",
+    borderRadius: 8,
+    padding: 8,
+    marginBottom: 4,
+  },
+  breakdownRowMuted: {
+    backgroundColor: "#FAFAFA",
+  },
+  breakdownName: {
+    flex: 1,
+    marginHorizontal: 8,
+  },
+  transferRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "grey",
+  },
+  transferPerson: {
+    width: windowWidth * 0.2,
+    alignItems: "center",
+  },
+  transferName: {
+    fontSize: moderateScale(12),
+    textAlign: "center",
+    marginTop: 2,
+  },
+  transferMiddle: {
+    alignItems: "center",
+    marginHorizontal: 4,
+  },
+  transferPays: {
+    fontSize: moderateScale(11),
+  },
+  transferAmount: {
+    flex: 1,
+    fontSize: moderateScale(16),
+    textAlign: "center",
+  },
+  savedListsScroll: {
+    marginVertical: 8,
+  },
+  savedListRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+  },
+  savedListInfo: {
+    flex: 1,
+  },
+  savedListName: {
+    fontSize: 16,
+    marginBottom: 2,
+  },
+  savedListAction: {
+    paddingHorizontal: 8,
+  },
+  toast: {
+    position: "absolute",
+    alignSelf: "center",
+    backgroundColor: "rgba(40, 40, 40, 0.9)",
+    borderRadius: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    maxWidth: "90%",
+  },
+  toastText: {
+    color: "white",
+    textAlign: "center",
   },
   accessory: {
     backgroundColor: "#f0f0f0",
@@ -3360,33 +2213,36 @@ const styles = StyleSheet.create({
     color: "#007bff",
     fontSize: 16,
   },
-
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  card: {
+  descriptionCard: {
     backgroundColor: "#fff",
     borderRadius: 18,
-     width: "90%",
+    width: "90%",
     maxHeight: "85%",
     elevation: 6,
     shadowColor: "#000",
     shadowOpacity: 0.2,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 2 },
-     padding:10
+    padding: 10,
   },
-  title: {
+  descriptionClose: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    zIndex: 10,
+  },
+  descriptionContent: {
+    padding: 5,
+    marginHorizontal: 20,
+  },
+  descriptionTitle: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#88209B",
+    color: PURPLE,
     textAlign: "center",
     marginBottom: 10,
   },
-  description: {
+  descriptionText: {
     fontSize: 16,
     color: "#333",
     textAlign: "center",
@@ -3394,26 +2250,27 @@ const styles = StyleSheet.create({
   },
   featuresGrid: {
     marginBottom: 20,
-    // marginHorizontal:5
   },
   featureRow: {
     flexDirection: "row",
     alignItems: "flex-start",
     marginBottom: 16,
   },
-  icon: {
+  featureIcon: {
     marginRight: 12,
     marginTop: 2,
+  },
+  featureTextContainer: {
+    flex: 1,
   },
   featureTitle: {
     fontWeight: "bold",
     fontSize: 16,
-    color: "#88209B",
+    color: PURPLE,
   },
   featureDesc: {
     fontSize: 14,
     color: "#666",
-
   },
   howItWorksBox: {
     backgroundColor: "#F3E6F8",
@@ -3425,227 +2282,12 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16,
     marginBottom: 6,
-    color: "#88209B",
+    color: PURPLE,
   },
-  stepsList: {
-    paddingLeft: 8,
-  },
-  step: {
+  howItWorksStep: {
     fontSize: 14,
     color: "#666",
     marginBottom: 2,
+    paddingLeft: 8,
   },
 });
-
-// [25, 75 0, 0, 0] [5, 55, -20, -20 , -20]
-// [0,60, -20, -20, -20]
-// 1 מעביר 5 שקלים ל2
-//[0,40,0,-20,-20]
-//3 מעביר 20 ל2
-//[0,20,0,0,-20]
-//4 מעביר 20 ל2
-//[0,0,0,0,0]
-//5 מעביר 20 ל2
-
-const NickNames = [
-  {
-    en: "Moneybags",
-    he: "שק הכסף",
-  },
-  {
-    en: "The Benefactor",
-    he: "הנדבן",
-  },
-  {
-    en: "The Miser",
-    he: "הקמצן",
-  },
-  {
-    en: "Loan Shark",
-    he: "הלווה בריבית גבוהה",
-  },
-  {
-    en: "The Tycoon",
-    he: "איל ההון",
-  },
-  {
-    en: "Money Maker",
-    he: "יוצר הכסף",
-  },
-  {
-    en: "Mr. Money Bags",
-    he: "מר שקי כסף",
-  },
-  {
-    en: "The Investor",
-    he: "המשקיע",
-  },
-  {
-    en: "The Philanthropist",
-    he: "הפילנתרופ",
-  },
-  {
-    en: "Richie Rich",
-    he: "העשירון",
-  },
-  {
-    en: "The Banker",
-    he: "הבנקאי",
-  },
-  {
-    en: "Cash Cow",
-    he: "פרת המשק",
-  },
-  {
-    en: "Money Tree",
-    he: "עץ הכסף",
-  },
-  {
-    en: "The Frugal",
-    he: "החסכן",
-  },
-  {
-    en: "The Tightwad",
-    he: "הקמצן",
-  },
-  {
-    en: "Mr. Big Bucks",
-    he: "מר שטרות גדולים",
-  },
-  {
-    en: "The Spendthrift",
-    he: "בזבזן",
-  },
-  {
-    en: "The Bargain Shopper",
-    he: "צייד המבצעים",
-  },
-  {
-    en: "The Mooch",
-    he: "הפריזיית",
-  },
-  {
-    en: "Money Grubber",
-    he: "אוהב הממון",
-  },
-  {
-    en: "The Ladies Man",
-    he: "הפלרטטן הגדול",
-  },
-  {
-    en: "The Scrooge",
-    he: "הקמצן",
-  },
-  {
-    en: "Mr. Big Spender",
-    he: "בעל ההוצאות הגדולות",
-  },
-  {
-    en: "Wallet Watch",
-    he: "שומר הארנק",
-  },
-  {
-    en: "The Stingy One",
-    he: "הקמצן",
-  },
-  {
-    en: "The Glutton",
-    he: "התאווה",
-  },
-  {
-    en: "The Miserly One",
-    he: "הקמצני",
-  },
-  {
-    en: "The Hoarder",
-    he: "האגרן",
-  },
-  {
-    en: "The Penny Pincher",
-    he: "חוסך הפרוטות",
-  },
-  {
-    en: "Heshy",
-    he: "חשוי",
-  },
-  {
-    en: "The Tightwad",
-    he: "הקמצן",
-  },
-  {
-    en: "The Big Saver",
-    he: "החוסך הגדול",
-  },
-  {
-    en: "Money Bags",
-    he: "שקי כסף",
-  },
-  {
-    en: "Dollar Man",
-    he: "איש הדולרים",
-  },
-  {
-    en: "The Thrift",
-    he: "החסכן",
-  },
-  {
-    en: "Mr. Cash Flow",
-    he: "מר תזרים מזומנים",
-  },
-  {
-    en: "The Cost Cutter",
-    he: "חותך העלויות",
-  },
-  {
-    en: "The Skinflint",
-    he: "הקמצן",
-  },
-  {
-    en: "The Money Saver",
-    he: "חוסך הכסף",
-  },
-  {
-    en: "Cash Cow",
-    he: "הפרה המניבה",
-  },
-  {
-    en: "The Saver",
-    he: "החוסך",
-  },
-  {
-    en: "Penny Pincher",
-    he: "טובע המטבעות",
-  },
-  {
-    en: "The Generous One",
-    he: "הנדיב",
-  },
-  {
-    en: "Money Bags McGee",
-    he: "שקי כסף מק'גי",
-  },
-  {
-    en: "The Deep Pockets",
-    he: "עמוק הכיסים",
-  },
-  {
-    en: "The Wealthy One",
-    he: "העשיר",
-  },
-  {
-    en: "Mr. Money Maker",
-    he: "מר עושה הכסף",
-  },
-  {
-    en: "The Rich One",
-    he: "העשיר",
-  },
-  {
-    en: "The Thrifty One",
-    he: "החסכן",
-  },
-  {
-    en: "Ms. Frugal",
-    he: "הגברת החסכנית",
-  },
-];

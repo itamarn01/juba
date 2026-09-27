@@ -2,7 +2,7 @@
   "expo": {
     "name": "JUBA",
     "slug": "JUBA",
-    "version": "1.0.4",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon-apple.png",
     "userInterfaceStyle": "light",
@@ -34,13 +34,17 @@
         "com.google.android.gms.permission.AD_ID"
       ],
       "package": "com.gigtunetry.JUBA",
-      "runtimeVersion": "1.0.0"
+      "runtimeVersion": "1.1.0",
+      "blockedPermissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "react-native-google-mobile-ads",
       [
         "expo-build-properties",
         {
@@ -48,7 +52,10 @@
             "useFrameworks": "static"
           },
           "android": {
-            "extraProguardRules": "-keep class com.google.android.gms.internal.consent_sdk.** { *; }"
+            "extraProguardRules": "-keep class com.google.android.gms.internal.consent_sdk.** { *; }",
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36,
+            "buildToolsVersion": "36.0.0"
           }
         }
       ],
@@ -68,9 +75,6 @@
             "./assets/fonts/Varela.ttf"
           ]
         }
-      ],
-      [
-        "expo-localization"
       ],
       [
         "expo-splash-screen",

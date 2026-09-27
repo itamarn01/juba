@@ -1,3 +1,5 @@
+import WizardTranslations from "./wizardTranslations";
+
 const Translations = {
   en: {
     expenseCalculator: "Group Expense Calculator",
@@ -543,5 +545,9 @@ const Translations = {
     step4: 'Sonuçları paylaşın veya daha sonra için kaydedin'
   },
 };
+
+Object.keys(WizardTranslations).forEach((locale) => {
+  Object.assign(Translations[locale], WizardTranslations[locale]);
+});
 
 export default Translations;
