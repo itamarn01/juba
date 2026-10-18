@@ -92,6 +92,8 @@ const WizardTranslations = {
     tipPending: "Your tip is pending. Thank you! 💜",
     tipError: "The purchase didn't go through. Please try again",
     deviceIdLabel: "Device ID",
+    privacyPolicy: "Privacy Policy",
+    privacySettings: "Privacy settings",
   },
   he: {
     searchCurrency: "חפש מטבע",
@@ -183,6 +185,8 @@ const WizardTranslations = {
     tipPending: "הטיפ ממתין לאישור. תודה! 💜",
     tipError: "הרכישה לא הושלמה. נסה שוב",
     deviceIdLabel: "מזהה מכשיר",
+    privacyPolicy: "מדיניות פרטיות",
+    privacySettings: "הגדרות פרטיות",
   },
   es: {
     searchCurrency: "Buscar moneda",
@@ -274,6 +278,8 @@ const WizardTranslations = {
     tipPending: "Tu propina está pendiente. ¡Gracias! 💜",
     tipError: "La compra no se completó. Inténtalo de nuevo",
     deviceIdLabel: "ID del dispositivo",
+    privacyPolicy: "Política de privacidad",
+    privacySettings: "Configuración de privacidad",
   },
   fr: {
     searchCurrency: "Rechercher une devise",
@@ -365,6 +371,8 @@ const WizardTranslations = {
     tipPending: "Votre pourboire est en attente. Merci ! 💜",
     tipError: "L'achat n'a pas abouti. Veuillez réessayer",
     deviceIdLabel: "ID de l'appareil",
+    privacyPolicy: "Politique de confidentialité",
+    privacySettings: "Paramètres de confidentialité",
   },
   it: {
     searchCurrency: "Cerca valuta",
@@ -456,6 +464,8 @@ const WizardTranslations = {
     tipPending: "La tua mancia è in attesa. Grazie! 💜",
     tipError: "L'acquisto non è andato a buon fine. Riprova",
     deviceIdLabel: "ID dispositivo",
+    privacyPolicy: "Informativa sulla privacy",
+    privacySettings: "Impostazioni privacy",
   },
   de: {
     searchCurrency: "Währung suchen",
@@ -547,6 +557,8 @@ const WizardTranslations = {
     tipPending: "Dein Trinkgeld ist ausstehend. Danke! 💜",
     tipError: "Der Kauf wurde nicht abgeschlossen. Bitte versuche es erneut",
     deviceIdLabel: "Geräte-ID",
+    privacyPolicy: "Datenschutzerklärung",
+    privacySettings: "Datenschutzeinstellungen",
   },
   zh: {
     searchCurrency: "搜索货币",
@@ -638,6 +650,8 @@ const WizardTranslations = {
     tipPending: "你的小费正在处理中。谢谢！💜",
     tipError: "购买未完成，请重试",
     deviceIdLabel: "设备 ID",
+    privacyPolicy: "隐私政策",
+    privacySettings: "隐私设置",
   },
   ja: {
     searchCurrency: "通貨を検索",
@@ -729,6 +743,8 @@ const WizardTranslations = {
     tipPending: "チップは保留中です。ありがとうございます！💜",
     tipError: "購入が完了しませんでした。もう一度お試しください",
     deviceIdLabel: "デバイスID",
+    privacyPolicy: "プライバシーポリシー",
+    privacySettings: "プライバシー設定",
   },
   ko: {
     searchCurrency: "통화 검색",
@@ -820,6 +836,8 @@ const WizardTranslations = {
     tipPending: "팁이 처리 대기 중입니다. 감사합니다! 💜",
     tipError: "구매가 완료되지 않았습니다. 다시 시도해 주세요",
     deviceIdLabel: "기기 ID",
+    privacyPolicy: "개인정보처리방침",
+    privacySettings: "개인정보 설정",
   },
   pt: {
     searchCurrency: "Pesquisar moeda",
@@ -911,6 +929,8 @@ const WizardTranslations = {
     tipPending: "Sua gorjeta está pendente. Obrigado! 💜",
     tipError: "A compra não foi concluída. Tente novamente",
     deviceIdLabel: "ID do dispositivo",
+    privacyPolicy: "Política de Privacidade",
+    privacySettings: "Configurações de privacidade",
   },
   ru: {
     searchCurrency: "Поиск валюты",
@@ -1002,6 +1022,8 @@ const WizardTranslations = {
     tipPending: "Ваши чаевые ожидают подтверждения. Спасибо! 💜",
     tipError: "Покупка не завершена. Попробуйте ещё раз",
     deviceIdLabel: "ID устройства",
+    privacyPolicy: "Политика конфиденциальности",
+    privacySettings: "Настройки конфиденциальности",
   },
   hi: {
     searchCurrency: "मुद्रा खोजें",
@@ -1093,6 +1115,8 @@ const WizardTranslations = {
     tipPending: "आपकी टिप लंबित है। धन्यवाद! 💜",
     tipError: "खरीदारी पूरी नहीं हुई। कृपया फिर से कोशिश करें",
     deviceIdLabel: "डिवाइस ID",
+    privacyPolicy: "गोपनीयता नीति",
+    privacySettings: "गोपनीयता सेटिंग्स",
   },
   tr: {
     searchCurrency: "Para birimi ara",
@@ -1184,6 +1208,8 @@ const WizardTranslations = {
     tipPending: "Bahşişin onay bekliyor. Teşekkürler! 💜",
     tipError: "Satın alma tamamlanamadı. Lütfen tekrar dene",
     deviceIdLabel: "Cihaz kimliği",
+    privacyPolicy: "Gizlilik Politikası",
+    privacySettings: "Gizlilik ayarları",
   },
 };
 

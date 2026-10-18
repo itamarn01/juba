@@ -35,6 +35,8 @@ import {
   InterstitialAd,
   AdEventType,
   mobileAds,
+  AdsConsent,
+  AdsConsentPrivacyOptionsRequirementStatus,
 } from "react-native-google-mobile-ads";
 import { captureRef } from "react-native-view-shot";
 import Share from "react-native-share";
@@ -149,6 +151,7 @@ const formatAmount = (amount) =>
 const PLAY_STORE_URL =
   "https://play.google.com/store/apps/details?id=com.gigtunetry.JUBA";
 const APP_STORE_URL = "https://apps.apple.com/app/id6502645038";
+const PRIVACY_POLICY_URL = "https://juba-backend.vercel.app/privacy";
 
 // Store links for shared messages. The Play link carries a UTM referrer, so
 // installs that came from shares show up in Play Console acquisition reports.
@@ -822,6 +825,10 @@ function Main() {
   const awaitingAdRef = useRef(false);
   const [adsDisabled, setAdsDisabled] = useState(false);
   const [deviceId, setDeviceId] = useState("");
+  // Google's consent form (UMP) for the EEA, UK and Switzerland. Elsewhere
+  // canRequestAds is true without asking.
+  const [canRequestAds, setCanRequestAds] = useState(false);
+  const [privacyOptionsRequired, setPrivacyOptionsRequired] = useState(false);
 
   const [friendShakeStyle, shakeFriend] = useShake();
   const [expenseShakeStyle, shakeExpense] = useShake();
@@ -945,6 +952,17 @@ function Main() {
 
   useEffect(() => {
     const getTrackingPermission = async () => {
+      // Google's consent form comes first, as Google requires for the EEA and
+      // UK. It shows only where needed, and only until the user answers.
+      try {
+        const info = await AdsConsent.gatherConsent();
+        setPrivacyOptionsRequired(
+          info.privacyOptionsRequirementStatus ===
+            AdsConsentPrivacyOptionsRequirementStatus.REQUIRED
+        );
+      } catch (error) {
+        console.log("Error gathering ads consent:", error);
+      }
       try {
         const permission = await requestTrackingPermission();
         if (permission === "authorized") {
@@ -955,7 +973,11 @@ function Main() {
       } finally {
         setTrackingPermissionProcessEnd(true);
         try {
-          await mobileAds().initialize();
+          // Also true when consent was given in an earlier session and this
+          // launch couldn't reach Google.
+          const { canRequestAds: allowed } = await AdsConsent.getConsentInfo();
+          setCanRequestAds(allowed);
+          if (allowed) await mobileAds().initialize();
         } catch (error) {
           console.log("Error initializing ads:", error);
         }
@@ -965,6 +987,17 @@ function Main() {
     getTrackingPermission();
   }, []);
 
+  // Lets EEA/UK users change their ads consent (Google requires this entry point).
+  const openPrivacyOptions = async () => {
+    try {
+      const info = await AdsConsent.showPrivacyOptionsForm();
+      setCanRequestAds(info.canRequestAds);
+      if (info.canRequestAds) await mobileAds().initialize();
+    } catch (error) {
+      console.log("Error showing privacy options:", error);
+    }
+  };
+
   useEffect(() => {
     if (!appReady) return;
     SplashScreen.hideAsync().catch(() => {});
@@ -972,7 +1005,7 @@ function Main() {
   }, [appReady]);
 
   useEffect(() => {
-    if (!trackingPermissionProcessEnd || adsDisabled) return;
+    if (!canRequestAds || adsDisabled) return;
     const interstitial = InterstitialAd.createForAdRequest(
       adUnitIdInterstitial,
       {
@@ -1016,7 +1049,7 @@ function Main() {
       interstitialRef.current = null;
       setInterstitialLoaded(false);
     };
-  }, [isTrackingPermission, trackingPermissionProcessEnd, adsDisabled]);
+  }, [isTrackingPermission, canRequestAds, adsDisabled]);
 
   // Keep a valid payer selected in the expenses step.
   useEffect(() => {
@@ -2022,6 +2055,24 @@ function Main() {
                   </Text>
                 ))}
               </View>
+              <View style={styles.privacyLinks}>
+                <TouchableOpacity
+                  onPress={() =>
+                    Linking.openURL(
+                      `${PRIVACY_POLICY_URL}?lang=${isRTL ? "he" : "en"}`
+                    ).catch(() => {})
+                  }
+                >
+                  <Text style={styles.privacyLink}>{i18n.t("privacyPolicy")}</Text>
+                </TouchableOpacity>
+                {privacyOptionsRequired ? (
+                  <TouchableOpacity onPress={openPrivacyOptions}>
+                    <Text style={styles.privacyLink}>
+                      {i18n.t("privacySettings")}
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
               {deviceId ? (
                 <Text selectable style={styles.deviceIdText}>
                   {`${i18n.t("deviceIdLabel")}: ${deviceId.slice(0, 8)}`}
@@ -2048,7 +2099,7 @@ function Main() {
   }
 
   const banner = (unitId) =>
-    trackingPermissionProcessEnd && !adsDisabled ? (
+    canRequestAds && !adsDisabled ? (
       <View style={styles.banner}>
         <BannerAd
           unitId={unitId}
@@ -2954,8 +3005,20 @@ const styles = StyleSheet.create({
     marginBottom: 2,
     paddingLeft: 8,
   },
+  privacyLinks: {
+    flexDirection: "row",
+    justifyContent: "center",
+    flexWrap: "wrap",
+    gap: 20,
+    marginTop: 20,
+  },
+  privacyLink: {
+    fontSize: 14,
+    color: PURPLE,
+    textDecorationLine: "underline",
+  },
   deviceIdText: {
-    marginTop: 16,
+    marginTop: 12,
     fontSize: 12,
     color: "#aaa",
     textAlign: "center",
