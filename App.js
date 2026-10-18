@@ -26,6 +26,7 @@ import {
   InputAccessoryView,
   BackHandler,
   DevSettings,
+  AppState,
 } from "react-native";
 import {
   BannerAd,
@@ -36,7 +37,9 @@ import {
   mobileAds,
 } from "react-native-google-mobile-ads";
 import { captureRef } from "react-native-view-shot";
-import * as Sharing from "expo-sharing";
+import Share from "react-native-share";
+import * as StoreReview from "expo-store-review";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { I18n } from "i18n-js";
 import { Feather, MaterialIcons, FontAwesome } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -56,8 +59,19 @@ import DropDownPicker from "react-native-dropdown-picker";
 import { requestTrackingPermission } from "react-native-tracking-transparency";
 import Translations from "./components/languages";
 import Currencies from "./components/currencies";
-import { calculateSplit, sumExpenses } from "./components/settlement";
+import {
+  calculateSplit,
+  getShares,
+  getSplitWith,
+  sumExpenses,
+} from "./components/settlement";
 import { loadSavedLists, writeSavedLists } from "./components/savedLists";
+import {
+  getCachedAdsDisabled,
+  getDeviceId,
+  registerDevice,
+} from "./components/deviceRegistry";
+import { useTipJar } from "./components/tipJar";
 
 SplashScreen.preventAutoHideAsync();
 const windowWidth = Dimensions.get("window").width;
@@ -121,11 +135,58 @@ const parseAmount = (text) => {
   return value > 0 ? value : null;
 };
 
+const MIN_SHARES = 0.5;
+const MAX_SHARES = 20;
+const formatShares = (shares) =>
+  shares.toLocaleString(undefined, { maximumFractionDigits: 1 });
+
 const formatAmount = (amount) =>
   amount.toLocaleString(undefined, {
     minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
     maximumFractionDigits: 2,
   });
+
+const PLAY_STORE_URL =
+  "https://play.google.com/store/apps/details?id=com.gigtunetry.JUBA";
+const APP_STORE_URL = "https://apps.apple.com/app/id6502645038";
+
+// Store links for shared messages. The Play link carries a UTM referrer, so
+// installs that came from shares show up in Play Console acquisition reports.
+const shareStoreLinks = (campaign) => {
+  const referrer = encodeURIComponent(
+    `utm_source=juba_app&utm_medium=share&utm_campaign=${campaign}`
+  );
+  return `Android: ${PLAY_STORE_URL}&referrer=${referrer}`;
+};
+
+// Asks for a store review after the user's second share, at most once in
+// REVIEW_INTERVAL_MS. The stores also limit how often the dialog appears.
+const SHARE_COUNT_KEY = "shareCount";
+const REVIEW_REQUESTED_AT_KEY = "reviewRequestedAt";
+const REVIEW_INTERVAL_MS = 90 * 24 * 60 * 60 * 1000;
+const DEVICE_SYNC_MS = 2 * 60 * 1000;
+const maybeRequestReview = async () => {
+  try {
+    const shareCount = Number(await AsyncStorage.getItem(SHARE_COUNT_KEY)) || 0;
+    const requestedAt =
+      Number(await AsyncStorage.getItem(REVIEW_REQUESTED_AT_KEY)) || 0;
+    if (shareCount < 2 || Date.now() - requestedAt < REVIEW_INTERVAL_MS) return;
+    if (!(await StoreReview.hasAction())) return;
+    await AsyncStorage.setItem(REVIEW_REQUESTED_AT_KEY, String(Date.now()));
+    await StoreReview.requestReview();
+  } catch (error) {
+    console.log("Error requesting review:", error);
+  }
+};
+
+const countShare = async () => {
+  try {
+    const shareCount = Number(await AsyncStorage.getItem(SHARE_COUNT_KEY)) || 0;
+    await AsyncStorage.setItem(SHARE_COUNT_KEY, String(shareCount + 1));
+  } catch (error) {
+    console.log("Error counting share:", error);
+  }
+};
 
 // Returns "mustUpdate" when the major/minor version is behind, and
 // "recommendToUpdate" when only the patch version is behind.
@@ -144,10 +205,7 @@ function getUpdateStatus(currentVersion, latestVersion) {
 
 const showUpdateAlert = (title, message, mandatory) => {
   const openStore = () => {
-    const link =
-      Platform.OS === "ios"
-        ? "https://apps.apple.com/il/app/juba/id6502645038?l=he"
-        : "https://play.google.com/store/apps/details?id=com.gigtunetry.JUBA";
+    const link = Platform.OS === "ios" ? APP_STORE_URL : PLAY_STORE_URL;
     Linking.openURL(link).catch((err) =>
       console.error("An error occurred", err)
     );
@@ -313,6 +371,46 @@ const ErrorText = ({ message, style }) =>
     </Animated.View>
   ) : null;
 
+// "Buy me a coffee" tips under the results. Hidden until the store returns
+// the tip products, so it never shows a broken card.
+const TIP_ICONS = ["☕", "☕☕", "🍰"];
+// Android picks a paragraph's direction from its first letter, so a Hebrew
+// line that starts with "JUBA" would be laid out left to right. A leading
+// right-to-left mark keeps it RTL.
+const RTL_MARK = isRTL ? "‏" : "";
+// Some Play one-time products only carry the price on their purchase option.
+const tipPrice = (tip) =>
+  tip.displayPrice ||
+  tip.discountOffers?.find((offer) => offer.displayPrice)?.displayPrice ||
+  (tip.price != null ? `${tip.price} ${tip.currency ?? ""}`.trim() : "");
+const TipJarCard = ({ tips, onBuy, buying }) =>
+  tips.length ? (
+    <View style={styles.tipCard}>
+      <AppText style={styles.tipTitle}>
+        {RTL_MARK + i18n.t("tipTitle")}
+      </AppText>
+      <AppText style={styles.tipDescription}>
+        {RTL_MARK + i18n.t("tipDescription")}
+      </AppText>
+      <View style={styles.tipButtonsRow}>
+        {tips.map((tip, index) => (
+          <TouchableOpacity
+            key={tip.id}
+            onPress={() => onBuy(tip.id)}
+            disabled={buying}
+            activeOpacity={0.7}
+            style={[styles.tipButton, buying && styles.tipButtonDisabled]}
+          >
+            <AppText style={styles.tipButtonIcon}>{TIP_ICONS[index]}</AppText>
+            <AppText style={styles.tipButtonPrice} numberOfLines={1}>
+              {tipPrice(tip)}
+            </AppText>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  ) : null;
+
 const ToastView = ({ toast, bottom }) =>
   toast.message ? (
     <Animated.View
@@ -432,107 +530,244 @@ const SaveListModal = ({
   </Modal>
 );
 
-// The results body. Rendered in the scrollable results window and again in an
-// off-screen full-height copy that is captured for sharing, because content
-// scrolled out of view is not drawn and would come out blank in the image.
-const ResultsContent = ({ friends, selectedIds, results, formatMoney }) => (
-  <>
-    <Image
-      source={require("./assets/juba-spend.png")}
-      style={styles.resultsImage}
-      resizeMode="contain"
-    />
-    <AppText style={styles.resultsTitle}>
-      {i18n.t("resultsTitle")}
-    </AppText>
-    <View style={styles.statsRow}>
-      <View style={[styles.statBox, styles.statBoxTotal]}>
-        <AppText style={styles.statLabel}>
-          {i18n.t("totalExpenses")}
-        </AppText>
-        <AppText style={styles.statValue}>
-          {formatMoney(results.total)}
-        </AppText>
-      </View>
-      <View style={[styles.statBox, styles.statBoxPerFriend]}>
-        <AppText style={styles.statLabel}>{i18n.t("perFriend")}</AppText>
-        <AppText style={styles.statValue}>
-          {formatMoney(results.perPerson)}
-        </AppText>
-      </View>
-    </View>
-
-    <AppText style={styles.sectionTitle}>
-      {i18n.t("expenseBreakdown")}
-    </AppText>
+// Multi-select chips for choosing who shares an expense.
+const SplitChips = ({ friends, selectedIds, onToggle }) => (
+  <View style={styles.chipsRow}>
     {friends.map((friend) => {
       const selected = selectedIds.includes(friend.id);
       return (
-        <View
+        <TouchableOpacity
           key={friend.id}
+          onPress={() => onToggle(friend.id)}
           style={[
-            styles.breakdownRow,
-            !selected && styles.breakdownRowMuted,
+            styles.chip,
+            styles.splitChip,
+            selected ? styles.splitChipSelected : styles.chipUnselected,
           ]}
         >
-          <FontAwesome
-            name="user-circle"
-            size={18}
+          <Feather
+            name={selected ? "check-square" : "square"}
+            size={16}
             color={selected ? PURPLE : "#9E9E9E"}
           />
-          <AppText
-            style={[styles.breakdownName, !selected && styles.mutedText]}
-            numberOfLines={1}
-          >
-            {selected
-              ? friend.name
-              : `${friend.name} ${i18n.t("notParticipating")}`}
+          <AppText style={styles.splitChipText} numberOfLines={1}>
+            {friend.name}
           </AppText>
-          <AppText style={!selected ? styles.mutedText : null}>
-            {formatMoney(sumExpenses(friend))}
-          </AppText>
-        </View>
+        </TouchableOpacity>
       );
     })}
+  </View>
+);
 
-    <View style={styles.divider} />
-    <AppText style={styles.sectionTitle}>{i18n.t("repayments")}</AppText>
-    {results.transfers.length === 0 ? (
-      <AppText style={styles.emptyText}>
-        {i18n.t("noRepayments")}
-      </AppText>
-    ) : (
-      results.transfers.map((transfer, index) => (
-        <View key={index} style={styles.transferRow}>
-          <View style={styles.transferPerson}>
-            <FontAwesome name="user-circle" size={20} color={PURPLE} />
-            <AppText style={styles.transferName} numberOfLines={2}>
-              {transfer.from}
-            </AppText>
-          </View>
-          <View style={styles.transferMiddle}>
-            <AppText style={styles.transferPays} numberOfLines={1}>
-              {i18n.t("pays")}
-            </AppText>
-            <Feather
-              name={isRTL ? "arrow-left" : "arrow-right"}
-              size={22}
-              color={PURPLE}
+const SplitEditorModal = ({
+  edit,
+  friends,
+  onToggle,
+  onSelectAll,
+  error,
+  shakeStyle,
+  onSave,
+  onClose,
+}) => (
+  <Modal
+    visible={!!edit}
+    transparent
+    animationType="fade"
+    statusBarTranslucent
+    navigationBarTranslucent
+    onRequestClose={onClose}
+  >
+    <View style={styles.modalOverlay}>
+      {edit ? (
+        <View style={styles.dialogCard}>
+          <AppText style={styles.dialogTitle}>
+            {i18n.t("editSplitTitle")}
+          </AppText>
+          <AppText style={styles.cardDescription}>{edit.label}</AppText>
+          <Animated.View style={[styles.splitEditorChips, shakeStyle]}>
+            <SplitChips
+              friends={friends}
+              selectedIds={edit.ids}
+              onToggle={onToggle}
+            />
+          </Animated.View>
+          <OutlineButton
+            small
+            icon="check-square"
+            title={i18n.t("selectAll")}
+            onPress={onSelectAll}
+          />
+          <ErrorText message={error} />
+          <View style={styles.dialogButtonsRow}>
+            <OutlineButton
+              title={i18n.t("cancelButton")}
+              onPress={onClose}
+              style={styles.flexButton}
+            />
+            <GradientButton
+              icon="check"
+              title={i18n.t("saveButton")}
+              onPress={onSave}
+              style={styles.flexButton}
             />
           </View>
-          <View style={styles.transferPerson}>
-            <FontAwesome name="user-circle" size={20} color={PURPLE} />
-            <AppText style={styles.transferName} numberOfLines={2}>
-              {transfer.to}
-            </AppText>
-          </View>
-          <AppText style={styles.transferAmount} numberOfLines={1}>
-            {formatMoney(transfer.amount)}
+        </View>
+      ) : null}
+    </View>
+  </Modal>
+);
+
+// The results body. Rendered in the scrollable results window and again in an
+// off-screen full-height copy that is captured for sharing, because content
+// scrolled out of view is not drawn and would come out blank in the image.
+const ResultsContent = ({ friends, selectedIds, results, formatMoney }) => {
+  // With uneven shares, show the amount per share and each person's part.
+  const weighted = friends.some(
+    (friend) => selectedIds.includes(friend.id) && getShares(friend) !== 1
+  );
+  // Expenses shared by specific friends make every part different, so each
+  // person's part is shown and a single per-friend amount is not.
+  const showParts = weighted || results.customSplits;
+  return (
+    <>
+      <Image
+        source={require("./assets/juba-spend.png")}
+        style={styles.resultsImage}
+        resizeMode="contain"
+      />
+      <AppText style={styles.resultsTitle}>
+        {i18n.t("resultsTitle")}
+      </AppText>
+      <View style={styles.statsRow}>
+        <View style={[styles.statBox, styles.statBoxTotal]}>
+          <AppText style={styles.statLabel}>
+            {i18n.t("totalExpenses")}
+          </AppText>
+          <AppText style={styles.statValue}>
+            {formatMoney(results.total)}
           </AppText>
         </View>
-      ))
-    )}
-  </>
+        {results.customSplits ? null : (
+          <View style={[styles.statBox, styles.statBoxPerFriend]}>
+            <AppText style={styles.statLabel}>
+              {i18n.t(weighted ? "perShare" : "perFriend")}
+            </AppText>
+            <AppText style={styles.statValue}>
+              {formatMoney(results.perShare)}
+            </AppText>
+          </View>
+        )}
+      </View>
+
+      <AppText style={styles.sectionTitle}>
+        {i18n.t("expenseBreakdown")}
+      </AppText>
+      {friends.map((friend) => {
+        const selected = selectedIds.includes(friend.id);
+        return (
+          <View
+            key={friend.id}
+            style={[
+              styles.breakdownRow,
+              !selected && styles.breakdownRowMuted,
+            ]}
+          >
+            <FontAwesome
+              name="user-circle"
+              size={18}
+              color={selected ? PURPLE : "#9E9E9E"}
+            />
+            <View style={styles.breakdownName}>
+              <AppText
+                style={!selected ? styles.mutedText : null}
+                numberOfLines={1}
+              >
+                {selected
+                  ? friend.name
+                  : `${friend.name} ${i18n.t("notParticipating")}`}
+              </AppText>
+              {selected && showParts ? (
+                <AppText style={styles.mutedText} numberOfLines={1}>
+                  {weighted
+                    ? i18n.t("friendPart", {
+                        amount: formatMoney(results.parts[friend.id] ?? 0),
+                        shares: formatShares(getShares(friend)),
+                      })
+                    : i18n.t("friendPartSimple", {
+                        amount: formatMoney(results.parts[friend.id] ?? 0),
+                      })}
+                </AppText>
+              ) : null}
+            </View>
+            <AppText style={!selected ? styles.mutedText : null}>
+              {formatMoney(sumExpenses(friend))}
+            </AppText>
+          </View>
+        );
+      })}
+
+      <View style={styles.divider} />
+      <AppText style={styles.sectionTitle}>{i18n.t("repayments")}</AppText>
+      {results.transfers.length === 0 ? (
+        <AppText style={styles.emptyText}>
+          {i18n.t("noRepayments")}
+        </AppText>
+      ) : (
+        results.transfers.map((transfer, index) => (
+          <View key={index} style={styles.transferRow}>
+            <View style={styles.transferPerson}>
+              <FontAwesome name="user-circle" size={20} color={PURPLE} />
+              <AppText style={styles.transferName} numberOfLines={2}>
+                {transfer.from}
+              </AppText>
+            </View>
+            <View style={styles.transferMiddle}>
+              <AppText style={styles.transferPays} numberOfLines={1}>
+                {i18n.t("pays")}
+              </AppText>
+              <Feather
+                name={isRTL ? "arrow-left" : "arrow-right"}
+                size={22}
+                color={PURPLE}
+              />
+            </View>
+            <View style={styles.transferPerson}>
+              <FontAwesome name="user-circle" size={20} color={PURPLE} />
+              <AppText style={styles.transferName} numberOfLines={2}>
+                {transfer.to}
+              </AppText>
+            </View>
+            <AppText style={styles.transferAmount} numberOfLines={1}>
+              {formatMoney(transfer.amount)}
+            </AppText>
+          </View>
+        ))
+      )}
+    </>
+  );
+};
+
+// Branding at the bottom of the shared image, so every share advertises JUBA.
+const ShareFooter = () => (
+  <LinearGradient
+    colors={GRADIENT}
+    start={{ x: 0, y: 0 }}
+    end={{ x: 1, y: 0 }}
+    style={styles.shareFooter}
+  >
+    <Image
+      source={require("./assets/icon-apple.png")}
+      style={styles.shareFooterIcon}
+    />
+    <View style={styles.shareFooterText}>
+      <AppText style={styles.shareFooterTitle} numberOfLines={1}>
+        {i18n.t("shareImageFooter")}
+      </AppText>
+      <AppText style={styles.shareFooterCta} numberOfLines={2}>
+        {i18n.t("shareImageCta")}
+      </AppText>
+    </View>
+  </LinearGradient>
 );
 
 function Main() {
@@ -560,6 +795,12 @@ function Main() {
   const [expenseAmount, setExpenseAmount] = useState("");
   const [expenseDescription, setExpenseDescription] = useState("");
   const [expenseError, setExpenseError] = useState("");
+  // Advanced: while open, new expenses are shared only by splitIds.
+  const [splitOpen, setSplitOpen] = useState(false);
+  const [splitIds, setSplitIds] = useState([]);
+  // The expense whose sharing friends are being edited.
+  const [splitEdit, setSplitEdit] = useState(null);
+  const [splitEditError, setSplitEditError] = useState("");
   const [stepError, setStepError] = useState("");
   const descriptionInput = useRef(null);
 
@@ -572,17 +813,30 @@ function Main() {
   const [savedListsVisible, setSavedListsVisible] = useState(false);
   const [savedLists, setSavedLists] = useState([]);
   const resultsShotRef = useRef(null);
+  // Set when the results were shared, to ask for a review on closing them.
+  const sharedResultsRef = useRef(false);
 
-  // Ads.
+  // Ads. adsDisabled is set per device from the admin panel.
   const interstitialRef = useRef(null);
   const [interstitialLoaded, setInterstitialLoaded] = useState(false);
   const awaitingAdRef = useRef(false);
+  const [adsDisabled, setAdsDisabled] = useState(false);
+  const [deviceId, setDeviceId] = useState("");
 
   const [friendShakeStyle, shakeFriend] = useShake();
   const [expenseShakeStyle, shakeExpense] = useShake();
   const [stepShakeStyle, shakeStep] = useShake();
   const [saveShakeStyle, shakeSave] = useShake();
+  const [splitEditShakeStyle, shakeSplitEdit] = useShake();
   const toast = useToast();
+  const { tips, buyTip, buying } = useTipJar({
+    onThanks: () => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      toast.show(i18n.t("tipThanks"));
+    },
+    onPending: () => toast.show(i18n.t("tipPending")),
+    onError: () => toast.show(i18n.t("tipError")),
+  });
 
   const currencySymbol = findCurrency(currencyCode)?.symbol ?? currencyCode;
   const formatMoney = (amount) => `${currencySymbol}${formatAmount(amount)}`;
@@ -644,6 +898,37 @@ function Main() {
     appVersionChecker();
   }, []);
 
+  // Registers the device on launch, on returning to the app, and every few
+  // minutes while it's open (the admin panel shows it as online), and picks
+  // up whether ads were turned off for it.
+  useEffect(() => {
+    let cancelled = false;
+    const sync = async (launch = false) => {
+      const disabled = await registerDevice({ launch });
+      if (!cancelled && disabled !== null) setAdsDisabled(disabled);
+    };
+
+    getCachedAdsDisabled().then((disabled) => {
+      if (!cancelled && disabled) setAdsDisabled(true);
+    });
+    getDeviceId()
+      .then((id) => !cancelled && setDeviceId(id))
+      .catch(() => {});
+    sync(true);
+
+    const interval = setInterval(() => {
+      if (AppState.currentState === "active") sync();
+    }, DEVICE_SYNC_MS);
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active") sync();
+    });
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      subscription.remove();
+    };
+  }, []);
+
   // Hebrew needs an RTL layout, which only applies after a reload.
   useEffect(() => {
     if (I18nManager.isRTL === isRTL) return;
@@ -687,7 +972,7 @@ function Main() {
   }, [appReady]);
 
   useEffect(() => {
-    if (!trackingPermissionProcessEnd) return;
+    if (!trackingPermissionProcessEnd || adsDisabled) return;
     const interstitial = InterstitialAd.createForAdRequest(
       adUnitIdInterstitial,
       {
@@ -731,7 +1016,7 @@ function Main() {
       interstitialRef.current = null;
       setInterstitialLoaded(false);
     };
-  }, [isTrackingPermission, trackingPermissionProcessEnd]);
+  }, [isTrackingPermission, trackingPermissionProcessEnd, adsDisabled]);
 
   // Keep a valid payer selected in the expenses step.
   useEffect(() => {
@@ -796,8 +1081,24 @@ function Main() {
 
   const removeFriend = (friend) => {
     const remove = () => {
-      setFriends((prev) => prev.filter((item) => item.id !== friend.id));
+      // Expenses left with nobody sharing them go back to everyone.
+      const withoutFriend = (expense) => {
+        const splitWith = getSplitWith(expense);
+        if (!splitWith) return expense;
+        const { splitWith: _, ...rest } = expense;
+        const remaining = splitWith.filter((id) => id !== friend.id);
+        return remaining.length > 0 ? { ...rest, splitWith: remaining } : rest;
+      };
+      setFriends((prev) =>
+        prev
+          .filter((item) => item.id !== friend.id)
+          .map((item) => ({
+            ...item,
+            expenses: item.expenses.map(withoutFriend),
+          }))
+      );
       setSelectedIds((prev) => prev.filter((id) => id !== friend.id));
+      setSplitIds((prev) => prev.filter((id) => id !== friend.id));
     };
     if (friend.expenses.length === 0) {
       remove();
@@ -819,6 +1120,17 @@ function Main() {
     const expense = { id: newId(), amount };
     const description = expenseDescription.trim();
     if (description) expense.description = description;
+    if (splitOpen) {
+      const splitWith = friends
+        .map((friend) => friend.id)
+        .filter((id) => splitIds.includes(id));
+      if (splitWith.length === 0) {
+        setExpenseError(i18n.t("errorNoSplit"));
+        shakeExpense();
+        return;
+      }
+      if (splitWith.length < friends.length) expense.splitWith = splitWith;
+    }
     setFriends((prev) =>
       prev.map((friend) =>
         friend.id === payerId
@@ -841,6 +1153,69 @@ function Main() {
             }
           : friend
       )
+    );
+  };
+
+  const toggleSplitOpen = () => {
+    setExpenseError("");
+    // Opening starts from everyone; closing goes back to everyone.
+    setSplitIds(friends.map((friend) => friend.id));
+    setSplitOpen((open) => !open);
+  };
+
+  const toggleId = (ids, id) =>
+    ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id];
+
+  const openSplitEdit = (friend, expense) => {
+    setSplitEditError("");
+    setSplitEdit({
+      friendId: friend.id,
+      expenseId: expense.id,
+      label: `${expense.description || i18n.t("generalExpense")} · ${formatMoney(
+        expense.amount
+      )}`,
+      ids: getSplitWith(expense) ?? friends.map((item) => item.id),
+    });
+  };
+
+  const saveSplitEdit = () => {
+    const splitWith = friends
+      .map((friend) => friend.id)
+      .filter((id) => splitEdit.ids.includes(id));
+    if (splitWith.length === 0) {
+      setSplitEditError(i18n.t("errorNoSplit"));
+      shakeSplitEdit();
+      return;
+    }
+    setFriends((prev) =>
+      prev.map((friend) =>
+        friend.id === splitEdit.friendId
+          ? {
+              ...friend,
+              expenses: friend.expenses.map((expense) => {
+                if (expense.id !== splitEdit.expenseId) return expense;
+                const { splitWith: _, ...rest } = expense;
+                return splitWith.length < friends.length
+                  ? { ...rest, splitWith }
+                  : rest;
+              }),
+            }
+          : friend
+      )
+    );
+    setSplitEdit(null);
+  };
+
+  const adjustShares = (friendId, delta) => {
+    setFriends((prev) =>
+      prev.map((friend) => {
+        if (friend.id !== friendId) return friend;
+        const shares = Math.min(
+          MAX_SHARES,
+          Math.max(MIN_SHARES, getShares(friend) + delta)
+        );
+        return { ...friend, shares };
+      })
     );
   };
 
@@ -879,7 +1254,7 @@ function Main() {
     Keyboard.dismiss();
     setStepError("");
     const interstitial = interstitialRef.current;
-    if (interstitialLoaded && interstitial) {
+    if (!adsDisabled && interstitialLoaded && interstitial) {
       awaitingAdRef.current = true;
       try {
         await interstitial.show();
@@ -893,6 +1268,28 @@ function Main() {
     }
   };
 
+  // The repayments as text, sent as the image caption (WhatsApp shows it under
+  // the image) with links to download JUBA.
+  const buildShareMessage = () => {
+    const transferLines =
+      results.transfers.length === 0
+        ? [i18n.t("noRepayments")]
+        : results.transfers.map((transfer) =>
+            i18n.t("shareTransferLine", {
+              from: transfer.from,
+              to: transfer.to,
+              amount: formatMoney(transfer.amount),
+            })
+          );
+    return [
+      i18n.t("repayments"),
+      ...transferLines,
+      "",
+      i18n.t("shareMessageCta"),
+      shareStoreLinks("results"),
+    ].join("\n");
+  };
+
   const shareResults = async () => {
     try {
       const uri = await captureRef(resultsShotRef, {
@@ -901,13 +1298,39 @@ function Main() {
         // The snapshot view is off-screen; iOS can only render it this way.
         useRenderInContext: Platform.OS === "ios",
       });
-      await Sharing.shareAsync(uri, {
-        mimeType: "image/jpeg",
-        dialogTitle: i18n.t("share"),
-        UTI: "public.jpeg",
+      const result = await Share.open({
+        url: uri,
+        type: "image/jpeg",
+        message: buildShareMessage(),
+        title: i18n.t("share"),
+        failOnCancel: false,
       });
+      if (result?.dismissedAction) return;
+      sharedResultsRef.current = true;
+      countShare();
     } catch (error) {
       console.log("Error capturing and sharing image:", error);
+    }
+  };
+
+  const closeResults = () => {
+    setResultsVisible(false);
+    if (sharedResultsRef.current) {
+      sharedResultsRef.current = false;
+      maybeRequestReview();
+    }
+  };
+
+  const recommendApp = async () => {
+    try {
+      const result = await Share.open({
+        message: `${i18n.t("inviteMessage")}\n${shareStoreLinks("invite")}`,
+        title: i18n.t("recommendApp"),
+        failOnCancel: false,
+      });
+      if (!result?.dismissedAction) countShare();
+    } catch (error) {
+      console.log("Error recommending the app:", error);
     }
   };
 
@@ -918,6 +1341,7 @@ function Main() {
     setFriendName("");
     setExpenseAmount("");
     setExpenseDescription("");
+    setSplitOpen(false);
     goToStep(1);
   };
 
@@ -1000,6 +1424,7 @@ function Main() {
       setFriendName("");
       setExpenseAmount("");
       setExpenseDescription("");
+      setSplitOpen(false);
       const complete =
         loadedFriends.length >= 2 &&
         loadedFriends.some((friend) => friend.expenses.length > 0);
@@ -1154,6 +1579,34 @@ function Main() {
           style={[styles.inputRowSecond, inputDirectionStyle]}
         />
       </Animated.View>
+      <TouchableOpacity
+        onPress={toggleSplitOpen}
+        hitSlop={6}
+        style={styles.splitToggle}
+      >
+        <Feather name="users" size={16} color={PURPLE} />
+        <AppText style={styles.splitToggleText} numberOfLines={1}>
+          {i18n.t("splitAdvanced")}
+        </AppText>
+        <Feather
+          name={splitOpen ? "chevron-up" : "chevron-down"}
+          size={18}
+          color={PURPLE}
+        />
+      </TouchableOpacity>
+      {splitOpen ? (
+        <View style={styles.splitPanel}>
+          <SplitChips
+            friends={friends}
+            selectedIds={splitIds}
+            onToggle={(id) => {
+              setExpenseError("");
+              setSplitIds((prev) => toggleId(prev, id));
+            }}
+          />
+          <AppText style={styles.splitHint}>{i18n.t("splitHint")}</AppText>
+        </View>
+      ) : null}
       <ErrorText message={expenseError} />
       <GradientButton
         icon="plus"
@@ -1182,23 +1635,47 @@ function Main() {
               {i18n.t("noExpensesYet")}
             </AppText>
           ) : (
-            friend.expenses.map((expense) => (
-              <View key={expense.id} style={styles.expenseRow}>
-                <Feather name="tag" size={16} color="#BD1865" />
-                <AppText style={styles.expenseDescription} numberOfLines={1}>
-                  {expense.description || i18n.t("generalExpense")}
-                </AppText>
-                <AppText style={styles.expenseAmount}>
-                  {formatMoney(expense.amount)}
-                </AppText>
+            friend.expenses.map((expense) => {
+              const splitWith = getSplitWith(expense);
+              return (
                 <TouchableOpacity
-                  onPress={() => removeExpense(friend.id, expense.id)}
-                  hitSlop={8}
+                  key={expense.id}
+                  onPress={() => openSplitEdit(friend, expense)}
+                  activeOpacity={0.7}
+                  style={styles.expenseRow}
                 >
-                  <Feather name="trash-2" size={18} color="#E53935" />
+                  <Feather
+                    name={splitWith ? "users" : "tag"}
+                    size={16}
+                    color="#BD1865"
+                  />
+                  <View style={styles.expenseDescription}>
+                    <AppText numberOfLines={1}>
+                      {expense.description || i18n.t("generalExpense")}
+                    </AppText>
+                    {splitWith ? (
+                      <AppText style={styles.expenseSharedBy} numberOfLines={2}>
+                        {i18n.t("sharedBy", {
+                          names: friends
+                            .filter((item) => splitWith.includes(item.id))
+                            .map((item) => item.name)
+                            .join(", "),
+                        })}
+                      </AppText>
+                    ) : null}
+                  </View>
+                  <AppText style={styles.expenseAmount}>
+                    {formatMoney(expense.amount)}
+                  </AppText>
+                  <TouchableOpacity
+                    onPress={() => removeExpense(friend.id, expense.id)}
+                    hitSlop={8}
+                  >
+                    <Feather name="trash-2" size={18} color="#E53935" />
+                  </TouchableOpacity>
                 </TouchableOpacity>
-              </View>
-            ))
+              );
+            })
           )}
         </View>
       ))}
@@ -1247,15 +1724,53 @@ function Main() {
               size={24}
               color={selected ? PURPLE : "#9E9E9E"}
             />
-            <AppText style={styles.participantName} numberOfLines={1}>
-              {friend.name}
-            </AppText>
-            {friend.expenses.length > 0 ? (
-              <AppText style={styles.mutedText}>
-                {i18n.t("spentLabel", {
-                  amount: formatMoney(sumExpenses(friend)),
-                })}
+            <View style={styles.participantName}>
+              <AppText style={styles.participantNameText} numberOfLines={1}>
+                {friend.name}
               </AppText>
+              {friend.expenses.length > 0 ? (
+                <AppText style={styles.mutedText} numberOfLines={1}>
+                  {i18n.t("spentLabel", {
+                    amount: formatMoney(sumExpenses(friend)),
+                  })}
+                </AppText>
+              ) : null}
+            </View>
+            {selected ? (
+              <View style={styles.sharesStepper}>
+                <View style={styles.sharesStepperRow}>
+                  <TouchableOpacity
+                    onPress={() => adjustShares(friend.id, -MIN_SHARES)}
+                    disabled={getShares(friend) <= MIN_SHARES}
+                    hitSlop={6}
+                    style={styles.sharesStepperButton}
+                  >
+                    <Feather
+                      name="minus"
+                      size={18}
+                      color={getShares(friend) <= MIN_SHARES ? "#CECECE" : PURPLE}
+                    />
+                  </TouchableOpacity>
+                  <AppText style={styles.sharesValue}>
+                    {formatShares(getShares(friend))}
+                  </AppText>
+                  <TouchableOpacity
+                    onPress={() => adjustShares(friend.id, MIN_SHARES)}
+                    disabled={getShares(friend) >= MAX_SHARES}
+                    hitSlop={6}
+                    style={styles.sharesStepperButton}
+                  >
+                    <Feather
+                      name="plus"
+                      size={18}
+                      color={getShares(friend) >= MAX_SHARES ? "#CECECE" : PURPLE}
+                    />
+                  </TouchableOpacity>
+                </View>
+                <AppText style={styles.sharesLabel}>
+                  {i18n.t("sharesLabel")}
+                </AppText>
+              </View>
             ) : null}
           </TouchableOpacity>
         );
@@ -1263,11 +1778,14 @@ function Main() {
       <AppText style={styles.selectionSummary}>
         {selectedIds.length === 0
           ? i18n.t("noneSelected")
-          : i18n.t("selectedCount", {
+          : `${i18n.t("selectedCount", {
               count: selectedIds.length,
               total: friends.length,
-            })}
+            })} · ${i18n.t("sharesSummary", {
+              shares: formatShares(results.totalShares),
+            })}`}
       </AppText>
+      <AppText style={styles.sharesHint}>{i18n.t("sharesHint")}</AppText>
     </>
   );
 
@@ -1278,7 +1796,7 @@ function Main() {
       statusBarTranslucent
       navigationBarTranslucent
       visible={resultsVisible}
-      onRequestClose={() => setResultsVisible(false)}
+      onRequestClose={closeResults}
     >
       <View style={styles.modalOverlay}>
         <View
@@ -1297,6 +1815,7 @@ function Main() {
               results={results}
               formatMoney={formatMoney}
             />
+            <TipJarCard tips={tips} onBuy={buyTip} buying={buying} />
           </ScrollView>
 
           <View style={styles.dialogButtonsRow}>
@@ -1317,7 +1836,7 @@ function Main() {
             <OutlineButton
               small
               title={i18n.t("close")}
-              onPress={() => setResultsVisible(false)}
+              onPress={closeResults}
               style={styles.flexButton}
             />
           </View>
@@ -1334,6 +1853,7 @@ function Main() {
             results={results}
             formatMoney={formatMoney}
           />
+          <ShareFooter />
         </View>
         <ToastView toast={toast} bottom={insets.bottom + 24} />
       </View>
@@ -1502,6 +2022,11 @@ function Main() {
                   </Text>
                 ))}
               </View>
+              {deviceId ? (
+                <Text selectable style={styles.deviceIdText}>
+                  {`${i18n.t("deviceIdLabel")}: ${deviceId.slice(0, 8)}`}
+                </Text>
+              ) : null}
             </ScrollView>
           </View>
         </View>
@@ -1523,7 +2048,7 @@ function Main() {
   }
 
   const banner = (unitId) =>
-    trackingPermissionProcessEnd ? (
+    trackingPermissionProcessEnd && !adsDisabled ? (
       <View style={styles.banner}>
         <BannerAd
           unitId={unitId}
@@ -1548,6 +2073,14 @@ function Main() {
           style={[styles.headerInfoButton, { top: insets.top + 10 }]}
         >
           <Feather name="info" size={24} color="white" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={recommendApp}
+          hitSlop={10}
+          accessibilityLabel={i18n.t("recommendApp")}
+          style={[styles.headerRecommendButton, { top: insets.top + 10 }]}
+        >
+          <Feather name="user-plus" size={24} color="white" />
         </TouchableOpacity>
         <AppText style={styles.headerTitle}>JUBA</AppText>
         <AppText style={styles.headerSubtitle}>
@@ -1659,6 +2192,25 @@ function Main() {
       {renderDescriptionModal()}
       {renderResultsModal()}
       {renderSavedListsModal()}
+      <SplitEditorModal
+        edit={splitEdit}
+        friends={friends}
+        onToggle={(id) => {
+          setSplitEditError("");
+          setSplitEdit((prev) => ({ ...prev, ids: toggleId(prev.ids, id) }));
+        }}
+        onSelectAll={() => {
+          setSplitEditError("");
+          setSplitEdit((prev) => ({
+            ...prev,
+            ids: friends.map((friend) => friend.id),
+          }));
+        }}
+        error={splitEditError}
+        shakeStyle={splitEditShakeStyle}
+        onSave={saveSplitEdit}
+        onClose={() => setSplitEdit(null)}
+      />
       <SaveListModal
         visible={saveModalVisible && !resultsVisible}
         name={saveListName}
@@ -1721,6 +2273,10 @@ const styles = StyleSheet.create({
   headerInfoButton: {
     position: "absolute",
     end: 16,
+  },
+  headerRecommendButton: {
+    position: "absolute",
+    start: 16,
   },
   headerTitle: {
     color: "white",
@@ -1976,6 +2532,54 @@ const styles = StyleSheet.create({
   expenseAmount: {
     marginEnd: 12,
   },
+  expenseSharedBy: {
+    color: "#9E9E9E",
+    fontSize: 12,
+    marginTop: 2,
+  },
+  splitToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    marginTop: 10,
+  },
+  splitToggleText: {
+    color: PURPLE,
+    fontSize: 14,
+    marginHorizontal: 6,
+  },
+  splitPanel: {
+    marginTop: 8,
+    padding: 10,
+    paddingBottom: 4,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#D9B8E3",
+    backgroundColor: "#F7F2F9",
+  },
+  splitHint: {
+    color: "#9E9E9E",
+    fontSize: 12,
+    marginBottom: 6,
+  },
+  splitChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+  },
+  splitChipSelected: {
+    borderWidth: 1,
+    borderColor: PURPLE,
+    backgroundColor: "white",
+  },
+  splitChipText: {
+    fontSize: 14,
+    marginStart: 6,
+    flexShrink: 1,
+  },
+  splitEditorChips: {
+    marginTop: 12,
+  },
   selectionButtonsRow: {
     flexDirection: "row",
     marginBottom: 8,
@@ -1995,8 +2599,42 @@ const styles = StyleSheet.create({
   },
   participantName: {
     flex: 1,
-    fontSize: 16,
     marginHorizontal: 10,
+  },
+  participantNameText: {
+    fontSize: 16,
+  },
+  sharesStepper: {
+    alignItems: "center",
+  },
+  sharesStepperRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#D9B8E3",
+    borderRadius: 16,
+    backgroundColor: "white",
+  },
+  sharesStepperButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  sharesValue: {
+    minWidth: 28,
+    textAlign: "center",
+    fontSize: 15,
+    color: PURPLE,
+  },
+  sharesLabel: {
+    fontSize: 11,
+    color: "#9E9E9E",
+    marginTop: 2,
+  },
+  sharesHint: {
+    color: "#9E9E9E",
+    fontSize: 12,
+    textAlign: "center",
+    marginTop: 6,
   },
   selectionSummary: {
     color: "grey",
@@ -2087,6 +2725,32 @@ const styles = StyleSheet.create({
     left: windowWidth * 2,
     width: windowWidth * 0.95,
     paddingHorizontal: 20,
+  },
+  shareFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+  },
+  shareFooterIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    marginEnd: 10,
+  },
+  shareFooterText: {
+    flex: 1,
+  },
+  shareFooterTitle: {
+    color: "white",
+    fontSize: 15,
+  },
+  shareFooterCta: {
+    color: "white",
+    fontSize: 11,
+    opacity: 0.9,
   },
   resultsImage: {
     width: horizontalScale(250),
@@ -2289,5 +2953,58 @@ const styles = StyleSheet.create({
     color: "#666",
     marginBottom: 2,
     paddingLeft: 8,
+  },
+  deviceIdText: {
+    marginTop: 16,
+    fontSize: 12,
+    color: "#aaa",
+    textAlign: "center",
+  },
+  tipCard: {
+    marginHorizontal: 12,
+    marginTop: 28,
+    marginBottom: 8,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#E9D7EE",
+    backgroundColor: "#FBF6FC",
+  },
+  tipTitle: {
+    color: PURPLE,
+    fontSize: 17,
+    textAlign: "center",
+  },
+  tipDescription: {
+    color: "grey",
+    fontSize: 13,
+    textAlign: "center",
+    marginTop: 4,
+  },
+  tipButtonsRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: 12,
+  },
+  tipButton: {
+    flex: 1,
+    alignItems: "center",
+    marginHorizontal: 4,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: PURPLE,
+    backgroundColor: "white",
+  },
+  tipButtonDisabled: {
+    opacity: 0.5,
+  },
+  tipButtonIcon: {
+    fontSize: 20,
+  },
+  tipButtonPrice: {
+    marginTop: 4,
+    fontSize: 14,
+    color: PURPLE,
   },
 });
