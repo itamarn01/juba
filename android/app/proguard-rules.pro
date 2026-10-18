@@ -12,6 +12,8 @@
 -keep class com.facebook.react.turbomodule.** { *; }
 
 # Add any project specific keep options here:
+-keep class cl.json.** { *; }
+-keep class fr.greweb.reactnativeviewshot.** { *; }
 
 # @generated begin expo-build-properties - expo prebuild (DO NOT MODIFY)
 -keep class com.google.android.gms.internal.consent_sdk.** { *; }
